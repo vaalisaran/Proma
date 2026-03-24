@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ bug.title }} — IIAP PM{% endblock %}
+{% block page_title %}Bug Detail{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'tasks:bug_edit' bug.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:760px">
+    <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+            <span class="badge {% if bug.severity == 'critical' %}badge-red{% elif bug.severity == 'high' %}badge-yellow{% elif bug.severity == 'medium' %}badge-blue{% else %}badge-gray{% endif %}">{{ bug.get_severity_display }}</span>
+            <span class="badge {% if bug.status == 'open' %}badge-red{% elif bug.status == 'in_progress' %}badge-blue{% elif bug.status == 'resolved' %}badge-green{% else %}badge-gray{% endif %}">{{ bug.get_status_display }}</span>
+        </div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:12px">{{ bug.title }}</h2>
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px">{{ bug.description }}</p>
+
+        <div class="grid-2" style="font-size:13px;gap:12px">
+            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Steps to Reproduce</div>
+                <p style="color:var(--text-secondary);line-height:1.6;white-space:pre-line">{{ bug.steps_to_reproduce|default:"Not specified." }}</p>
+            </div>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Expected vs Actual</div>
+                <p style="color:var(--green);font-size:12px;margin-bottom:4px"><strong>Expected:</strong> {{ bug.expected_behavior|default:"—" }}</p>
+                <p style="color:var(--red);font-size:12px"><strong>Actual:</strong> {{ bug.actual_behavior|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            {% if bug.project %}<div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Project</span><a href="{% url 'tasks:project_detail' bug.project.pk %}" style="color:var(--accent);text-decoration:none">{{ bug.project.name }}</a></div>{% endif %}
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Reported By</span><span>{{ bug.reported_by.display_name }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Assigned To</span><span>{{ bug.assigned_to.display_name|default:"Unassigned" }}</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Reported On</span><span>{{ bug.created_at|date:"M d, Y H:i" }}</span></div>
+            {% if bug.linked_task %}<div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">Linked Task</span><a href="{% url 'tasks:task_detail' bug.linked_task.pk %}" style="color:var(--accent);text-decoration:none">{{ bug.linked_task.title }}</a></div>{% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

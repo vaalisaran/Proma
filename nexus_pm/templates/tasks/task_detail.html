@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }} — IIAP PM{% endblock %}
+{% block page_title %}Task Detail{% endblock %}
+
+{% block topbar_actions %}
+{% if user.is_admin or user.is_project_manager %}
+<a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+<a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i></a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 290px; gap:20px; align-items:start;">
+
+    <!-- ── MAIN ── -->
+    <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Task Header -->
+        <div class="card">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% elif task.task_type == 'improvement' %}badge-cyan{% elif task.task_type == 'research' %}badge-yellow{% else %}badge-gray{% endif %}">
+                    {% if task.task_type == 'bug' %}<i class="fas fa-bug"></i>{% elif task.task_type == 'feature' %}<i class="fas fa-star"></i>{% elif task.task_type == 'research' %}<i class="fas fa-flask"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+                    {{ task.get_task_type_display }}
+                </span>
+                <span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">
+                    {{ task.get_status_display }}
+                </span>
+                <span class="badge {% if task.priority == 'critical' %}badge-red{% elif task.priority == 'high' %}badge-yellow{% elif task.priority == 'medium' %}badge-blue{% else %}badge-gray{% endif %}">
+                    {{ task.get_priority_display }} Priority
+                </span>
+                {% if task.is_overdue %}
+                <span class="badge badge-red"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+                {% endif %}
+                {% if task.completed_at %}
+                <span class="badge badge-green"><i class="fas fa-check-circle"></i> Done {{ task.completed_at|date:"d M Y" }}</span>
+                {% endif %}
+            </div>
+
+            <h2 style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--text-primary); margin-bottom:12px; line-height:1.3;">{{ task.title }}</h2>
+
+            {% if task.description %}
+            <div style="font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:14px; padding:14px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border);">
+                {{ task.description|linebreaksbr }}
+            </div>
+            {% endif %}
+
+            {% if task.tag_list %}
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                {% for tag in task.tag_list %}
+                <span style="background:var(--border); color:var(--text-muted); padding:3px 10px; border-radius:20px; font-size:11px;">#{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Subtasks -->
+        {% if subtasks %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-sitemap" style="color:var(--purple); margin-right:8px;"></i>Subtasks <span style="color:var(--text-muted); font-weight:400;">({{ subtasks.count }})</span></div>
+                {% if user.is_admin or user.is_project_manager %}
+                <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Add</a>
+                {% endif %}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                {% for sub in subtasks %}
+                <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border);">
+                    <i class="fas {% if sub.status == 'done' %}fa-check-circle{% elif sub.status == 'in_progress' %}fa-spinner{% else %}fa-circle{% endif %}"
+                       style="color:{% if sub.status == 'done' %}var(--green){% elif sub.status == 'in_progress' %}var(--accent){% else %}var(--text-muted){% endif %}; flex-shrink:0;"></i>
+                    <a href="{% url 'tasks:task_detail' sub.pk %}" style="color:var(--text-primary); text-decoration:none; font-size:13px; flex:1;">{{ sub.title }}</a>
+                    {% if sub.assigned_to %}
+                    <div class="avatar" style="background:{{ sub.assigned_to.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ sub.assigned_to.initials }}</div>
+                    {% endif %}
+                    <span class="badge {% if sub.status == 'done' %}badge-green{% elif sub.status == 'in_progress' %}badge-blue{% elif sub.status == 'blocked' %}badge-red{% else %}badge-gray{% endif %}" style="font-size:10px;">{{ sub.get_status_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Comments -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-comments" style="color:var(--cyan); margin-right:8px;"></i>Comments <span style="color:var(--text-muted); font-weight:400;">({{ comments.count }})</span></div>
+            </div>
+
+            <!-- Comment list -->
+            <div style="display:flex; flex-direction:column; gap:0;">
+                {% for comment in comments %}
+                <div style="display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--border);">
+                    <a href="{% url 'accounts:user_detail' comment.author.pk %}" style="flex-shrink:0;">
+                        <div class="avatar" style="background:{{ comment.author.avatar_color }}; width:34px; height:34px; font-size:13px; border-radius:8px;">{{ comment.author.initials }}</div>
+                    </a>
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
+                            <span style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ comment.author.display_name }}</span>
+                            <span class="badge {% if comment.author.role == 'admin' %}badge-red{% elif comment.author.role == 'project_manager' %}badge-blue{% else %}badge-gray{% endif %}" style="font-size:9px;">{{ comment.author.get_role_display }}</span>
+                            <span style="font-size:11px; color:var(--text-muted);">{{ comment.created_at|timesince }} ago</span>
+                        </div>
+                        <p style="font-size:13px; color:var(--text-secondary); line-height:1.6;">{{ comment.content|linebreaksbr }}</p>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">
+                    <i class="fas fa-comment-slash" style="font-size:28px; opacity:.3; display:block; margin-bottom:8px;"></i>
+                    No comments yet. Start the conversation.
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Add Comment -->
+            <form method="post" style="margin-top:16px;">
+                {% csrf_token %}
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <div class="avatar" style="background:{{ user.avatar_color }}; width:34px; height:34px; font-size:13px; border-radius:8px; flex-shrink:0; margin-top:2px;">{{ user.initials }}</div>
+                    <div style="flex:1;">
+                        {{ comment_form.content }}
+                        {% if comment_form.content.errors %}
+                        <div class="form-error">{{ comment_form.content.errors.0 }}</div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;"><i class="fas fa-paper-plane"></i> Post Comment</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+
+        <!-- Quick Status -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;"><i class="fas fa-exchange-alt" style="color:var(--accent); margin-right:6px;"></i>Update Status</div>
+            <div style="display:flex; flex-direction:column; gap:5px;">
+                {% for val, label in task.STATUS_CHOICES %}
+                <button type="button"
+                    onclick="updateStatus('{{ val }}')"
+                    class="btn {% if task.status == val %}btn-primary{% else %}btn-secondary{% endif %}"
+                    style="width:100%; justify-content:flex-start; text-align:left;">
+                    <i class="fas {% if val == 'done' %}fa-check-circle{% elif val == 'in_progress' %}fa-spinner{% elif val == 'blocked' %}fa-ban{% elif val == 'review' %}fa-eye{% else %}fa-circle{% endif %}"></i>
+                    {{ label }}
+                    {% if task.status == val %}<i class="fas fa-check" style="margin-left:auto; font-size:11px;"></i>{% endif %}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Details</div>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-folder" style="width:14px;"></i> Project</span>
+                    <a href="{% url 'tasks:project_detail' task.project.pk %}" style="color:var(--accent); text-decoration:none; text-align:right; font-size:12px;">{{ task.project.name }}</a>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-user" style="width:14px;"></i> Assigned To</span>
+                    {% if task.assigned_to %}
+                    <a href="{% url 'accounts:user_detail' task.assigned_to.pk %}" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
+                        <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ task.assigned_to.initials }}</div>
+                        <span style="font-size:12px; color:var(--text-primary);">{{ task.assigned_to.display_name }}</span>
+                    </a>
+                    {% else %}
+                    <span style="color:var(--text-muted); font-size:12px;">Unassigned</span>
+                    {% endif %}
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-user-edit" style="width:14px;"></i> Created By</span>
+                    <span style="font-size:12px;">{{ task.created_by.display_name|default:"—" }}</span>
+                </div>
+                {% if task.due_date %}
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-calendar" style="width:14px;"></i> Due Date</span>
+                    <span style="font-size:12px; color:{% if task.is_overdue %}var(--red){% else %}var(--text-primary){% endif %}; font-weight:{% if task.is_overdue %}600{% else %}400{% endif %};">
+                        {% if task.is_overdue %}<i class="fas fa-exclamation-circle"></i> {% endif %}{{ task.due_date }}
+                    </span>
+                </div>
+                {% endif %}
+                {% if task.estimated_hours %}
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted);"><i class="fas fa-clock" style="width:14px;"></i> Est. Hours</span>
+                    <span style="font-size:12px;">{{ task.estimated_hours }}h</span>
+                </div>
+                {% endif %}
+                {% if task.parent_task %}
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted);"><i class="fas fa-sitemap" style="width:14px;"></i> Parent</span>
+                    <a href="{% url 'tasks:task_detail' task.parent_task.pk %}" style="color:var(--accent); text-decoration:none; font-size:12px;">{{ task.parent_task.title|truncatewords:4 }}</a>
+                </div>
+                {% endif %}
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted);"><i class="fas fa-paperclip" style="width:14px;"></i> Attachments</span>
+                    <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" style="color:var(--accent);text-decoration:none;font-size:12px;">
+                        {{ task.files.count }} file{{ task.files.count|pluralize }}
+                        {% if task.files.count == 0 %}— Add{% endif %}
+                    </a>
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted);"><i class="fas fa-plus-circle" style="width:14px;"></i> Created</span>
+                    <span style="font-size:12px; color:var(--text-muted);">{{ task.created_at|date:"d M Y" }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; gap:8px;">
+                    <span style="color:var(--text-muted);"><i class="fas fa-sync" style="width:14px;"></i> Updated</span>
+                    <span style="font-size:12px; color:var(--text-muted);">{{ task.updated_at|timesince }} ago</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;">Actions</div>
+            <div style="display:flex; flex-direction:column; gap:7px;">
+                {% if user.is_admin or user.is_project_manager %}
+                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Task</a>
+                <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-code-branch"></i> Add Subtask</a>
+                {% endif %}
+                <a href="{% url 'tasks:bug_create' %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-bug"></i> Report Bug</a>
+                <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-paperclip"></i> Attach File</a>
+                <a href="{% url 'tasks:project_detail' task.project.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-folder"></i> View Project</a>
+                {% if user.is_admin or user.is_project_manager %}
+                <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger" style="width:100%; justify-content:flex-start;" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i> Delete Task</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function updateStatus(status) {
+    const resp = await fetch('{% url "tasks:task_update_status" task.pk %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ status: status })
+    });
+    const data = await resp.json();
+    if (data.success) {
+        location.reload();
+    } else {
+        alert('Failed to update status. Please refresh.');
+    }
+}
+</script>
+{% endblock %}

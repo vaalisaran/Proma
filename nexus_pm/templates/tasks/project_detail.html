@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load task_tags %}
+{% block title %}{{ project.name }} — IIAP PM{% endblock %}
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'files:project_files' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-paperclip"></i> Files ({{ project.files.count }})</a>
+<a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
+{% if user.is_admin or user.is_project_manager %}
+<a href="{% url 'tasks:project_members' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-users"></i> Members</a>
+<a href="{% url 'tasks:project_edit' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Tabs */
+.view-tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+.view-tab {
+    padding:9px 18px; font-size:13px; font-weight:500; color:var(--text-muted);
+    text-decoration:none; border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+    display:inline-flex; align-items:center; gap:6px;
+    border-bottom:2px solid transparent; transition:var(--transition);
+    margin-bottom:-1px;
+}
+.view-tab:hover { color:var(--text-primary); background:var(--bg-card); }
+.view-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* Kanban */
+.kanban-board { display:flex; gap:14px; overflow-x:auto; padding-bottom:20px; min-height:400px; }
+.kanban-col { min-width:250px; flex:1; display:flex; flex-direction:column; }
+.kanban-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--bg-card); border:1px solid var(--border);
+    border-radius:var(--radius-sm) var(--radius-sm) 0 0; border-bottom:none;
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px;
+}
+.kanban-body {
+    flex:1; background:var(--bg-secondary); border:1px solid var(--border);
+    border-radius:0 0 var(--radius-sm) var(--radius-sm);
+    min-height:200px; padding:8px; display:flex; flex-direction:column; gap:7px;
+}
+.k-card {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:8px;
+    padding:12px; cursor:pointer; transition:var(--transition); text-decoration:none; display:block;
+}
+.k-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.4); }
+.k-card-title { font-size:12px; font-weight:600; color:var(--text-primary); line-height:1.4; margin-bottom:8px; }
+.k-card-meta { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+.k-empty { text-align:center; padding:24px 10px; color:var(--text-muted); font-size:12px; }
+
+/* Priority dot */
+.p-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- PROJECT HEADER CARD -->
+<div class="card" style="margin-bottom:20px;">
+    <div style="display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <span class="badge {% if project.module == 'electronics' %}badge-blue{% elif project.module == 'software' %}badge-green{% elif project.module == 'mechanical' %}badge-yellow{% elif project.module == 'optics' %}badge-cyan{% else %}badge-purple{% endif %}">
+                    <i class="fas {% if project.module == 'electronics' %}fa-microchip{% elif project.module == 'software' %}fa-code{% elif project.module == 'mechanical' %}fa-cog{% elif project.module == 'optics' %}fa-eye{% else %}fa-chart-line{% endif %}"></i>
+                    {{ project.get_module_display }}
+                </span>
+                <span class="badge {% if project.status == 'active' %}badge-green{% elif project.status == 'planning' %}badge-blue{% elif project.status == 'on_hold' %}badge-yellow{% elif project.status == 'completed' %}badge-gray{% else %}badge-red{% endif %}">{{ project.get_status_display }}</span>
+                <span class="badge {% if project.priority == 'critical' %}badge-red{% elif project.priority == 'high' %}badge-yellow{% else %}badge-gray{% endif %}">{{ project.get_priority_display }} Priority</span>
+                {% if project.is_overdue %}<span class="badge badge-red"><i class="fas fa-clock"></i> Overdue</span>{% endif %}
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">{{ project.description|default:"No description provided." }}</p>
+            <div style="display:flex; gap:20px; flex-wrap:wrap; font-size:12px; color:var(--text-muted);">
+                <span><i class="fas fa-calendar-plus" style="margin-right:5px; opacity:.6;"></i>{{ project.start_date }}</span>
+                <span><i class="fas fa-calendar-check" style="margin-right:5px; opacity:.6;"></i>{{ project.end_date }}</span>
+                {% if project.manager %}
+                <span><i class="fas fa-user-tie" style="margin-right:5px; opacity:.6;"></i>
+                    <a href="{% url 'accounts:user_detail' project.manager.pk %}" style="color:var(--accent); text-decoration:none;">{{ project.manager.display_name }}</a>
+                </span>
+                {% endif %}
+                <span><i class="fas fa-tasks" style="margin-right:5px; opacity:.6;"></i>{{ project.task_count }} tasks</span>
+                <span><i class="fas fa-users" style="margin-right:5px; opacity:.6;"></i>{{ members.count }} members</span>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div style="min-width:160px; text-align:center;">
+            <div style="font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:var(--accent); line-height:1;">{{ project.progress }}%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Complete</div>
+            <div class="progress-bar" style="height:6px;">
+                <div class="progress-fill" style="width:{{ project.progress }}%;"></div>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">{{ project.completed_task_count }} / {{ project.task_count }} tasks done</div>
+        </div>
+
+        <!-- Member Avatars -->
+        <div style="min-width:120px;">
+            <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Team</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px;">
+                {% for m in members|slice:":8" %}
+                <a href="{% url 'accounts:user_detail' m.pk %}" title="{{ m.display_name }} — {{ m.get_team_display }}">
+                    <div class="avatar" style="background:{{ m.avatar_color }}; width:30px; height:30px; font-size:11px; border-radius:7px; border:2px solid var(--bg-card);">{{ m.initials }}</div>
+                </a>
+                {% endfor %}
+                {% if members.count > 8 %}
+                <div style="width:30px; height:30px; border-radius:7px; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--text-muted);">+{{ members.count|add:"-8" }}</div>
+                {% endif %}
+            </div>
+            {% if user.is_admin or user.is_project_manager %}
+            <a href="{% url 'tasks:project_members' project.pk %}" class="btn btn-secondary btn-sm" style="font-size:11px;"><i class="fas fa-user-plus"></i> Manage</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- STATS ROW -->
+<div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;">
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--text-muted);">{{ kanban.todo.count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">To Do</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--accent);">{{ kanban.in_progress.count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">In Progress</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--yellow);">{{ kanban.review.count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">In Review</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--green);">{{ kanban.done.count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">Done</div>
+    </div>
+    <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center;">
+        <div style="font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--red);">{{ kanban.blocked.count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">Blocked</div>
+    </div>
+</div>
+
+<!-- TABS -->
+<div class="view-tabs">
+    <a href="?view=list{% if status_filter %}&status={{ status_filter }}{% endif %}" class="view-tab {% if view_mode != 'kanban' %}active{% endif %}">
+        <i class="fas fa-list"></i> List View
+    </a>
+    <a href="?view=kanban" class="view-tab {% if view_mode == 'kanban' %}active{% endif %}">
+        <i class="fas fa-columns"></i> Kanban Board
+    </a>
+</div>
+
+{% if view_mode == 'kanban' %}
+<!-- ── KANBAN VIEW ── -->
+<div class="kanban-board">
+    {% for col_key, col_tasks in kanban.items %}
+    <div class="kanban-col">
+        <div class="kanban-header" style="color:{% if col_key == 'done' %}var(--green){% elif col_key == 'in_progress' %}var(--accent){% elif col_key == 'blocked' %}var(--red){% elif col_key == 'review' %}var(--yellow){% else %}var(--text-muted){% endif %};">
+            <span>
+                <i class="fas {% if col_key == 'todo' %}fa-circle{% elif col_key == 'in_progress' %}fa-spinner{% elif col_key == 'review' %}fa-eye{% elif col_key == 'done' %}fa-check-circle{% else %}fa-ban{% endif %}" style="margin-right:5px;"></i>
+                {% if col_key == 'todo' %}To Do{% elif col_key == 'in_progress' %}In Progress{% elif col_key == 'review' %}In Review{% elif col_key == 'done' %}Done{% else %}Blocked{% endif %}
+            </span>
+            <span style="background:var(--border); padding:2px 8px; border-radius:10px; font-size:11px; color:var(--text-muted);">{{ col_tasks.count }}</span>
+        </div>
+        <div class="kanban-body">
+            {% for task in col_tasks %}
+            <a href="{% url 'tasks:task_detail' task.pk %}" class="k-card">
+                <div style="display:flex; align-items:flex-start; gap:7px; margin-bottom:7px;">
+                    <div class="p-dot" style="margin-top:4px; background:{% if task.priority == 'critical' %}#ef4444{% elif task.priority == 'high' %}#f97316{% elif task.priority == 'medium' %}#f59e0b{% else %}#22c55e{% endif %};"></div>
+                    <div class="k-card-title">{{ task.title }}</div>
+                </div>
+                <div class="k-card-meta">
+                    <span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:9px;">{{ task.get_task_type_display }}</span>
+                    {% if task.assigned_to %}
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}; width:20px; height:20px; font-size:8px; border-radius:5px;">{{ task.assigned_to.initials }}</div>
+                        <span style="font-size:10px; color:var(--text-muted);">{{ task.assigned_to.display_name|truncatewords:1 }}</span>
+                    </div>
+                    {% else %}
+                    <span style="font-size:10px; color:var(--text-muted);">Unassigned</span>
+                    {% endif %}
+                </div>
+                {% if task.due_date %}
+                <div style="font-size:10px; margin-top:7px; color:{% if task.is_overdue %}var(--red){% else %}var(--text-muted){% endif %};">
+                    <i class="fas fa-clock" style="margin-right:3px;"></i>{{ task.due_date }}
+                    {% if task.is_overdue %}<span class="badge badge-red" style="font-size:8px; margin-left:4px;">Overdue</span>{% endif %}
+                </div>
+                {% endif %}
+            </a>
+            {% empty %}
+            <div class="k-empty"><i class="fas fa-inbox" style="font-size:24px; margin-bottom:6px; display:block; opacity:.3;"></i>No tasks</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- ── LIST VIEW ── -->
+<!-- Filters -->
+<form method="get" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center;">
+    <input type="hidden" name="view" value="list">
+    <div class="search-wrap">
+        <i class="fas fa-filter"></i>
+        <select name="status" class="filter-select" onchange="this.form.submit()" style="padding-left:14px;">
+            <option value="">All Statuses</option>
+            {% for val,label in status_choices %}<option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <select name="priority" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Priorities</option>
+        {% for val,label in priority_choices %}<option value="{{ val }}" {% if priority_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="type" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        {% for val,label in type_choices %}<option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="assignee" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Members</option>
+        {% for m in members %}<option value="{{ m.pk }}" {% if assignee_filter == m.pk|stringformat:"s" %}selected{% endif %}>{{ m.display_name }}</option>{% endfor %}
+    </select>
+    {% if status_filter or priority_filter or type_filter or assignee_filter %}
+    <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
+    {% endif %}
+    <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-plus"></i> New Task</a>
+</form>
+
+<div class="card" style="padding:0;">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Due Date</th>
+                    <th>Est.</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td>
+                        <a href="{% url 'tasks:task_detail' task.pk %}" style="color:var(--text-primary); text-decoration:none; font-weight:600; font-size:13px;">{{ task.title }}</a>
+                        {% if task.subtasks.count %}
+                        <div style="font-size:10px; color:var(--text-muted); margin-top:2px;"><i class="fas fa-sitemap"></i> {{ task.subtasks.count }} subtask{{ task.subtasks.count|pluralize }}</div>
+                        {% endif %}
+                        {% if task.tag_list %}
+                        <div style="display:flex; gap:3px; flex-wrap:wrap; margin-top:4px;">
+                            {% for tag in task.tag_list|slice:":3" %}<span style="background:var(--border); color:var(--text-muted); padding:1px 6px; border-radius:3px; font-size:9px;">#{{ tag }}</span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% elif task.task_type == 'improvement' %}badge-cyan{% elif task.task_type == 'research' %}badge-yellow{% else %}badge-gray{% endif %}" style="font-size:10px;">
+                            {% if task.task_type == 'bug' %}<i class="fas fa-bug"></i>{% elif task.task_type == 'feature' %}<i class="fas fa-star"></i>{% elif task.task_type == 'research' %}<i class="fas fa-flask"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+                            {{ task.get_task_type_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size:12px; font-weight:700; {% if task.priority == 'critical' %}color:#ef4444{% elif task.priority == 'high' %}color:#f97316{% elif task.priority == 'medium' %}color:#f59e0b{% else %}color:#22c55e{% endif %}">
+                            ● {{ task.get_priority_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <select class="filter-select status-changer" data-task="{{ task.pk }}" style="font-size:11px; padding:4px 8px;">
+                            {% for val,label in status_choices %}
+                            <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        {% if task.assigned_to %}
+                        <a href="{% url 'accounts:user_detail' task.assigned_to.pk %}" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
+                            <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}; width:24px; height:24px; font-size:9px;">{{ task.assigned_to.initials }}</div>
+                            <span style="font-size:12px; color:var(--text-secondary);">{{ task.assigned_to.display_name }}</span>
+                        </a>
+                        {% else %}
+                        <span style="color:var(--text-muted); font-size:12px;">— Unassigned</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size:12px; color:{% if task.is_overdue %}var(--red){% else %}var(--text-muted){% endif %};">
+                            {% if task.due_date %}
+                                {% if task.is_overdue %}<i class="fas fa-exclamation-circle"></i> {% endif %}{{ task.due_date }}
+                            {% else %}—{% endif %}
+                        </span>
+                    </td>
+                    <td style="font-size:12px; color:var(--text-muted);">
+                        {{ task.estimated_hours|default:"—" }}{% if task.estimated_hours %}h{% endif %}
+                    </td>
+                    <td>
+                        <div style="display:flex; gap:4px; justify-content:flex-end;">
+                            <a href="{% url 'tasks:task_detail' task.pk %}" class="btn btn-secondary btn-icon btn-sm" title="View"><i class="fas fa-eye"></i></a>
+                            {% if user.is_admin or user.is_project_manager %}
+                            <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-icon btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger btn-icon btn-sm" title="Delete" onclick="return confirm('Delete this task?')"><i class="fas fa-trash"></i></a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="fas fa-tasks"></i>
+                            <h3>No tasks found</h3>
+                            <p>{% if status_filter or priority_filter or type_filter %}Adjust your filters{% else %}Add the first task to this project{% endif %}</p>
+                            <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary" style="margin-top:12px;"><i class="fas fa-plus"></i> New Task</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Bug Reports -->
+{% if bugs %}
+<div class="card" style="margin-top:20px; padding:0;">
+    <div class="card-header" style="padding:14px 20px;">
+        <div class="card-title"><i class="fas fa-bug" style="color:var(--red); margin-right:8px;"></i>Recent Bug Reports</div>
+        <a href="{% url 'tasks:bug_list' %}?project={{ project.pk }}" class="btn btn-secondary btn-sm">View All</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Title</th><th>Severity</th><th>Status</th><th>Reported By</th><th>Date</th><th></th></tr></thead>
+            <tbody>
+                {% for bug in bugs %}
+                <tr>
+                    <td><a href="{% url 'tasks:bug_detail' bug.pk %}" style="color:var(--text-primary); text-decoration:none; font-weight:500; font-size:13px;">{{ bug.title }}</a></td>
+                    <td><span class="badge {% if bug.severity == 'critical' %}badge-red{% elif bug.severity == 'high' %}badge-yellow{% elif bug.severity == 'medium' %}badge-blue{% else %}badge-gray{% endif %}" style="font-size:10px;">{{ bug.get_severity_display }}</span></td>
+                    <td><span class="badge {% if bug.status == 'open' %}badge-red{% elif bug.status == 'in_progress' %}badge-blue{% elif bug.status == 'resolved' %}badge-green{% else %}badge-gray{% endif %}" style="font-size:10px;">{{ bug.get_status_display }}</span></td>
+                    <td style="font-size:12px;">{{ bug.reported_by.display_name }}</td>
+                    <td style="font-size:11px; color:var(--text-muted);">{{ bug.created_at|date:"d M Y" }}</td>
+                    <td><a href="{% url 'tasks:bug_detail' bug.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-eye"></i></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.status-changer').forEach(sel => {
+    sel.addEventListener('change', async function() {
+        const taskId   = this.dataset.task;
+        const newStatus = this.value;
+        const resp = await fetch(`/tasks/${taskId}/status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const data = await resp.json();
+        if (data.success) {
+            // Update progress bar if present
+            const fill = document.querySelector('.progress-fill');
+            if (fill) fill.style.width = data.progress + '%';
+        } else {
+            alert('Failed to update status. Please refresh.');
+        }
+    });
+});
+</script>
+{% endblock %}

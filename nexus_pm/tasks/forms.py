@@ -1,0 +1,144 @@
+from django import forms
+from .models import Project, Task, Comment, BugReport, CalendarEvent
+from accounts.models import User
+
+
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model  = Project
+        fields = ['name', 'description', 'module', 'status', 'priority',
+                  'start_date', 'end_date', 'manager', 'members']
+        widgets = {
+            'name':        forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Project name'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Describe the project...'}),
+            'module':      forms.Select(attrs={'class': 'form-control'}),
+            'status':      forms.Select(attrs={'class': 'form-control'}),
+            'priority':    forms.Select(attrs={'class': 'form-control'}),
+            'start_date':  forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date':    forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'manager':     forms.Select(attrs={'class': 'form-control'}),
+            'members':     forms.CheckboxSelectMultiple(),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['manager'].queryset    = User.objects.filter(is_active=True, role__in=['admin', 'project_manager'])
+        self.fields['members'].queryset    = User.objects.filter(is_active=True).order_by('team', 'first_name')
+        self.fields['manager'].empty_label = '— Select Project Manager —'
+        self.fields['manager'].required    = False
+        self.fields['members'].required    = False
+
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model  = Task
+        fields = ['title', 'description', 'project', 'task_type', 'status',
+                  'priority', 'assigned_to', 'parent_task', 'due_date',
+                  'estimated_hours', 'tags']
+        widgets = {
+            'title':           forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'What needs to be done?'}),
+            'description':     forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Details, acceptance criteria...'}),
+            'project':         forms.Select(attrs={'class': 'form-control'}),
+            'task_type':       forms.Select(attrs={'class': 'form-control'}),
+            'status':          forms.Select(attrs={'class': 'form-control'}),
+            'priority':        forms.Select(attrs={'class': 'form-control'}),
+            'assigned_to':     forms.Select(attrs={'class': 'form-control'}),
+            'parent_task':     forms.Select(attrs={'class': 'form-control'}),
+            'due_date':        forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'estimated_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.5', 'placeholder': '0.0'}),
+            'tags':            forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'tag1, tag2, tag3'}),
+        }
+
+    def __init__(self, *args, user=None, project=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show active members in assigned_to
+        if project:
+            # Members of the project + manager
+            member_ids = list(project.members.values_list('pk', flat=True))
+            if project.manager:
+                member_ids.append(project.manager.pk)
+            self.fields['assigned_to'].queryset = User.objects.filter(
+                pk__in=member_ids, is_active=True
+            ).order_by('first_name', 'username')
+            self.fields['parent_task'].queryset = Task.objects.filter(
+                project=project, parent_task__isnull=True
+            )
+            # Pre-select project
+            self.fields['project'].initial = project
+        else:
+            self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name')
+            self.fields['parent_task'].queryset = Task.objects.filter(parent_task__isnull=True)
+
+        self.fields['assigned_to'].empty_label = '— Unassigned —'
+        self.fields['parent_task'].empty_label = '— No parent task —'
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model  = Comment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'class': 'form-control', 'rows': 3,
+                'placeholder': 'Write a comment...',
+            })
+        }
+
+
+class BugReportForm(forms.ModelForm):
+    class Meta:
+        model  = BugReport
+        fields = ['title', 'project', 'severity', 'description',
+                  'steps_to_reproduce', 'expected_behavior', 'actual_behavior',
+                  'assigned_to', 'linked_task']
+        widgets = {
+            'title':               forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Short descriptive title'}),
+            'project':             forms.Select(attrs={'class': 'form-control'}),
+            'severity':            forms.Select(attrs={'class': 'form-control'}),
+            'description':         forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'What went wrong?'}),
+            'steps_to_reproduce':  forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '1. Go to...\n2. Click on...\n3. See error'}),
+            'expected_behavior':   forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'What should happen?'}),
+            'actual_behavior':     forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'What actually happened?'}),
+            'assigned_to':         forms.Select(attrs={'class': 'form-control'}),
+            'linked_task':         forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name')
+        self.fields['assigned_to'].empty_label = '— Unassigned —'
+        self.fields['linked_task'].empty_label = '— None —'
+        if user and not user.is_admin:
+            from django.db.models import Q
+            accessible = Project.objects.filter(Q(manager=user) | Q(members=user)).distinct()
+            self.fields['project'].queryset  = accessible
+            self.fields['linked_task'].queryset = Task.objects.filter(project__in=accessible)
+        else:
+            self.fields['linked_task'].queryset = Task.objects.all()
+
+
+class CalendarEventForm(forms.ModelForm):
+    class Meta:
+        model  = CalendarEvent
+        fields = ['title', 'description', 'event_type', 'project', 'task',
+                  'start_datetime', 'end_datetime', 'attendees', 'color']
+        widgets = {
+            'title':          forms.TextInput(attrs={'class': 'form-control'}),
+            'description':    forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'event_type':     forms.Select(attrs={'class': 'form-control'}),
+            'project':        forms.Select(attrs={'class': 'form-control'}),
+            'task':           forms.Select(attrs={'class': 'form-control'}),
+            'start_datetime': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'end_datetime':   forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'attendees':      forms.CheckboxSelectMultiple(),
+            'color':          forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['project'].empty_label  = '— No project —'
+        self.fields['project'].required     = False
+        self.fields['task'].empty_label     = '— No task —'
+        self.fields['task'].required        = False
+        self.fields['attendees'].queryset   = User.objects.filter(is_active=True).order_by('first_name')
+        self.fields['attendees'].required   = False

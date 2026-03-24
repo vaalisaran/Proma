@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} — IIAP PM{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>{{ title }}</h1>
+            {% if project %}<p>Project: <a href="{% url 'tasks:project_detail' project.pk %}" style="color:var(--accent); text-decoration:none;"><strong>{{ project.name }}</strong></a></p>{% endif %}
+        </div>
+        <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <!-- Main Info -->
+            <div class="card">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
+                    <i class="fas fa-pen" style="color:var(--accent);margin-right:6px;"></i>Task Details
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Title <span style="color:var(--red)">*</span></label>
+                    {{ form.title }}
+                    {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    {{ form.description }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tags</label>
+                    {{ form.tags }}
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Separate tags with commas e.g. <code style="color:var(--accent);">hardware, urgent, v2</code></div>
+                </div>
+            </div>
+
+            <!-- Assignment & Priority -->
+            <div class="card">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
+                    <i class="fas fa-sliders-h" style="color:var(--accent);margin-right:6px;"></i>Assignment & Priority
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Project <span style="color:var(--red)">*</span></label>
+                        {{ form.project }}
+                        {% if form.project.errors %}<div class="form-error">{{ form.project.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Assign To</label>
+                        {{ form.assigned_to }}
+                        {% if form.assigned_to.errors %}<div class="form-error">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+                        {% if project %}
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;"><i class="fas fa-info-circle"></i> Only project members are shown.</div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Task Type</label>
+                        {{ form.task_type }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Priority</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        {{ form.status }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Parent Task</label>
+                        {{ form.parent_task }}
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Set a parent to make this a subtask.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="card">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
+                    <i class="fas fa-calendar" style="color:var(--accent);margin-right:6px;"></i>Schedule & Effort
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Due Date</label>
+                        {{ form.due_date }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Estimated Hours</label>
+                        {{ form.estimated_hours }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
+                <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+                {% if task %}
+                <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger" style="margin-left:auto;" onclick="return confirm('Delete this task?')"><i class="fas fa-trash"></i> Delete Task</a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — IIAP PM{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+    {% if user.is_admin or user.is_project_manager %}
+    <a href="{% url 'tasks:project_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Project</a>
+    {% endif %}
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> New Task</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Good day, {{ user.display_name }} 👋</h1>
+        <p>Here's what's happening across your projects today.</p>
+    </div>
+</div>
+
+<!-- STAT CARDS -->
+<div class="grid-4" style="margin-bottom:24px">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.total_projects }}</div>
+            <div class="stat-label">Total Projects</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-rocket"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.active_projects }}</div>
+            <div class="stat-label">Active Projects</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-tasks"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.my_open_tasks }}</div>
+            <div class="stat-label">My Open Tasks</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.overdue_count }}</div>
+            <div class="stat-label">Overdue Tasks</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="gap:20px">
+    <!-- RECENT TASKS -->
+    <div class="card" style="grid-column: span 1">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-clock" style="color:var(--accent);margin-right:8px"></i>Recent Tasks</div>
+            <a href="{% url 'tasks:task_list' %}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        {% if recent_tasks %}
+        <div style="display:flex;flex-direction:column;gap:8px">
+            {% for task in recent_tasks %}
+            <a href="{% url 'tasks:task_detail' task.pk %}" style="text-decoration:none">
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);transition:var(--transition)" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:
+                    {% if task.priority == 'critical' %}#ef4444
+                    {% elif task.priority == 'high' %}#f97316
+                    {% elif task.priority == 'medium' %}#f59e0b
+                    {% else %}#22c55e{% endif %}"></div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ task.title }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ task.project.name }}</div>
+                </div>
+                <span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% else %}badge-gray{% endif %}">
+                    {{ task.get_status_display }}
+                </span>
+            </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:30px">
+            <i class="fas fa-check-square"></i>
+            <p>No tasks yet</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- PROJECTS -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-folder" style="color:var(--yellow);margin-right:8px"></i>Projects</div>
+                <a href="{% url 'tasks:project_list' %}" class="btn btn-secondary btn-sm">All Projects</a>
+            </div>
+            {% if projects %}
+            <div style="display:flex;flex-direction:column;gap:10px">
+                {% for project in projects %}
+                <a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none">
+                <div style="padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary)">{{ project.name }}</div>
+                        <span class="badge {% if project.module == 'electronics' %}badge-blue{% elif project.module == 'software' %}badge-green{% elif project.module == 'mechanical' %}badge-yellow{% elif project.module == 'optics' %}badge-cyan{% else %}badge-purple{% endif %}">
+                            {{ project.get_module_display }}
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{{ project.progress }}%"></div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">{{ project.progress }}% complete · {{ project.task_count }} tasks</div>
+                </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:20px">
+                <i class="fas fa-folder-open"></i>
+                <p>No projects yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- NOTIFICATIONS -->
+        {% if notifications %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-bell" style="color:var(--red);margin-right:8px"></i>Notifications</div>
+                <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+                {% for n in notifications %}
+                <a href="{% url 'tasks:notification_read' n.pk %}" style="text-decoration:none">
+                <div style="padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);display:flex;align-items:flex-start;gap:10px">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px"></div>
+                    <div>
+                        <div style="font-size:12px;font-weight:600;color:var(--text-primary)">{{ n.title }}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">{{ n.created_at|timesince }} ago</div>
+                    </div>
+                </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- OVERDUE -->
+        {% if overdue_tasks %}
+        <div class="card" style="border-color:rgba(239,68,68,0.3)">
+            <div class="card-header">
+                <div class="card-title" style="color:var(--red)"><i class="fas fa-exclamation-circle" style="margin-right:8px"></i>Overdue Tasks</div>
+            </div>
+            {% for task in overdue_tasks %}
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+                <div style="flex:1">
+                    <a href="{% url 'tasks:task_detail' task.pk %}" style="color:var(--text-primary);font-size:13px;text-decoration:none">{{ task.title }}</a>
+                    <div style="font-size:11px;color:var(--red)">Due {{ task.due_date }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

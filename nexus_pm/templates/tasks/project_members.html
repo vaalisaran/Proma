@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Manage Members — {{ project.name }} — IIAP PM{% endblock %}
+{% block page_title %}Manage Members{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Project</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.user-card-row {
+    display:flex; align-items:center; gap:12px; padding:10px 14px;
+    background:var(--bg-secondary); border:1px solid var(--border);
+    border-radius:var(--radius-sm); transition:var(--transition);
+}
+.user-card-row:hover { border-color:var(--border-light); background:var(--bg-card-hover); }
+.user-card-row.is-member { border-color:rgba(79,142,247,0.3); background:rgba(79,142,247,0.04); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:900px;">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>Manage Members</h1>
+            <p>Project: <a href="{% url 'tasks:project_detail' project.pk %}" style="color:var(--accent); text-decoration:none;">{{ project.name }}</a></p>
+        </div>
+    </div>
+
+    <div class="grid-2" style="gap:20px; align-items:start;">
+
+        <!-- LEFT: Current Members -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:6px;"><i class="fas fa-users" style="color:var(--green); margin-right:8px;"></i>Current Members <span style="color:var(--text-muted); font-weight:400;">({{ current_member_ids|length }})</span></div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">These users can view and work on this project.</p>
+
+            {% if project.manager %}
+            <div style="margin-bottom:12px;">
+                <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px;">Project Manager</div>
+                <div class="user-card-row is-member">
+                    <div class="avatar" style="background:{{ project.manager.avatar_color }}; width:36px; height:36px; font-size:13px; border-radius:8px; flex-shrink:0;">{{ project.manager.initials }}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:600; color:var(--text-primary); font-size:13px;">{{ project.manager.display_name }}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@{{ project.manager.username }} · {{ project.manager.get_team_display }}</div>
+                    </div>
+                    <span class="badge badge-blue" style="font-size:10px;">Manager</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px;">Members</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                {% for m in all_users %}
+                {% if m.pk in current_member_ids %}
+                <div class="user-card-row is-member">
+                    <div class="avatar" style="background:{{ m.avatar_color }}; width:34px; height:34px; font-size:12px; border-radius:8px; flex-shrink:0;">{{ m.initials }}</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:600; color:var(--text-primary); font-size:13px;">{{ m.display_name }}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@{{ m.username }} · <span class="badge {% if m.team == 'electronics' %}badge-blue{% elif m.team == 'software' %}badge-green{% elif m.team == 'mechanical' %}badge-yellow{% elif m.team == 'optics' %}badge-cyan{% elif m.team == 'simulation' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:9px;">{{ m.get_team_display }}</span></div>
+                    </div>
+                    <form method="post" style="flex-shrink:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" value="{{ m.pk }}">
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remove {{ m.display_name }} from this project?')" title="Remove">
+                            <i class="fas fa-user-minus"></i> Remove
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+                {% empty %}
+                <div class="empty-state" style="padding:20px;"><i class="fas fa-user-slash"></i><p>No members yet.</p></div>
+                {% endfor %}
+
+                {% with member_count=current_member_ids|length %}
+                {% if member_count == 0 %}
+                <div class="empty-state" style="padding:20px;"><i class="fas fa-user-slash"></i><p>No members yet. Add members from the right panel.</p></div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- RIGHT: Add Members -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:6px;"><i class="fas fa-user-plus" style="color:var(--accent); margin-right:8px;"></i>Add Members</div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Add active users to this project. They'll get a notification.</p>
+
+            <div class="search-wrap" style="margin-bottom:12px;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="addSearch" class="search-input" style="width:100%;" placeholder="Search by name, team...">
+            </div>
+
+            <div id="addList" style="display:flex; flex-direction:column; gap:6px; max-height:460px; overflow-y:auto;">
+                {% regroup all_users by get_team_display as team_groups %}
+                {% for team_group in team_groups %}
+                <div class="team-group" data-team="{{ team_group.grouper }}">
+                    <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; padding:8px 4px 4px;">
+                        {{ team_group.grouper }}
+                    </div>
+                    {% for m in team_group.list %}
+                    <div class="user-card-row {% if m.pk in current_member_ids %}is-member{% endif %} add-user-row"
+                         data-name="{{ m.display_name|lower }} {{ m.username|lower }} {{ m.get_team_display|lower }}">
+                        <div class="avatar" style="background:{{ m.avatar_color }}; width:34px; height:34px; font-size:12px; border-radius:8px; flex-shrink:0;">{{ m.initials }}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:600; color:var(--text-primary); font-size:13px;">{{ m.display_name }}</div>
+                            <div style="font-size:11px; color:var(--text-muted);">@{{ m.username }} · {{ m.get_role_display }}</div>
+                        </div>
+                        {% if m.pk in current_member_ids %}
+                        <span class="badge badge-green" style="font-size:10px; flex-shrink:0;"><i class="fas fa-check"></i> Added</span>
+                        {% else %}
+                        <form method="post" style="flex-shrink:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_id" value="{{ m.pk }}">
+                            <input type="hidden" name="action" value="add">
+                            <button type="submit" class="btn btn-primary btn-sm" title="Add to project">
+                                <i class="fas fa-user-plus"></i> Add
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('addSearch').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.add-user-row').forEach(row => {
+        const text = row.dataset.name || '';
+        row.style.display = text.includes(q) ? '' : 'none';
+    });
+    // Hide empty team sections
+    document.querySelectorAll('.team-group').forEach(grp => {
+        const visible = [...grp.querySelectorAll('.add-user-row')].some(r => r.style.display !== 'none');
+        grp.style.display = visible ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

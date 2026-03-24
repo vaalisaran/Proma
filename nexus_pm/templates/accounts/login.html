@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — IIAP PM</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0a0e1a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+        /* Glow orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            animation: float 8s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 400px; height: 400px;
+            background: rgba(79,142,247,0.08);
+            top: -100px; left: -100px;
+        }
+        .orb-2 {
+            width: 300px; height: 300px;
+            background: rgba(124,58,237,0.08);
+            bottom: -80px; right: -80px;
+            animation-delay: -4s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0,0); }
+            50% { transform: translate(20px, -20px); }
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .login-card {
+            background: #0f1629;
+            border: 1px solid #1e2d47;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+            animation: cardIn 0.5s ease;
+        }
+        @keyframes cardIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #4f8ef7, #7c3aed);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #e8eaf0;
+        }
+        .logo-text span { color: #4f8ef7; }
+
+        .login-heading {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #e8eaf0;
+            margin-bottom: 6px;
+        }
+        .login-sub {
+            font-size: 13px;
+            color: #4a5568;
+            margin-bottom: 28px;
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #7a8aaa;
+            margin-bottom: 7px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute;
+            left: 13px; top: 50%;
+            transform: translateY(-50%);
+            color: #4a5568;
+            font-size: 14px;
+            pointer-events: none;
+        }
+        .form-input {
+            width: 100%;
+            background: #0a0e1a;
+            border: 1px solid #1e2d47;
+            border-radius: 8px;
+            color: #e8eaf0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            padding: 11px 12px 11px 40px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            border-color: #4f8ef7;
+            box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+        }
+        .form-input::placeholder { color: #2d3748; }
+        .password-toggle {
+            position: absolute;
+            right: 12px; top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #4a5568;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .password-toggle:hover { color: #7a8aaa; }
+
+        .error-msg {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #4f8ef7, #7c3aed);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-login:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(79,142,247,0.3);
+        }
+        .btn-login:active { transform: translateY(0); }
+
+        .login-footer {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #1e2d47;
+            text-align: center;
+            font-size: 12px;
+            color: #2d3748;
+        }
+        .modules-info {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .module-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid #1e2d47;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <div class="logo-icon">N</div>
+                <div class="logo-text">IIAP <span>PM</span></div>
+            </div>
+
+            <h1 class="login-heading">Welcome back</h1>
+            <p class="login-sub">Sign in to your project management workspace</p>
+
+            {% if form.non_field_errors %}
+            <div class="error-msg">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ form.non_field_errors.0 }}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'accounts:login' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" name="username" class="form-input"
+                            placeholder="Enter your username"
+                            value="{{ form.username.value|default:'' }}"
+                            autofocus required>
+                    </div>
+                    {% if form.username.errors %}
+                    <div style="color:#ef4444;font-size:12px;margin-top:4px">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrap">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" name="password" id="passwordField" class="form-input"
+                            placeholder="Enter your password" required>
+                        <button type="button" class="password-toggle" onclick="togglePwd()">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+            </form>
+
+            <div class="login-footer">
+                Access is restricted. Contact your administrator for credentials.
+                <div class="modules-info">
+                    <span class="module-pill">Electronics</span>
+                    <span class="module-pill">Mechanical</span>
+                    <span class="module-pill">Optics</span>
+                    <span class="module-pill">Simulation</span>
+                    <span class="module-pill">Software</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePwd() {
+            const f = document.getElementById('passwordField');
+            const i = document.getElementById('eyeIcon');
+            if (f.type === 'password') {
+                f.type = 'text';
+                i.className = 'fas fa-eye-slash';
+            } else {
+                f.type = 'password';
+                i.className = 'fas fa-eye';
+            }
+        }
+    </script>
+</body>
+</html>

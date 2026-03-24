@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Delete — IIAP PM{% endblock %}
+{% block page_title %}Confirm Delete{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:0 auto">
+    <div class="card" style="border-color:rgba(239,68,68,0.3);text-align:center;padding:40px">
+        <div style="width:64px;height:64px;background:var(--red-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:var(--red)">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:10px">Delete {{ obj_type }}</h2>
+        <p style="color:var(--text-secondary);font-size:14px;margin-bottom:6px">Are you sure you want to delete:</p>
+        <p style="color:var(--red);font-weight:600;font-size:15px;margin-bottom:24px">{{ obj }}</p>
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:28px">This action is permanent and cannot be undone.</p>
+        <div style="display:flex;gap:10px;justify-content:center">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Yes, Delete</button>
+            </form>
+            <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

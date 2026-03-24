@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Delete File — IIAP PM{% endblock %}
+{% block page_title %}Delete File{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:0 auto;">
+    <div class="card" style="border-color:rgba(239,68,68,0.3);text-align:center;padding:40px;">
+        <div style="width:64px;height:64px;background:var(--red-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:26px;color:var(--red);">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h2 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:12px;">Delete File</h2>
+
+        <!-- File preview mini card -->
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;text-align:left;">
+            <div style="width:40px;height:40px;border-radius:8px;background:{{ file.icon_color }}20;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas {{ file.icon_class }}" style="color:{{ file.icon_color }};font-size:18px;"></i>
+            </div>
+            <div>
+                <div style="font-weight:600;color:var(--text-primary);font-size:13px;">{{ file.display_name }}</div>
+                <div style="font-size:11px;color:var(--text-muted);">{{ file.file_size_display }} · {{ file.get_file_type_display }}</div>
+            </div>
+        </div>
+
+        <div style="background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:12px;margin-bottom:24px;font-size:12px;color:var(--red);text-align:left;">
+            <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>
+            <strong>Warning:</strong> The file will be permanently removed from the server and cannot be recovered. All comments on this file will also be deleted.
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Yes, Delete Permanently</button>
+            </form>
+            <a href="{% url 'files:file_detail' file.pk %}" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

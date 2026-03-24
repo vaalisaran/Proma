@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Upload Files — IIAP PM{% endblock %}
+{% block page_title %}Upload Files{% endblock %}
+{% block extra_css %}
+<style>
+.drop-zone {
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius);
+    padding: 52px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-secondary);
+    position: relative;
+}
+.drop-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(79,142,247,0.06);
+}
+.drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon { font-size: 48px; color: var(--text-muted); margin-bottom: 14px; display: block; }
+.drop-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.drop-sub { font-size: 13px; color: var(--text-muted); }
+.file-type-badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 16px; }
+.type-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border); color: var(--text-muted); }
+
+.file-queue { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.queue-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    animation: slideIn .2s ease;
+}
+.queue-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.queue-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.queue-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 4px; }
+.queue-remove:hover { color: var(--red); }
+.upload-progress { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; display: none; }
+.upload-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #7c3aed); border-radius: 2px; transition: width .3s; width: 0; }
+
+@keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+{% block content %}
+<div style="max-width:760px;">
+    <div class="page-header">
+        <div class="page-header-left">
+            <h1>Upload Files</h1>
+            <p>Any file type accepted — images, documents, code, archives, CAD files and more</p>
+        </div>
+        <a href="{% url 'files:file_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="uploadForm">
+        {% csrf_token %}
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Drop Zone -->
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" name="files" id="fileInput" multiple>
+                    <i class="fas fa-cloud-upload-alt drop-icon"></i>
+                    <div class="drop-title">Drag & drop files here</div>
+                    <div class="drop-sub">or <span style="color:var(--accent);font-weight:600;">click to browse</span></div>
+                    <div class="file-type-badges">
+                        <span class="type-badge"><i class="fas fa-file-image" style="color:#06b6d4;"></i> Images</span>
+                        <span class="type-badge"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> PDF</span>
+                        <span class="type-badge"><i class="fas fa-file-word" style="color:#4f8ef7;"></i> Docs</span>
+                        <span class="type-badge"><i class="fas fa-file-code" style="color:#a855f7;"></i> Code</span>
+                        <span class="type-badge"><i class="fas fa-file-archive" style="color:#f59e0b;"></i> ZIP/RAR</span>
+                        <span class="type-badge"><i class="fas fa-file-excel" style="color:#22c55e;"></i> Excel</span>
+                        <span class="type-badge"><i class="fas fa-cube" style="color:#64748b;"></i> CAD</span>
+                        <span class="type-badge"><i class="fas fa-file-video" style="color:#ec4899;"></i> Video</span>
+                        <span class="type-badge" style="color:var(--accent);">+ Any format</span>
+                    </div>
+                </div>
+
+                <!-- File Queue -->
+                <div id="fileQueue" class="file-queue" style="padding:0 16px;margin-bottom:8px;"></div>
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="upload-progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="card">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
+                    <i class="fas fa-tags" style="color:var(--accent);margin-right:6px;"></i>File Details
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Project</label>
+                        {{ form.project }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Link to Task</label>
+                        {{ form.task }}
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Select a project first, then pick a task.</div>
+                    </div>
+                    <div class="form-group" style="grid-column:span 2;">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            {{ form.is_public }}
+                            <span>Make visible to all project members</span>
+                        </label>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">If unchecked, only you and admins can see this file.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                    <i class="fas fa-cloud-upload-alt"></i> Upload <span id="fileCountLabel">Files</span>
+                </button>
+                <a href="{% url 'files:file_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const dropZone   = document.getElementById('dropZone');
+const fileInput  = document.getElementById('fileInput');
+const fileQueue  = document.getElementById('fileQueue');
+const submitBtn  = document.getElementById('submitBtn');
+const countLabel = document.getElementById('fileCountLabel');
+
+const FILE_ICONS = {
+    image:        {icon:'fa-file-image',   color:'#06b6d4'},
+    pdf:          {icon:'fa-file-pdf',     color:'#ef4444'},
+    document:     {icon:'fa-file-word',    color:'#4f8ef7'},
+    spreadsheet:  {icon:'fa-file-excel',   color:'#22c55e'},
+    presentation: {icon:'fa-file-powerpoint', color:'#f97316'},
+    code:         {icon:'fa-file-code',    color:'#a855f7'},
+    archive:      {icon:'fa-file-archive', color:'#f59e0b'},
+    video:        {icon:'fa-file-video',   color:'#ec4899'},
+    audio:        {icon:'fa-file-audio',   color:'#8b5cf6'},
+    cad:          {icon:'fa-cube',         color:'#64748b'},
+    other:        {icon:'fa-file',         color:'#7a8aaa'},
+};
+
+const EXT_MAP = {
+    '.jpg':'.jpeg':'.png':'.gif':'.bmp':'.webp':'.svg':'.ico': 'image',
+    '.pdf': 'pdf',
+    '.doc':'.docx':'.odt':'.rtf':'.txt':'.md': 'document',
+    '.xls':'.xlsx':'.csv': 'spreadsheet',
+    '.ppt':'.pptx': 'presentation',
+    '.py':'.js':'.ts':'.html':'.css':'.java':'.cpp':'.c':'.json':'.xml':'.yaml':'.yml':'.sh':'.sql':'.php':'.rb':'.go': 'code',
+    '.zip':'.tar':'.gz':'.7z':'.rar':'.bz2': 'archive',
+    '.mp4':'.avi':'.mov':'.mkv':'.webm': 'video',
+    '.mp3':'.wav':'.ogg':'.flac': 'audio',
+    '.dwg':'.dxf':'.step':'.stp':'.stl':'.obj': 'cad',
+};
+
+// Simple extension → type lookup
+function getFileType(filename) {
+    const ext = ('.' + filename.split('.').pop()).toLowerCase();
+    const imgExts = ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.ico','.tiff'];
+    const pdfExts = ['.pdf'];
+    const docExts = ['.doc','.docx','.odt','.rtf','.txt','.md','.rst'];
+    const sheetExts = ['.xls','.xlsx','.csv','.ods'];
+    const slideExts = ['.ppt','.pptx','.odp'];
+    const codeExts = ['.py','.js','.ts','.html','.css','.java','.cpp','.c','.h','.json','.xml','.yaml','.yml','.toml','.ini','.sh','.bat','.sql','.php','.rb','.go','.rs','.swift','.kt'];
+    const archExts = ['.zip','.tar','.gz','.bz2','.xz','.7z','.rar'];
+    const vidExts  = ['.mp4','.avi','.mov','.mkv','.wmv','.webm'];
+    const audExts  = ['.mp3','.wav','.ogg','.flac','.aac'];
+    const cadExts  = ['.dwg','.dxf','.step','.stp','.iges','.stl','.obj'];
+    if (imgExts.includes(ext))   return 'image';
+    if (pdfExts.includes(ext))   return 'pdf';
+    if (docExts.includes(ext))   return 'document';
+    if (sheetExts.includes(ext)) return 'spreadsheet';
+    if (slideExts.includes(ext)) return 'presentation';
+    if (codeExts.includes(ext))  return 'code';
+    if (archExts.includes(ext))  return 'archive';
+    if (vidExts.includes(ext))   return 'video';
+    if (audExts.includes(ext))   return 'audio';
+    if (cadExts.includes(ext))   return 'cad';
+    return 'other';
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+    if (bytes < 1073741824) return (bytes/1048576).toFixed(1) + ' MB';
+    return (bytes/1073741824).toFixed(2) + ' GB';
+}
+
+function renderQueue(files) {
+    fileQueue.innerHTML = '';
+    if (!files.length) { submitBtn.disabled = true; countLabel.textContent = 'Files'; return; }
+    submitBtn.disabled = false;
+    countLabel.textContent = files.length + ' File' + (files.length > 1 ? 's' : '');
+    [...files].forEach((f, i) => {
+        const ft   = getFileType(f.name);
+        const info = FILE_ICONS[ft] || FILE_ICONS.other;
+        const div  = document.createElement('div');
+        div.className = 'queue-item';
+        div.innerHTML = `
+            <div class="queue-icon" style="background:${info.color}20;">
+                <i class="fas ${info.icon}" style="color:${info.color};"></i>
+            </div>
+            <div>
+                <div class="queue-name">${f.name}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${formatSize(f.size)} · ${ft}</div>
+            </div>
+            <div class="queue-size">${formatSize(f.size)}</div>`;
+        fileQueue.appendChild(div);
+    });
+}
+
+fileInput.addEventListener('change', () => renderQueue(fileInput.files));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const dt = e.dataTransfer;
+    if (dt.files.length) {
+        const transfer = new DataTransfer();
+        [...dt.files].forEach(f => transfer.items.add(f));
+        fileInput.files = transfer.files;
+        renderQueue(fileInput.files);
+    }
+});
+
+// Dynamic task loading based on project selection
+document.getElementById('id_project').addEventListener('change', function() {
+    const pid = this.value;
+    const taskSel = document.getElementById('id_task');
+    taskSel.innerHTML = '<option value="">— No task —</option>';
+    if (!pid) return;
+    fetch(`/tasks/?project=${pid}&format=json`)
+        .catch(() => {});
+});
+</script>
+{% endblock %}

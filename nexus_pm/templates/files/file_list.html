@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Files — IIAP PM{% endblock %}
+{% block page_title %}File Manager{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'files:file_upload' %}" class="btn btn-primary btn-sm"><i class="fas fa-cloud-upload-alt"></i> Upload Files</a>
+{% endblock %}
+{% block extra_css %}
+<style>
+.file-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+.file-card {
+    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px; cursor:pointer; transition:var(--transition); text-decoration:none; display:block;
+}
+.file-card:hover { border-color:var(--border-light); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.3); }
+.file-icon-wrap {
+    width:52px; height:52px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-size:22px; margin-bottom:12px;
+}
+.file-name { font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.file-meta { font-size:11px; color:var(--text-muted); }
+.view-toggle { display:flex; gap:4px; }
+.view-btn { padding:6px 10px; border-radius:var(--radius-sm); cursor:pointer; border:1px solid var(--border); background:var(--bg-card); color:var(--text-muted); transition:var(--transition); }
+.view-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>File Manager</h1>
+        <p>{{ stats.total }} files · {{ stats.total_size_display }} total</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-file"></i></div><div><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total Files</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(6,182,212,0.12);color:#06b6d4"><i class="fas fa-file-image"></i></div><div><div class="stat-value">{{ stats.images }}</div><div class="stat-label">Images</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-file-code"></i></div><div><div class="stat-value">{{ stats.code }}</div><div class="stat-label">Code Files</div></div></div>
+    <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b"><i class="fas fa-file-archive"></i></div><div><div class="stat-value">{{ stats.archives }}</div><div class="stat-label">Archives</div></div></div>
+</div>
+
+<!-- Filters + View Toggle -->
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+    <form method="get" style="display:flex;gap:8px;flex:1;flex-wrap:wrap;">
+        <div class="search-wrap"><i class="fas fa-search"></i><input type="text" name="q" class="search-input" placeholder="Search files..." value="{{ search }}"></div>
+        <select name="type" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Types</option>
+            {% for val,label in type_choices %}<option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <select name="project" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Projects</option>
+            {% for p in projects %}<option value="{{ p.pk }}" {% if proj_filter==p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+        {% if search or type_filter or proj_filter %}<a href="{% url 'files:file_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>{% endif %}
+    </form>
+    <div class="view-toggle">
+        <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')"><i class="fas fa-th"></i></button>
+        <button class="view-btn" id="listViewBtn" onclick="setView('list')"><i class="fas fa-list"></i></button>
+    </div>
+</div>
+
+<!-- GRID VIEW -->
+<div id="gridView">
+    {% if files %}
+    <div class="file-grid">
+        {% for f in files %}
+        <a href="{% url 'files:file_detail' f.pk %}" class="file-card" title="{{ f.display_name }}">
+            <div class="file-icon-wrap" style="background:{{ f.icon_color }}20;">
+                {% if f.is_image %}
+                <img src="{% url 'files:file_view' f.pk %}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }};display:none;"></i>
+                {% else %}
+                <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }};"></i>
+                {% endif %}
+            </div>
+            <div class="file-name">{{ f.display_name }}</div>
+            <div class="file-meta">{{ f.file_size_display }} · {{ f.extension }}</div>
+            <div class="file-meta" style="margin-top:4px;">
+                {% if f.project %}<span style="color:var(--accent);">{{ f.project.name|truncatewords:2 }}</span>{% endif %}
+            </div>
+            <div class="file-meta" style="margin-top:4px;">{{ f.created_at|timesince }} ago</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card"><div class="empty-state"><i class="fas fa-folder-open"></i><h3>No files found</h3><p>Upload your first file to get started.</p><a href="{% url 'files:file_upload' %}" class="btn btn-primary" style="margin-top:14px;"><i class="fas fa-cloud-upload-alt"></i> Upload Files</a></div></div>
+    {% endif %}
+</div>
+
+<!-- LIST VIEW -->
+<div id="listView" style="display:none;">
+    <div class="card" style="padding:0;">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>File</th><th>Type</th><th>Project / Task</th><th>Size</th><th>Uploaded By</th><th>Date</th><th>Downloads</th><th></th></tr></thead>
+                <tbody>
+                    {% for f in files %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:34px;height:34px;border-radius:7px;background:{{ f.icon_color }}20;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }};font-size:15px;"></i>
+                                </div>
+                                <div>
+                                    <a href="{% url 'files:file_detail' f.pk %}" style="color:var(--text-primary);text-decoration:none;font-weight:600;font-size:13px;">{{ f.display_name }}</a>
+                                    {% if f.description %}<div style="font-size:11px;color:var(--text-muted);">{{ f.description|truncatewords:8 }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-gray" style="font-size:10px;">{{ f.get_file_type_display }}</span></td>
+                        <td style="font-size:12px;">
+                            {% if f.project %}<div><a href="{% url 'tasks:project_detail' f.project.pk %}" style="color:var(--accent);text-decoration:none;">{{ f.project.name|truncatewords:3 }}</a></div>{% endif %}
+                            {% if f.task %}<div style="color:var(--text-muted);font-size:11px;">{{ f.task.title|truncatewords:4 }}</div>{% endif %}
+                        </td>
+                        <td style="font-size:12px;color:var(--text-muted);">{{ f.file_size_display }}</td>
+                        <td>
+                            {% if f.uploaded_by %}
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <div class="avatar" style="background:{{ f.uploaded_by.avatar_color }};width:22px;height:22px;font-size:9px;">{{ f.uploaded_by.initials }}</div>
+                                <span style="font-size:12px;">{{ f.uploaded_by.display_name }}</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:11px;color:var(--text-muted);">{{ f.created_at|date:"d M Y" }}</td>
+                        <td style="font-size:12px;color:var(--text-muted);text-align:center;">{{ f.download_count }}</td>
+                        <td>
+                            <div style="display:flex;gap:4px;">
+                                <a href="{% url 'files:file_detail' f.pk %}" class="btn btn-secondary btn-icon btn-sm" title="View"><i class="fas fa-eye"></i></a>
+                                <a href="{% url 'files:file_download' f.pk %}" class="btn btn-secondary btn-icon btn-sm" title="Download"><i class="fas fa-download"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8"><div class="empty-state"><i class="fas fa-folder-open"></i><p>No files.</p></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function setView(v) {
+    document.getElementById('gridView').style.display = v==='grid'?'':'none';
+    document.getElementById('listView').style.display = v==='list'?'':'none';
+    document.getElementById('gridViewBtn').classList.toggle('active', v==='grid');
+    document.getElementById('listViewBtn').classList.toggle('active', v==='list');
+    localStorage.setItem('fileView', v);
+}
+// Restore last view
+const saved = localStorage.getItem('fileView');
+if (saved) setView(saved);
+</script>
+{% endblock %}

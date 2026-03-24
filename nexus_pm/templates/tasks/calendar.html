@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Calendar — IIAP PM{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+{% block topbar_actions %}
+<a href="{% url 'tasks:event_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Event</a>
+{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.9/index.global.min.css">
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left"><h1>Calendar</h1><p>Events, milestones, and deadlines</p></div>
+</div>
+<div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card" style="grid-column:span 1">
+        <div id="calendar"></div>
+    </div>
+    <div>
+        <div class="card">
+            <div class="card-title" style="margin-bottom:14px"><i class="fas fa-list" style="color:var(--accent);margin-right:8px"></i>Upcoming Events</div>
+            {% if events %}
+            <div style="display:flex;flex-direction:column;gap:8px">
+                {% for event in events %}
+                <div style="padding:10px 12px;border-radius:var(--radius-sm);border-left:3px solid {{ event.color }};background:var(--bg-secondary)">
+                    <div style="font-size:13px;font-weight:600;color:var(--text-primary)">{{ event.title }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px">
+                        <i class="fas fa-clock"></i> {{ event.start_datetime|date:"M d, Y H:i" }}
+                        <span class="badge badge-gray" style="margin-left:6px">{{ event.get_event_type_display }}</span>
+                    </div>
+                    {% if event.project %}<div style="font-size:11px;color:var(--accent);margin-top:3px">{{ event.project.name }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:20px"><i class="fas fa-calendar-times"></i><p>No events scheduled.</p></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.9/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+        events: {{ events_json|safe }},
+        height: 'auto',
+        themeSystem: 'standard',
+    });
+    cal.render();
+});
+</script>
+<style>
+.fc { font-family: 'DM Sans', sans-serif; color: var(--text-secondary); }
+.fc-theme-standard td, .fc-theme-standard th { border-color: var(--border); }
+.fc-daygrid-day { background: var(--bg-secondary); }
+.fc-daygrid-day:hover { background: var(--bg-card); }
+.fc-toolbar-title { font-size: 15px !important; font-family: 'Space Grotesk', sans-serif !important; color: var(--text-primary) !important; }
+.fc-button { background: var(--bg-card) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; font-size: 12px !important; }
+.fc-button-active, .fc-button:hover { background: var(--accent) !important; color: #fff !important; }
+.fc-col-header-cell-cushion { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.fc-daygrid-day-number { color: var(--text-secondary); font-size: 12px; }
+.fc-day-today { background: rgba(79,142,247,0.06) !important; }
+</style>
+{% endblock %}
