@@ -76,10 +76,26 @@ def file_list(request):
 
 @login_required
 def file_upload(request):
-    project_id = request.GET.get('project')
-    task_id    = request.GET.get('task')
-    project    = get_object_or_404(Project, pk=project_id) if project_id else None
-    task       = get_object_or_404(Task,    pk=task_id)    if task_id    else None
+    # Resolve project/task from GET (pre-linked) OR POST (form selection)
+    if request.method == 'POST':
+        project_id = request.POST.get('project') or request.GET.get('project')
+        task_id    = request.POST.get('task')    or request.GET.get('task')
+    else:
+        project_id = request.GET.get('project')
+        task_id    = request.GET.get('task')
+
+    project = None
+    task    = None
+    if project_id:
+        try:
+            project = Project.objects.get(pk=project_id)
+        except (Project.DoesNotExist, ValueError):
+            project = None
+    if task_id:
+        try:
+            task = Task.objects.get(pk=task_id)
+        except (Task.DoesNotExist, ValueError):
+            task = None
 
     form = FileUploadForm(
         request.POST or None,
@@ -88,18 +104,22 @@ def file_upload(request):
     )
 
     if request.method == 'POST':
-        # Handle multi-file AJAX upload
-        if request.FILES.getlist('files'):
+        # ── Multi-file upload (name="files" multiple input) ──────────────────
+        uploaded_files = request.FILES.getlist('files')
+        if uploaded_files:
             uploaded = []
-            for f in request.FILES.getlist('files'):
+            description = request.POST.get('description', '')
+            is_public   = request.POST.get('is_public') == 'on'
+
+            for f in uploaded_files:
                 pf = ProjectFile(
                     file          = f,
                     original_name = f.name,
                     project       = project,
                     task          = task,
                     uploaded_by   = request.user,
-                    description   = request.POST.get('description', ''),
-                    is_public     = request.POST.get('is_public') == 'on',
+                    description   = description,
+                    is_public     = is_public,
                 )
                 pf.save()
                 uploaded.append({
@@ -108,26 +128,31 @@ def file_upload(request):
                     'size': pf.file_size_display,
                     'type': pf.file_type,
                     'icon': pf.icon_class,
+                    'url':  f'/files/{pf.pk}/',
                 })
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': True, 'files': uploaded})
+
             messages.success(request, f'{len(uploaded)} file(s) uploaded successfully.')
             if project:
                 return redirect('files:project_files', pk=project.pk)
             return redirect('files:file_list')
 
-        # Single file form submit
-        if form.is_valid():
+        # ── Single-file form fallback ─────────────────────────────────────────
+        if 'file' in request.FILES and form.is_valid():
             pf = form.save(commit=False)
-            pf.uploaded_by = request.user
+            pf.uploaded_by   = request.user
             pf.original_name = request.FILES['file'].name
-            # Handle versioning
             if pf.parent_file:
                 pf.version = pf.parent_file.version + 1
             pf.save()
             messages.success(request, f'"{pf.display_name}" uploaded successfully.')
             return redirect('files:file_detail', pk=pf.pk)
-        else:
+
+        if not uploaded_files and 'file' not in request.FILES:
+            messages.error(request, 'Please select at least one file to upload.')
+        elif not form.is_valid() and 'file' in request.FILES:
             messages.error(request, 'Please fix the errors below.')
 
     return render(request, 'files/file_upload.html', {

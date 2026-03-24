@@ -49,7 +49,7 @@
         </select>
         <select name="project" class="filter-select" onchange="this.form.submit()">
             <option value="">All Projects</option>
-            {% for p in projects %}<option value="{{ p.pk }}" {% if proj_filter==p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+            {% for p in projects %}<option value="{{ p.pk }}"{% if proj_filter == p.pk|stringformat:"s" %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
         </select>
         {% if search or type_filter or proj_filter %}<a href="{% url 'files:file_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>{% endif %}
     </form>

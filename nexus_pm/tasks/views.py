@@ -40,6 +40,11 @@ def dashboard(request):
     due_today     = [t for t in my_tasks if t.due_date == timezone.now().date()]
     notifications = Notification.objects.filter(recipient=user, is_read=False)[:5]
 
+    # Bugs assigned to or reported by the user
+    my_bugs = BugReport.objects.filter(
+        Q(assigned_to=user) | Q(reported_by=user)
+    ).exclude(status__in=['resolved','closed']).distinct()[:5]
+
     stats = {
         'total_projects':   projects.count(),
         'active_projects':  projects.filter(status='active').count(),
@@ -47,6 +52,7 @@ def dashboard(request):
         'my_open_tasks':    my_tasks.count(),
         'overdue_count':    len(overdue_tasks),
         'completed_tasks':  tasks.filter(status='done').count(),
+        'my_open_bugs':     BugReport.objects.filter(assigned_to=user).exclude(status__in=['resolved','closed']).count(),
     }
     context = {
         'stats': stats,
@@ -55,6 +61,7 @@ def dashboard(request):
         'due_today': due_today,
         'notifications': notifications,
         'projects': projects.order_by('-updated_at')[:6],
+        'my_bugs': my_bugs,
     }
     return render(request, 'tasks/dashboard.html', context)
 
@@ -256,7 +263,9 @@ def task_list(request):
         tasks = Task.objects.all()
     else:
         tasks = Task.objects.filter(
-            Q(project__members=user) | Q(assigned_to=user)
+            Q(project__members=user) |
+            Q(project__manager=user) |
+            Q(assigned_to=user)
         ).distinct()
 
     if my_only:         tasks = tasks.filter(assigned_to=user)
@@ -281,6 +290,7 @@ def task_list(request):
         'project_filter':   project_filter,
         'search':           search,
         'my_only':          my_only,
+        'my_tasks':         my_only,   # alias used by template
     })
 
 
@@ -421,14 +431,19 @@ def bug_list(request):
     severity_filter = request.GET.get('severity', '')
     status_filter   = request.GET.get('status', '')
     project_filter  = request.GET.get('project', '')
+    assigned_only   = request.GET.get('assigned_to_me', '')
 
     if request.user.is_admin:
         bugs = BugReport.objects.all()
     else:
         bugs = BugReport.objects.filter(
-            Q(project__members=request.user) | Q(reported_by=request.user)
+            Q(project__members=request.user) |
+            Q(project__manager=request.user) |
+            Q(reported_by=request.user) |
+            Q(assigned_to=request.user)
         ).distinct()
 
+    if assigned_only:   bugs = bugs.filter(assigned_to=request.user)
     if severity_filter: bugs = bugs.filter(severity=severity_filter)
     if status_filter:   bugs = bugs.filter(status=status_filter)
     if project_filter:  bugs = bugs.filter(project_id=project_filter)
@@ -446,6 +461,7 @@ def bug_list(request):
         'severity_filter':  severity_filter,
         'status_filter':    status_filter,
         'project_filter':   project_filter,
+        'assigned_only':    assigned_only,
     })
 
 
@@ -456,6 +472,14 @@ def bug_create(request):
         bug = form.save(commit=False)
         bug.reported_by = request.user
         bug.save()
+        # Notify the person the bug is assigned to
+        if bug.assigned_to and bug.assigned_to != request.user:
+            create_notification(
+                bug.assigned_to, request.user, 'task_assigned',
+                f'Bug assigned to you: {bug.title}',
+                f'{request.user.display_name} assigned you a bug report in "{bug.project.name}": {bug.title}.',
+                project=bug.project,
+            )
         messages.success(request, f'Bug "{bug.title}" reported.')
         return redirect('tasks:bug_detail', pk=bug.pk)
     return render(request, 'tasks/bug_form.html', {
@@ -471,10 +495,19 @@ def bug_detail(request, pk):
 
 @login_required
 def bug_edit(request, pk):
-    bug  = get_object_or_404(BugReport, pk=pk)
+    bug          = get_object_or_404(BugReport, pk=pk)
+    old_assignee = bug.assigned_to
     form = BugReportForm(request.POST or None, instance=bug, user=request.user)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        bug = form.save()
+        # Notify newly assigned person
+        if bug.assigned_to and bug.assigned_to != old_assignee:
+            create_notification(
+                bug.assigned_to, request.user, 'task_assigned',
+                f'Bug assigned to you: {bug.title}',
+                f'{request.user.display_name} assigned you a bug report in "{bug.project.name}": {bug.title}.',
+                project=bug.project,
+            )
         messages.success(request, 'Bug report updated.')
         return redirect('tasks:bug_detail', pk=pk)
     return render(request, 'tasks/bug_form.html', {
@@ -558,3 +591,35 @@ def reports(request):
         'active_projects': projects.filter(status='active').count(),
         'team_workload':   team_workload,
     })
+
+
+# ─── AJAX: Tasks for a project ────────────────────────────────────────────────
+
+@login_required
+def tasks_for_project(request):
+    """Return JSON list of tasks for a given project (used by file upload & bug forms)."""
+    project_id = request.GET.get('project_id')
+    if not project_id:
+        return JsonResponse({'tasks': []})
+    tasks = Task.objects.filter(project_id=project_id).values('id', 'title').order_by('title')
+    return JsonResponse({'tasks': list(tasks)})
+
+
+@login_required
+def project_members_api(request):
+    """Return JSON list of members for a given project (used by bug form)."""
+    project_id = request.GET.get('project_id')
+    if not project_id:
+        return JsonResponse({'members': []})
+    try:
+        project = Project.objects.get(pk=project_id)
+    except (Project.DoesNotExist, ValueError):
+        return JsonResponse({'members': []})
+
+    member_ids = list(project.members.values_list('pk', flat=True))
+    if project.manager_id:
+        member_ids.append(project.manager_id)
+
+    members = User.objects.filter(pk__in=member_ids, is_active=True).order_by('first_name', 'username')
+    data = [{'id': u.pk, 'name': u.display_name} for u in members]
+    return JsonResponse({'members': data})

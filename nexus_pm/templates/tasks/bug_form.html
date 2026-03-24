@@ -1,27 +1,230 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }} — IIAP PM{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
+{% block extra_css %}
+<style>
+.form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+.form-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+</style>
+{% endblock %}
 {% block content %}
-<div style="max-width:700px">
+<div style="max-width:780px">
     <div class="page-header">
-        <div class="page-header-left"><h1>{{ title }}</h1></div>
+        <div class="page-header-left">
+            <h1>{{ title }}</h1>
+            <p>{% if bug %}Editing bug #{{ bug.pk }}{% else %}Fill in the details below to report a bug{% endif %}</p>
+        </div>
         <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
-    <div class="card">
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group">
-                <label class="form-label">{{ field.label }}{% if field.field.required %} <span style="color:var(--red)">*</span>{% endif %}</label>
-                {{ field }}
-                {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+
+    <form method="post" id="bugForm">
+        {% csrf_token %}
+        <div class="grid-2" style="gap:16px;align-items:start;">
+
+            <!-- LEFT COLUMN -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-bug" style="color:var(--red)"></i> Bug Details</div>
+                    <div class="form-group">
+                        <label class="form-label">Title <span style="color:var(--red)">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Severity <span style="color:var(--red)">*</span></label>
+                            {{ form.severity }}
+                            {% if form.severity.errors %}<div class="form-error">{{ form.severity.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            {{ form.status }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description <span style="color:var(--red)">*</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Reproduce -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-list-ol" style="color:var(--yellow)"></i> Reproduction Info</div>
+                    <div class="form-group">
+                        <label class="form-label">Steps to Reproduce</label>
+                        {{ form.steps_to_reproduce }}
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Expected Behavior</label>
+                            {{ form.expected_behavior }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Actual Behavior</label>
+                            {{ form.actual_behavior }}
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% endfor %}
-            <div style="display:flex;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
-                <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+
+            <!-- RIGHT COLUMN -->
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+                <!-- Assignment -->
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-link" style="color:var(--accent)"></i> Assignment &amp; Linking</div>
+
+                    <div class="form-group">
+                        <label class="form-label">Project <span style="color:var(--red)">*</span></label>
+                        {{ form.project }}
+                        {% if form.project.errors %}<div class="form-error">{{ form.project.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Assign To</label>
+                        <select name="assigned_to" id="id_assigned_to" class="form-control">
+                            <option value="">— Unassigned —</option>
+                            {% for u in form.assigned_to.field.queryset %}
+                            <option value="{{ u.pk }}" {% if form.assigned_to.value == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.display_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                            <i class="fas fa-info-circle"></i> Select a project first to see its members.
+                        </div>
+                        {% if form.assigned_to.errors %}<div class="form-error">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Link to Task</label>
+                        <select name="linked_task" id="id_linked_task" class="form-control">
+                            <option value="">— None —</option>
+                            {% for t in form.linked_task.field.queryset %}
+                            <option value="{{ t.pk }}" {% if form.linked_task.value == t.pk|stringformat:"s" %}selected{% endif %}>{{ t.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                            <i class="fas fa-info-circle"></i> Only tasks from the selected project are shown.
+                        </div>
+                        {% if form.linked_task.errors %}<div class="form-error">{{ form.linked_task.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Summary card for edit mode -->
+                {% if bug %}
+                <div class="form-section">
+                    <div class="form-section-title"><i class="fas fa-info-circle" style="color:var(--cyan)"></i> Bug Info</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                        <div style="display:flex;justify-content:space-between;">
+                            <span style="color:var(--text-muted)">Reported By</span>
+                            <span>{{ bug.reported_by.display_name }}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <span style="color:var(--text-muted)">Reported On</span>
+                            <span>{{ bug.created_at|date:"d M Y H:i" }}</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;">
+                            <span style="color:var(--text-muted)">Last Updated</span>
+                            <span>{{ bug.updated_at|date:"d M Y H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {{ action }}
+                    </button>
+                    <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+                </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const projectSel  = document.getElementById('id_bug_project');
+const assignedSel = document.getElementById('id_assigned_to');
+const linkedSel   = document.getElementById('id_linked_task');
+
+// Store current selections so we can restore them after AJAX reload
+const currentAssignee = assignedSel ? assignedSel.value : '';
+const currentTask     = linkedSel   ? linkedSel.value   : '';
+
+function loadProjectData(projectId, keepAssignee, keepTask) {
+    if (!projectId) {
+        resetSelect(assignedSel, '— Unassigned —');
+        resetSelect(linkedSel,   '— None —');
+        return;
+    }
+
+    // Load assignable members
+    fetch(`/tasks/api/project-members/?project_id=${projectId}`)
+        .then(r => r.json())
+        .then(data => {
+            const saved = keepAssignee || assignedSel.value;
+            resetSelect(assignedSel, '— Unassigned —');
+            (data.members || []).forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                if (String(m.id) === String(saved)) opt.selected = true;
+                assignedSel.appendChild(opt);
+            });
+        })
+        .catch(() => {});
+
+    // Load tasks for project
+    fetch(`/tasks/api/tasks-for-project/?project_id=${projectId}`)
+        .then(r => r.json())
+        .then(data => {
+            const saved = keepTask || linkedSel.value;
+            resetSelect(linkedSel, '— None —');
+            (data.tasks || []).forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.title;
+                if (String(t.id) === String(saved)) opt.selected = true;
+                linkedSel.appendChild(opt);
+            });
+        })
+        .catch(() => {});
+}
+
+function resetSelect(sel, emptyLabel) {
+    sel.innerHTML = `<option value="">${emptyLabel}</option>`;
+}
+
+if (projectSel) {
+    projectSel.addEventListener('change', function() {
+        loadProjectData(this.value, '', '');
+    });
+
+    // On page load for edit mode, restore existing selections
+    if (projectSel.value) {
+        loadProjectData(projectSel.value, '{{ form.assigned_to.value }}', '{{ form.linked_task.value }}');
+    }
+}
+</script>
 {% endblock %}

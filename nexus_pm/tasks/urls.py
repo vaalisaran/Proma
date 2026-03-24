@@ -26,4 +26,6 @@ urlpatterns = [
     path('calendar/',                           views.calendar_view,       name='calendar'),
     path('calendar/event/new/',                 views.event_create,        name='event_create'),
     path('reports/',                            views.reports,             name='reports'),
+    path('api/tasks-for-project/',              views.tasks_for_project,   name='tasks_for_project'),
+    path('api/project-members/',                views.project_members_api, name='project_members_api'),
 ]

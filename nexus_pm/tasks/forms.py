@@ -90,31 +90,58 @@ class BugReportForm(forms.ModelForm):
         model  = BugReport
         fields = ['title', 'project', 'severity', 'description',
                   'steps_to_reproduce', 'expected_behavior', 'actual_behavior',
-                  'assigned_to', 'linked_task']
+                  'assigned_to', 'linked_task', 'status']
         widgets = {
             'title':               forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Short descriptive title'}),
-            'project':             forms.Select(attrs={'class': 'form-control'}),
+            'project':             forms.Select(attrs={'class': 'form-control', 'id': 'id_bug_project'}),
             'severity':            forms.Select(attrs={'class': 'form-control'}),
+            'status':              forms.Select(attrs={'class': 'form-control'}),
             'description':         forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'What went wrong?'}),
             'steps_to_reproduce':  forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '1. Go to...\n2. Click on...\n3. See error'}),
             'expected_behavior':   forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'What should happen?'}),
             'actual_behavior':     forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'What actually happened?'}),
             'assigned_to':         forms.Select(attrs={'class': 'form-control'}),
-            'linked_task':         forms.Select(attrs={'class': 'form-control'}),
+            'linked_task':         forms.Select(attrs={'class': 'form-control', 'id': 'id_linked_task'}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name')
+        from django.db.models import Q
+
+        # Assigned_to: project members if project is known (edit mode), else all active users
+        if self.instance and self.instance.pk and self.instance.project_id:
+            proj = self.instance.project
+            member_ids = list(proj.members.values_list('pk', flat=True))
+            if proj.manager_id:
+                member_ids.append(proj.manager_id)
+            self.fields['assigned_to'].queryset = User.objects.filter(
+                pk__in=member_ids, is_active=True
+            ).order_by('first_name', 'username')
+        else:
+            self.fields['assigned_to'].queryset = User.objects.filter(is_active=True).order_by('first_name')
+
         self.fields['assigned_to'].empty_label = '— Unassigned —'
         self.fields['linked_task'].empty_label = '— None —'
+        self.fields['status'].required = False
+
         if user and not user.is_admin:
-            from django.db.models import Q
             accessible = Project.objects.filter(Q(manager=user) | Q(members=user)).distinct()
-            self.fields['project'].queryset  = accessible
-            self.fields['linked_task'].queryset = Task.objects.filter(project__in=accessible)
+            self.fields['project'].queryset = accessible
+            if self.instance and self.instance.pk and self.instance.project_id:
+                self.fields['linked_task'].queryset = Task.objects.filter(
+                    project=self.instance.project
+                ).order_by('title')
+            else:
+                self.fields['linked_task'].queryset = Task.objects.filter(
+                    project__in=accessible
+                ).order_by('title')
         else:
-            self.fields['linked_task'].queryset = Task.objects.all()
+            if self.instance and self.instance.pk and self.instance.project_id:
+                self.fields['linked_task'].queryset = Task.objects.filter(
+                    project=self.instance.project
+                ).order_by('title')
+            else:
+                self.fields['linked_task'].queryset = Task.objects.all().order_by('title')
 
 
 class CalendarEventForm(forms.ModelForm):

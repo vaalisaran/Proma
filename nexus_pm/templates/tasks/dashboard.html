@@ -46,6 +46,13 @@
             <div class="stat-label">Overdue Tasks</div>
         </div>
     </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.10);color:#f97316"><i class="fas fa-bug"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.my_open_bugs }}</div>
+            <div class="stat-label">My Open Bugs</div>
+        </div>
+    </div>
 </div>
 
 <div class="grid-2" style="gap:20px">
@@ -119,6 +126,32 @@
             </div>
             {% endif %}
         </div>
+
+        <!-- MY ASSIGNED BUGS -->
+        {% if my_bugs %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-bug" style="color:var(--red);margin-right:8px"></i>My Open Bugs</div>
+                <a href="{% url 'tasks:bug_list' %}?assigned_to_me=1" class="btn btn-secondary btn-sm">View All</a>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+                {% for bug in my_bugs %}
+                <a href="{% url 'tasks:bug_detail' bug.pk %}" style="text-decoration:none">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);transition:var(--transition)" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:{% if bug.severity == 'critical' %}#ef4444{% elif bug.severity == 'high' %}#f97316{% elif bug.severity == 'medium' %}#f59e0b{% else %}#22c55e{% endif %}"></div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bug.title }}</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">{{ bug.project.name }}</div>
+                    </div>
+                    <span class="badge {% if bug.status == 'open' %}badge-red{% elif bug.status == 'in_progress' %}badge-blue{% else %}badge-gray{% endif %}" style="font-size:10px">
+                        {{ bug.get_status_display }}
+                    </span>
+                </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
 
         <!-- NOTIFICATIONS -->
         {% if notifications %}

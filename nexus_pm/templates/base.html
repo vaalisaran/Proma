@@ -201,6 +201,36 @@
         .user-dropdown a.danger { color: var(--red); }
         .user-dropdown a.danger:hover { background: var(--red-dim); }
 
+        /* ── LOGOUT BUTTON ── */
+        .sidebar-logout {
+            padding: 0 20px 16px;
+        }
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 9px 14px;
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--red);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+        }
+        .btn-logout:hover {
+            background: var(--red-dim);
+            border-color: var(--red);
+            color: var(--red);
+        }
+        .btn-logout i { font-size: 13px; }
+
         /* ── MAIN CONTENT ── */
         .main-content {
             margin-left: var(--sidebar-width);
@@ -698,6 +728,12 @@
                     <a href="{% url 'accounts:logout' %}" class="danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
+        </div>
+        <div class="sidebar-logout">
+            <a href="{% url 'accounts:logout' %}" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
         </div>
     </nav>
 

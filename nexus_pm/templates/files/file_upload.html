@@ -114,8 +114,15 @@
                 </div>
             </div>
 
+            <div id="uploadResults" style="display:none;" class="card" style="margin-top:0;">
+                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">
+                    <i class="fas fa-check-circle" style="color:var(--green);margin-right:6px;"></i>Uploaded Files
+                </div>
+                <div id="uploadResultsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+            </div>
+
             <div style="display:flex;gap:10px;">
-                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                <button type="button" class="btn btn-primary" id="submitBtn" disabled onclick="doUpload()">
                     <i class="fas fa-cloud-upload-alt"></i> Upload <span id="fileCountLabel">Files</span>
                 </button>
                 <a href="{% url 'files:file_list' %}" class="btn btn-secondary">Cancel</a>
@@ -133,71 +140,58 @@ const submitBtn  = document.getElementById('submitBtn');
 const countLabel = document.getElementById('fileCountLabel');
 
 const FILE_ICONS = {
-    image:        {icon:'fa-file-image',   color:'#06b6d4'},
-    pdf:          {icon:'fa-file-pdf',     color:'#ef4444'},
-    document:     {icon:'fa-file-word',    color:'#4f8ef7'},
-    spreadsheet:  {icon:'fa-file-excel',   color:'#22c55e'},
-    presentation: {icon:'fa-file-powerpoint', color:'#f97316'},
-    code:         {icon:'fa-file-code',    color:'#a855f7'},
-    archive:      {icon:'fa-file-archive', color:'#f59e0b'},
-    video:        {icon:'fa-file-video',   color:'#ec4899'},
-    audio:        {icon:'fa-file-audio',   color:'#8b5cf6'},
-    cad:          {icon:'fa-cube',         color:'#64748b'},
-    other:        {icon:'fa-file',         color:'#7a8aaa'},
+    image:        {icon:'fa-file-image',      color:'#06b6d4'},
+    pdf:          {icon:'fa-file-pdf',         color:'#ef4444'},
+    document:     {icon:'fa-file-word',        color:'#4f8ef7'},
+    spreadsheet:  {icon:'fa-file-excel',       color:'#22c55e'},
+    presentation: {icon:'fa-file-powerpoint',  color:'#f97316'},
+    code:         {icon:'fa-file-code',        color:'#a855f7'},
+    archive:      {icon:'fa-file-archive',     color:'#f59e0b'},
+    video:        {icon:'fa-file-video',       color:'#ec4899'},
+    audio:        {icon:'fa-file-audio',       color:'#8b5cf6'},
+    cad:          {icon:'fa-cube',             color:'#64748b'},
+    other:        {icon:'fa-file',             color:'#7a8aaa'},
 };
 
-const EXT_MAP = {
-    '.jpg':'.jpeg':'.png':'.gif':'.bmp':'.webp':'.svg':'.ico': 'image',
-    '.pdf': 'pdf',
-    '.doc':'.docx':'.odt':'.rtf':'.txt':'.md': 'document',
-    '.xls':'.xlsx':'.csv': 'spreadsheet',
-    '.ppt':'.pptx': 'presentation',
-    '.py':'.js':'.ts':'.html':'.css':'.java':'.cpp':'.c':'.json':'.xml':'.yaml':'.yml':'.sh':'.sql':'.php':'.rb':'.go': 'code',
-    '.zip':'.tar':'.gz':'.7z':'.rar':'.bz2': 'archive',
-    '.mp4':'.avi':'.mov':'.mkv':'.webm': 'video',
-    '.mp3':'.wav':'.ogg':'.flac': 'audio',
-    '.dwg':'.dxf':'.step':'.stp':'.stl':'.obj': 'cad',
-};
-
-// Simple extension → type lookup
 function getFileType(filename) {
     const ext = ('.' + filename.split('.').pop()).toLowerCase();
-    const imgExts = ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.ico','.tiff'];
-    const pdfExts = ['.pdf'];
-    const docExts = ['.doc','.docx','.odt','.rtf','.txt','.md','.rst'];
-    const sheetExts = ['.xls','.xlsx','.csv','.ods'];
-    const slideExts = ['.ppt','.pptx','.odp'];
-    const codeExts = ['.py','.js','.ts','.html','.css','.java','.cpp','.c','.h','.json','.xml','.yaml','.yml','.toml','.ini','.sh','.bat','.sql','.php','.rb','.go','.rs','.swift','.kt'];
-    const archExts = ['.zip','.tar','.gz','.bz2','.xz','.7z','.rar'];
-    const vidExts  = ['.mp4','.avi','.mov','.mkv','.wmv','.webm'];
-    const audExts  = ['.mp3','.wav','.ogg','.flac','.aac'];
-    const cadExts  = ['.dwg','.dxf','.step','.stp','.iges','.stl','.obj'];
-    if (imgExts.includes(ext))   return 'image';
-    if (pdfExts.includes(ext))   return 'pdf';
-    if (docExts.includes(ext))   return 'document';
-    if (sheetExts.includes(ext)) return 'spreadsheet';
-    if (slideExts.includes(ext)) return 'presentation';
-    if (codeExts.includes(ext))  return 'code';
-    if (archExts.includes(ext))  return 'archive';
-    if (vidExts.includes(ext))   return 'video';
-    if (audExts.includes(ext))   return 'audio';
-    if (cadExts.includes(ext))   return 'cad';
+    const map = {
+        image:        ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.ico','.tiff'],
+        pdf:          ['.pdf'],
+        document:     ['.doc','.docx','.odt','.rtf','.txt','.md','.rst'],
+        spreadsheet:  ['.xls','.xlsx','.csv','.ods'],
+        presentation: ['.ppt','.pptx','.odp'],
+        code:         ['.py','.js','.ts','.html','.css','.java','.cpp','.c','.h',
+                       '.json','.xml','.yaml','.yml','.toml','.ini','.sh','.bat',
+                       '.sql','.php','.rb','.go','.rs','.swift','.kt'],
+        archive:      ['.zip','.tar','.gz','.bz2','.xz','.7z','.rar'],
+        video:        ['.mp4','.avi','.mov','.mkv','.wmv','.webm'],
+        audio:        ['.mp3','.wav','.ogg','.flac','.aac'],
+        cad:          ['.dwg','.dxf','.step','.stp','.iges','.stl','.obj'],
+    };
+    for (const [type, exts] of Object.entries(map)) {
+        if (exts.includes(ext)) return type;
+    }
     return 'other';
 }
 
 function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+    if (bytes < 1024)       return bytes + ' B';
+    if (bytes < 1048576)    return (bytes/1024).toFixed(1) + ' KB';
     if (bytes < 1073741824) return (bytes/1048576).toFixed(1) + ' MB';
     return (bytes/1073741824).toFixed(2) + ' GB';
 }
 
 function renderQueue(files) {
     fileQueue.innerHTML = '';
-    if (!files.length) { submitBtn.disabled = true; countLabel.textContent = 'Files'; return; }
+    if (!files || !files.length) {
+        submitBtn.disabled = true;
+        countLabel.textContent = 'Files';
+        return;
+    }
     submitBtn.disabled = false;
     countLabel.textContent = files.length + ' File' + (files.length > 1 ? 's' : '');
-    [...files].forEach((f, i) => {
+    [...files].forEach(f => {
         const ft   = getFileType(f.name);
         const info = FILE_ICONS[ft] || FILE_ICONS.other;
         const div  = document.createElement('div');
@@ -206,39 +200,147 @@ function renderQueue(files) {
             <div class="queue-icon" style="background:${info.color}20;">
                 <i class="fas ${info.icon}" style="color:${info.color};"></i>
             </div>
-            <div>
-                <div class="queue-name">${f.name}</div>
-                <div style="font-size:11px;color:var(--text-muted);">${formatSize(f.size)} · ${ft}</div>
-            </div>
-            <div class="queue-size">${formatSize(f.size)}</div>`;
+            <div style="flex:1;min-width:0;">
+                <div class="queue-name">${escHtml(f.name)}</div>
+                <div style="font-size:11px;color:var(--text-muted);">${formatSize(f.size)} &middot; ${ft}</div>
+            </div>`;
         fileQueue.appendChild(div);
     });
 }
 
-fileInput.addEventListener('change', () => renderQueue(fileInput.files));
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+fileInput.addEventListener('change', function() { renderQueue(this.files); });
+
+// Drag & Drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
 dropZone.addEventListener('drop', e => {
-    e.preventDefault();
+    e.preventDefault(); e.stopPropagation();
     dropZone.classList.remove('dragover');
     const dt = e.dataTransfer;
-    if (dt.files.length) {
-        const transfer = new DataTransfer();
-        [...dt.files].forEach(f => transfer.items.add(f));
-        fileInput.files = transfer.files;
+    if (dt && dt.files && dt.files.length) {
+        try {
+            const transfer = new DataTransfer();
+            [...dt.files].forEach(f => transfer.items.add(f));
+            fileInput.files = transfer.files;
+        } catch(err) { console.warn('DataTransfer:', err); }
         renderQueue(fileInput.files);
     }
 });
 
-// Dynamic task loading based on project selection
-document.getElementById('id_project').addEventListener('change', function() {
-    const pid = this.value;
-    const taskSel = document.getElementById('id_task');
-    taskSel.innerHTML = '<option value="">— No task —</option>';
-    if (!pid) return;
-    fetch(`/tasks/?project=${pid}&format=json`)
-        .catch(() => {});
-});
+fileInput.addEventListener('click', e => e.stopPropagation());
+dropZone.addEventListener('click', function(e) { if (e.target !== fileInput) fileInput.click(); });
+
+// ── AJAX Upload ───────────────────────────────────────────────────────────────
+function doUpload() {
+    if (!fileInput.files || !fileInput.files.length) return;
+
+    const form     = document.getElementById('uploadForm');
+    const formData = new FormData(form);
+
+    // Make sure files are in the formData under key "files"
+    // Remove any existing "files" entries and re-add from fileInput
+    formData.delete('files');
+    [...fileInput.files].forEach(f => formData.append('files', f));
+
+    const progress = document.getElementById('uploadProgress');
+    const fill     = document.getElementById('progressFill');
+    progress.style.display = 'block';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+    // Animate progress bar
+    let w = 0;
+    const iv = setInterval(() => { w = Math.min(w + 3, 85); fill.style.width = w + '%'; }, 100);
+
+    fetch(form.action || window.location.href, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+        clearInterval(iv);
+        fill.style.width = '100%';
+        setTimeout(() => { progress.style.display = 'none'; fill.style.width = '0'; }, 800);
+
+        if (data.success) {
+            // Show uploaded files
+            const resultsBox  = document.getElementById('uploadResults');
+            const resultsList = document.getElementById('uploadResultsList');
+            resultsBox.style.display = 'block';
+            resultsList.innerHTML = '';
+
+            data.files.forEach(f => {
+                const info = FILE_ICONS[f.type] || FILE_ICONS.other;
+                const row  = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);';
+                row.innerHTML = `
+                    <div style="width:32px;height:32px;border-radius:7px;background:${info.color}20;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="fas ${info.icon}" style="color:${info.color};font-size:14px;"></i>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(f.name)}</div>
+                        <div style="font-size:11px;color:var(--text-muted);">${f.size} &middot; ${f.type}</div>
+                    </div>
+                    <a href="${f.url || '/files/' + f.id + '/'}" class="btn btn-secondary btn-sm btn-icon" title="View file">
+                        <i class="fas fa-eye"></i>
+                    </a>`;
+                resultsList.appendChild(row);
+            });
+
+            // Reset form state
+            fileQueue.innerHTML = '';
+            try { fileInput.value = ''; } catch(e) {}
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload Files';
+            countLabel.textContent = 'Files';
+        } else {
+            alert(data.error || 'Upload failed. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload ' + fileInput.files.length + ' File(s)';
+        }
+    })
+    .catch(err => {
+        clearInterval(iv);
+        console.error('Upload error:', err);
+        // Fallback to normal form submit
+        form.submit();
+    });
+}
+
+// ── Dynamic task loading ──────────────────────────────────────────────────────
+const projectSel = document.getElementById('id_project');
+const taskSel    = document.getElementById('id_task');
+
+if (projectSel && taskSel) {
+    projectSel.addEventListener('change', function() {
+        const pid = this.value;
+        taskSel.innerHTML = '<option value="">— No task —</option>';
+        taskSel.disabled = !pid;
+        if (!pid) return;
+        fetch(`{% url 'tasks:tasks_for_project' %}?project_id=${pid}`, {
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.tasks && data.tasks.length) {
+                data.tasks.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.title;
+                    taskSel.appendChild(opt);
+                });
+                taskSel.disabled = false;
+            }
+        })
+        .catch(() => { taskSel.disabled = false; });
+    });
+
+    if (projectSel.value) projectSel.dispatchEvent(new Event('change'));
+}
 </script>
 {% endblock %}
