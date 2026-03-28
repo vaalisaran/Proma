@@ -15,9 +15,15 @@
             --bg-sidebar: #0c1220;
             --border: #1e2d47;
             --border-light: #243352;
+            {% if sys_settings.primary_color %}
+            --accent: {{ sys_settings.primary_color }};
+            --accent-hover: {{ sys_settings.primary_color }}cc;
+            --accent-glow: {{ sys_settings.primary_color }}26;
+            {% else %}
             --accent: #4f8ef7;
             --accent-hover: #6ba3ff;
             --accent-glow: rgba(79, 142, 247, 0.15);
+            {% endif %}
             --green: #22c55e;
             --green-dim: rgba(34, 197, 94, 0.12);
             --red: #ef4444;
@@ -42,6 +48,7 @@
 
         body {
             font-family: 'DM Sans', sans-serif;
+            font-size: {{ sys_settings.font_size|default:'14px' }};
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -746,6 +753,9 @@
                     <i class="fas fa-bell"></i>
                     {% if unread_count %}<span style="background:var(--red);color:#fff;border-radius:50%;width:8px;height:8px;display:inline-block;margin-left:-4px;margin-top:-8px;vertical-align:top;"></span>{% endif %}
                 </a>
+                {% if not request.user.is_admin %}
+                <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Task</a>
+                {% endif %}
                 {% block topbar_actions %}{% endblock %}
             </div>
         </div>

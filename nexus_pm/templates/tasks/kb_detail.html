@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ note.title }} — {{ project.name }} — IIAP PM{% endblock %}
+{% block page_title %}Knowledge Base{% endblock %}
+{% block topbar_actions %}
+{% if request.user == note.author or request.user == project.manager or request.user.is_admin %}
+<a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
+{% endif %}
+<a href="{% url 'tasks:kb_list' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-list"></i> All Notes</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.markdown-body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+.markdown-body h1 { font-size: 2em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+.markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
+.markdown-body h3 { font-size: 1.25em; }
+.markdown-body pre {
+    background-color: var(--bg-hover);
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    font-family: monospace;
+    font-size: 85%;
+    line-height: 1.45;
+}
+.markdown-body code {
+    background-color: var(--bg-hover);
+    border-radius: 6px;
+    padding: .2em .4em;
+    font-family: monospace;
+    font-size: 85%;
+}
+.markdown-body pre code {
+    background-color: transparent;
+    padding: 0;
+}
+.markdown-body blockquote {
+    padding: 0 1em;
+    color: var(--text-muted);
+    border-left: .25em solid var(--border);
+    margin: 0 0 16px 0;
+}
+.markdown-body ul, .markdown-body ol { margin-bottom: 16px; padding-left: 2em; }
+.markdown-body p { margin-top: 0; margin-bottom: 16px; }
+.markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.markdown-body table th, .markdown-body table td { border: 1px solid var(--border); padding: 6px 13px; }
+.markdown-body table tr:nth-child(2n) { background-color: var(--bg-hover); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1><a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> {{ project.name }}</a> / <a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)">Knowledge Base</a> / {{ note.title }}</h1>
+        <p>By {% if note.author %}{{ note.author.display_name }}{% else %}Unknown{% endif %} &bull; Last updated {{ note.updated_at|date:"M d, Y H:i" }}</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">{{ note.title }}</div>
+    </div>
+    
+    <div id="content-container" style="display:none;">{{ note.content }}</div>
+    
+    <div id="markdown-render" class="markdown-body" style="padding: 10px 0;">
+        <!-- Rendered markdown goes here -->
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var rawContent = document.getElementById("content-container").innerText;
+        document.getElementById("markdown-render").innerHTML = marked.parse(rawContent);
+    });
+</script>
+{% endblock %}

@@ -236,6 +236,58 @@ def change_password(request):
             messages.error(request, 'Please fix the errors below.')
     return render(request, 'accounts/change_password.html', {'form': form})
 
+@login_required
+def settings_view(request):
+    from tasks.models import SystemSettings, SystemIssue
+    
+    # Load settings
+    sys_settings = SystemSettings.get_settings()
+    
+    # Process actions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_profile':
+            user = request.user
+            user.first_name = request.POST.get('first_name', user.first_name)
+            user.last_name = request.POST.get('last_name', user.last_name)
+            user.nickname = request.POST.get('nickname', user.nickname)
+            # Handle password change inline or use change_password functionality
+            if request.POST.get('new_password'):
+                user.set_password(request.POST.get('new_password'))
+                update_session_auth_hash(request, user)
+            user.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('accounts:settings')
+            
+        elif action == 'report_issue':
+            SystemIssue.objects.create(
+                title=request.POST.get('title'),
+                description=request.POST.get('description'),
+                issue_type=request.POST.get('issue_type', 'bug'),
+                reported_by=request.user
+            )
+            messages.success(request, 'Thank you! Your issue has been reported and will be reviewed by Project Managers.')
+            return redirect('accounts:settings')
+            
+        elif action == 'update_system_settings' and request.user.is_admin:
+            sys_settings.primary_color = request.POST.get('primary_color', sys_settings.primary_color)
+            sys_settings.font_size = request.POST.get('font_size', sys_settings.font_size)
+            sys_settings.default_pm_password = request.POST.get('default_pm_password', sys_settings.default_pm_password)
+            sys_settings.save()
+            messages.success(request, 'System settings updated successfully.')
+            return redirect('accounts:settings')
+            
+    # For Project Managers: load reported issues
+    reported_issues = []
+    if request.user.is_project_manager:
+        reported_issues = SystemIssue.objects.all()
+
+    return render(request, 'accounts/settings.html', {
+        'sys_settings': sys_settings,
+        'reported_issues': reported_issues
+    })
+
 
 # ─── Superadmin: Change User Role (AJAX) ─────────────────────────────────────
 

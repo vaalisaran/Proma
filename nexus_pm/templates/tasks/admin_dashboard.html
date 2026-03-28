@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — IIAP PM{% endblock %}
+{% block page_title %}System Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Welcome, System Admin 👋</h1>
+        <p>System-wide health and configuration.</p>
+    </div>
+</div>
+
+<div class="grid-4" style="margin-bottom:24px">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.total_projects }}</div>
+            <div class="stat-label">Projects ({{ stats.active_projects }} Active)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-users"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.total_users }}</div>
+            <div class="stat-label">Registered Users</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-database"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.db_size_mb }} <span style="font-size: 14px; font-weight: normal; color: var(--text-muted)">MB</span></div>
+            <div class="stat-label">Database Size</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-trash-alt"></i></div>
+        <div class="stat-body">
+            <div class="stat-value">{{ stats.deletion_reqs }}</div>
+            <div class="stat-label">Pending Deletions</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title"><i class="fas fa-folder" style="color:var(--yellow);margin-right:8px"></i>System Projects Directory</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Manager</th>
+                    <th>Members</th>
+                    <th>Status</th>
+                    <th>System Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr>
+                    <td><strong>{{ project.name }}</strong></td>
+                    <td>{{ project.manager.display_name|default:'—' }}</td>
+                    <td>{{ project.members.count }}</td>
+                    <td><span class="badge {% if project.status == 'active' %}badge-green{% elif project.status == 'completed' %}badge-blue{% else %}badge-gray{% endif %}">{{ project.get_status_display }}</span></td>
+                    <td>
+                        {% if project.deletion_requested_by_admin %}
+                            <span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red)">Deletion Requested</span>
+                        {% else %}
+                            <a href="{% url 'tasks:project_delete' project.pk %}" class="btn btn-sm" style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red)"><i class="fas fa-trash-alt"></i> Request Deletion</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5"><div class="empty-state">No projects in the system.</div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

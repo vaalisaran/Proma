@@ -1,5 +1,5 @@
 from django import forms
-from .models import Project, Task, Comment, BugReport, CalendarEvent
+from .models import Project, Task, Comment, BugReport, CalendarEvent, KnowledgeBaseNote
 from accounts.models import User
 
 
@@ -169,3 +169,13 @@ class CalendarEventForm(forms.ModelForm):
         self.fields['task'].required        = False
         self.fields['attendees'].queryset   = User.objects.filter(is_active=True).order_by('first_name')
         self.fields['attendees'].required   = False
+
+
+class KnowledgeBaseNoteForm(forms.ModelForm):
+    class Meta:
+        model = KnowledgeBaseNote
+        fields = ['title', 'content']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Note title'}),
+            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 15, 'placeholder': '# Heading\n\nWrite your note in Markdown...'}),
+        }

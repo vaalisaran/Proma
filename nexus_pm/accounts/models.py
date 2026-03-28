@@ -7,6 +7,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
         ('project_manager', 'Project Manager'),
         ('member', 'Member'),
+        ('student', 'Student'),
     ]
 
     MODULE_CHOICES = [
@@ -21,6 +22,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
     team = models.CharField(max_length=20, choices=MODULE_CHOICES, default='general')
     avatar_color = models.CharField(max_length=7, default='#6366f1')
+    nickname = models.CharField(max_length=50, blank=True)
     designation = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
@@ -44,7 +46,13 @@ class User(AbstractUser):
         return self.role == 'project_manager'
 
     @property
+    def is_student(self):
+        return self.role == 'student'
+
+    @property
     def display_name(self):
+        if self.nickname:
+            return self.nickname
         return self.get_full_name() or self.username
 
     @property

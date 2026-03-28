@@ -48,6 +48,8 @@ class Project(models.Model):
         related_name='projects'
     )
     progress = models.PositiveIntegerField(default=0)  # 0-100
+    deletion_requested_by_admin = models.BooleanField(default=False)
+    deletion_requested_by_pm = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -262,3 +264,63 @@ class CalendarEvent(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class KnowledgeBaseNote(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='kb_notes')
+    title = models.CharField(max_length=200)
+    content = models.TextField(help_text="Markdown format supported")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return self.title
+
+
+class SystemSettings(models.Model):
+    primary_color = models.CharField(max_length=7, default='#4f8ef7')
+    font_size = models.CharField(max_length=20, default='14px')
+    default_pm_password = models.CharField(max_length=128, default='nexuspm123')
+
+    class Meta:
+        verbose_name_plural = "System Settings"
+
+    def __str__(self):
+        return "System Settings"
+
+    @classmethod
+    def get_settings(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class SystemIssue(models.Model):
+    TYPE_CHOICES = [
+        ('bug', 'Bug'),
+        ('feature', 'Feature Request'),
+    ]
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+    
+    title = models.CharField(max_length=300)
+    description = models.TextField()
+    issue_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='bug')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reported_system_issues')
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_system_issues')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_issue_type_display()}: {self.title}"

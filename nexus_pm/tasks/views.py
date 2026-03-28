@@ -26,8 +26,23 @@ def create_notification(recipient, sender, notif_type, title, message, task=None
 def dashboard(request):
     user = request.user
     if user.is_admin:
+        import os
+        from django.conf import settings
+        db_size = 0
+        db_path = settings.DATABASES['default'].get('NAME')
+        if db_path and os.path.exists(db_path):
+            db_size = os.path.getsize(db_path) / (1024 * 1024)
+            
         projects = Project.objects.all()
-        tasks    = Task.objects.all()
+        stats = {
+            'total_projects':   projects.count(),
+            'active_projects':  projects.filter(status='active').count(),
+            'total_users':      User.objects.count(),
+            'db_size_mb':       f"{db_size:.2f}",
+            'deletion_reqs':    projects.filter(Q(deletion_requested_by_admin=True) | Q(deletion_requested_by_pm=True)).exclude(deletion_requested_by_admin=True, deletion_requested_by_pm=True).count()
+        }
+        return render(request, 'tasks/admin_dashboard.html', {'stats': stats, 'projects': projects.order_by('-updated_at')[:6]})
+
     elif user.is_project_manager:
         projects = Project.objects.filter(Q(manager=user) | Q(members=user)).distinct()
         tasks    = Task.objects.filter(Q(project__in=projects) | Q(assigned_to=user)).distinct()
@@ -124,11 +139,14 @@ def project_create(request):
 @login_required
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
-    # Access check: admin sees all, others only their projects
-    if not request.user.is_admin:
-        if not (project.members.filter(pk=request.user.pk).exists() or project.manager == request.user):
-            messages.error(request, 'You do not have access to this project.')
-            return redirect('tasks:project_list')
+    
+    if request.user.is_admin:
+        messages.error(request, 'Admins cannot view inside projects.')
+        return redirect('tasks:project_list')
+
+    if not (project.members.filter(pk=request.user.pk).exists() or project.manager == request.user):
+        messages.error(request, 'You do not have access to this project.')
+        return redirect('tasks:project_list')
 
     tasks = project.tasks.all().select_related('assigned_to', 'created_by')
 
@@ -240,8 +258,24 @@ def project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
         name = project.name
-        project.delete()
-        messages.success(request, f'Project "{name}" deleted.')
+        
+        if request.user.is_admin:
+            project.deletion_requested_by_admin = True
+            project.save()
+            messages.info(request, f'Project "{name}" deletion requested. Waiting for Project Manager approval.')
+            if project.manager:
+                create_notification(project.manager, request.user, 'project_update', 'Project Deletion Requested', f'Admin {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
+        elif request.user.is_project_manager and project.manager == request.user:
+            project.deletion_requested_by_pm = True
+            project.save()
+            messages.info(request, f'Project "{name}" deletion requested. Waiting for Admin approval.')
+            for admin in User.objects.filter(role='admin'):
+                create_notification(admin, request.user, 'project_update', 'Project Deletion Requested', f'PM {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
+
+        if project.deletion_requested_by_admin and project.deletion_requested_by_pm:
+            project.delete()
+            messages.success(request, f'Project "{name}" fully deleted as both Admin and PM approved.')
+            
         return redirect('tasks:project_list')
     return render(request, 'tasks/confirm_delete.html', {
         'obj': project, 'obj_type': 'Project'
@@ -260,13 +294,14 @@ def task_list(request):
     project_filter  = request.GET.get('project', '')
 
     if user.is_admin:
-        tasks = Task.objects.all()
-    else:
-        tasks = Task.objects.filter(
-            Q(project__members=user) |
-            Q(project__manager=user) |
-            Q(assigned_to=user)
-        ).distinct()
+        messages.error(request, 'Admins do not have access to tasks.')
+        return redirect('tasks:dashboard')
+        
+    tasks = Task.objects.filter(
+        Q(project__members=user) |
+        Q(project__manager=user) |
+        Q(assigned_to=user)
+    ).distinct()
 
     if my_only:         tasks = tasks.filter(assigned_to=user)
     if status_filter:   tasks = tasks.filter(status=status_filter)
@@ -623,3 +658,62 @@ def project_members_api(request):
     members = User.objects.filter(pk__in=member_ids, is_active=True).order_by('first_name', 'username')
     data = [{'id': u.pk, 'name': u.display_name} for u in members]
     return JsonResponse({'members': data})
+
+
+# ─── KNOWLEDGE BASE ──────────────────────────────────────────────────────────
+
+@login_required
+def kb_list(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    if not request.user.is_admin:
+        if not (project.members.filter(pk=request.user.pk).exists() or project.manager == request.user):
+            messages.error(request, 'You do not have access to this project.')
+            return redirect('tasks:project_list')
+    notes = project.kb_notes.all()
+    return render(request, 'tasks/kb_list.html', {'project': project, 'notes': notes})
+
+
+@login_required
+def kb_create(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    from .forms import KnowledgeBaseNoteForm
+    form = KnowledgeBaseNoteForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        note = form.save(commit=False)
+        note.project = project
+        note.author = request.user
+        note.save()
+        messages.success(request, 'Note created.')
+        return redirect('tasks:kb_list', pk=project.pk)
+    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'title': 'Create Note', 'action': 'Save Note'})
+
+
+@login_required
+def kb_detail(request, pk):
+    from .models import KnowledgeBaseNote
+    note = get_object_or_404(KnowledgeBaseNote, pk=pk)
+    project = note.project
+    if not request.user.is_admin:
+        if not (project.members.filter(pk=request.user.pk).exists() or project.manager == request.user):
+            messages.error(request, 'You do not have access to this note.')
+            return redirect('tasks:project_list')
+    return render(request, 'tasks/kb_detail.html', {'note': note, 'project': project})
+
+
+@login_required
+def kb_edit(request, pk):
+    from .models import KnowledgeBaseNote
+    note = get_object_or_404(KnowledgeBaseNote, pk=pk)
+    project = note.project
+    if not request.user.is_admin and request.user != note.author and project.manager != request.user:
+        messages.error(request, "You can only edit your own notes or if you are the project manager.")
+        return redirect('tasks:kb_detail', pk=pk)
+        
+    from .forms import KnowledgeBaseNoteForm
+    form = KnowledgeBaseNoteForm(request.POST or None, instance=note)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Note updated.')
+        return redirect('tasks:kb_detail', pk=pk)
+    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'title': 'Edit Note', 'action': 'Update Note'})
+
