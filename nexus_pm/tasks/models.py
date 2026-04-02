@@ -27,11 +27,11 @@ class Project(models.Model):
 
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    module = models.CharField(max_length=20, choices=MODULE_CHOICES)
+    module = models.CharField(max_length=20, choices=MODULE_CHOICES, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, null=True,
@@ -50,6 +50,7 @@ class Project(models.Model):
     progress = models.PositiveIntegerField(default=0)  # 0-100
     deletion_requested_by_admin = models.BooleanField(default=False)
     deletion_requested_by_pm = models.BooleanField(default=False)
+    deletion_requested_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -61,7 +62,9 @@ class Project(models.Model):
 
     @property
     def is_overdue(self):
-        return self.end_date < timezone.now().date() and self.status not in ['completed', 'cancelled']
+        if self.end_date:
+            return self.end_date < timezone.now().date() and self.status not in ['completed', 'cancelled']
+        return False
 
     @property
     def task_count(self):
@@ -105,7 +108,7 @@ class Task(models.Model):
 
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
     task_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='task')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
@@ -219,7 +222,7 @@ class BugReport(models.Model):
 
     title = models.CharField(max_length=300)
     description = models.TextField()
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='bug_reports')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='bug_reports', null=True, blank=True)
     reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reported_bugs')
     assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_bugs')
     severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
@@ -324,3 +327,42 @@ class SystemIssue(models.Model):
 
     def __str__(self):
         return f"{self.get_issue_type_display()}: {self.title}"
+
+class PipelineRun(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('passed', 'Passed'),
+        ('failed', 'Failed'),
+    ]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='pipeline_runs')
+    name = models.CharField(max_length=200, help_text="e.g. Build & Test")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    trigger_commit = models.CharField(max_length=100, blank=True, help_text="Git commit hash")
+    triggered_by = models.CharField(max_length=100, blank=True, help_text="User or webhook name")
+    duration_seconds = models.PositiveIntegerField(default=0)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+
+    def __str__(self):
+        return f"{self.name} - {self.get_status_display()} ({self.project.name})"
+
+class Release(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='releases')
+    version = models.CharField(max_length=50, help_text="e.g. v1.0.0")
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, help_text="Release notes (Markdown supported)")
+    release_date = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    files = models.ManyToManyField('files.ProjectFile', blank=True, related_name='releases', help_text="Build artifacts")
+
+    class Meta:
+        ordering = ['-release_date']
+        unique_together = ('project', 'version')
+
+    def __str__(self):
+        return f"{self.project.name} - {self.version}"

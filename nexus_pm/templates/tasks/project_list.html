@@ -45,9 +45,11 @@
                 <i class="fas {% if project.module == 'electronics' %}fa-microchip{% elif project.module == 'software' %}fa-code{% elif project.module == 'mechanical' %}fa-cog{% elif project.module == 'optics' %}fa-eye{% else %}fa-chart-line{% endif %}"></i>
                 {{ project.get_module_display }}
             </span>
+            {% if not user.is_admin %}
             <span class="badge {% if project.status == 'active' %}badge-green{% elif project.status == 'planning' %}badge-blue{% elif project.status == 'on_hold' %}badge-yellow{% elif project.status == 'completed' %}badge-gray{% else %}badge-red{% endif %}">
                 {{ project.get_status_display }}
             </span>
+            {% endif %}
         </div>
 
         <a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none">
@@ -57,6 +59,7 @@
             {{ project.description|truncatewords:15|default:"No description." }}
         </p>
 
+        {% if not user.is_admin %}
         <div class="progress-bar" style="margin-bottom:6px">
             <div class="progress-fill" style="width:{{ project.progress }}%"></div>
         </div>
@@ -64,6 +67,7 @@
             <span>{{ project.progress }}% complete</span>
             <span>{{ project.completed_task_count }}/{{ project.task_count }} tasks</span>
         </div>
+        {% endif %}
 
         <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
             <div style="display:flex;align-items:center;gap:6px">
@@ -72,6 +76,8 @@
                 <span style="font-size:11px;color:var(--text-muted)">{{ project.manager.display_name }}</span>
                 {% endif %}
             </div>
+            
+            {% if not user.is_admin %}
             <div style="display:flex;gap:6px">
                 <span style="font-size:11px;color:var(--text-muted)">
                     <i class="fas fa-calendar-alt"></i> {{ project.end_date }}
@@ -80,13 +86,30 @@
                 <span class="badge badge-red"><i class="fas fa-clock"></i> Overdue</span>
                 {% endif %}
             </div>
+            {% endif %}
         </div>
 
         <div style="display:flex;gap:6px;margin-top:12px">
             <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-eye"></i> View</a>
             {% if user.is_admin or user.is_project_manager %}
             <a href="{% url 'tasks:project_edit' project.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a>
-            <a href="{% url 'tasks:project_delete' project.pk %}" class="btn btn-danger btn-icon btn-sm"><i class="fas fa-trash"></i></a>
+            
+            {% if project.deletion_requested_by_admin %}
+                {% if user.is_admin %}
+                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-times"></i> Cancel Project Deletion</button></form>
+                {% elif user == project.manager %}
+                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
+                {% endif %}
+            {% elif project.deletion_requested_by_pm %}
+                {% if user.is_admin %}
+                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
+                {% elif user == project.manager %}
+                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-times"></i> Cancel Delete Request</button></form>
+                {% endif %}
+            {% else %}
+                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="request_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-paper-plane"></i> Request to Delete</button></form>
+            {% endif %}
+            
             {% endif %}
         </div>
     </div>
@@ -104,4 +127,6 @@
     </div>
 </div>
 {% endif %}
+
+{% include 'pagination.html' %}
 {% endblock %}

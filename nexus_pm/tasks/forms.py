@@ -28,6 +28,11 @@ class ProjectForm(forms.ModelForm):
         self.fields['manager'].required    = False
         self.fields['members'].required    = False
 
+        if user and user.is_admin:
+            for field in ['module', 'status', 'priority', 'start_date', 'end_date', 'members']:
+                if field in self.fields:
+                    del self.fields[field]
+
 
 class TaskForm(forms.ModelForm):
     class Meta:
@@ -123,6 +128,13 @@ class BugReportForm(forms.ModelForm):
         self.fields['assigned_to'].empty_label = '— Unassigned —'
         self.fields['linked_task'].empty_label = '— None —'
         self.fields['status'].required = False
+        self.fields['project'].required = False
+        
+        if getattr(self, 'instance', None) and self.instance.pk and user:
+            if user == self.instance.assigned_to and user != self.instance.reported_by and getattr(user, 'is_admin', False) == False:
+                for field_name, field in self.fields.items():
+                    if field_name != 'status':
+                        field.disabled = True
 
         if user and not user.is_admin:
             accessible = Project.objects.filter(Q(manager=user) | Q(members=user)).distinct()

@@ -51,8 +51,6 @@
                 <tr>
                     <th>Project Name</th>
                     <th>Manager</th>
-                    <th>Members</th>
-                    <th>Status</th>
                     <th>System Actions</th>
                 </tr>
             </thead>
@@ -61,18 +59,36 @@
                 <tr>
                     <td><strong>{{ project.name }}</strong></td>
                     <td>{{ project.manager.display_name|default:'—' }}</td>
-                    <td>{{ project.members.count }}</td>
-                    <td><span class="badge {% if project.status == 'active' %}badge-green{% elif project.status == 'completed' %}badge-blue{% else %}badge-gray{% endif %}">{{ project.get_status_display }}</span></td>
                     <td>
-                        {% if project.deletion_requested_by_admin %}
-                            <span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red)">Deletion Requested</span>
-                        {% else %}
-                            <a href="{% url 'tasks:project_delete' project.pk %}" class="btn btn-sm" style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red)"><i class="fas fa-trash-alt"></i> Request Deletion</a>
-                        {% endif %}
+                        <div style="display:flex; gap: 8px;">
+                            <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary)"><i class="fas fa-eye"></i> View</a>
+                            
+                            {% if project.deletion_requested_by_admin %}
+                                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="cancel_deletion">
+                                    <button type="submit" class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary)"><i class="fas fa-times"></i> Cancel Project Deletion</button>
+                                </form>
+                                {% if project.is_overdue %} <!-- just roughly simulating 30 days logic if available, but the real logic is in views. Let's just show Force Delete if we know it's available, otherwise they can click to confirm page -->
+                                {% endif %}
+                            {% elif project.deletion_requested_by_pm %}
+                                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve_deletion">
+                                    <button type="submit" class="btn btn-sm" style="background:var(--red-dim);border:1px solid rgba(239,68,68,0.3);color:var(--red)"><i class="fas fa-check"></i> Approve Project Deletion</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="request_deletion">
+                                    <button type="submit" class="btn btn-sm" style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:var(--red)"><i class="fas fa-paper-plane"></i> Request to Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5"><div class="empty-state">No projects in the system.</div></td></tr>
+                <tr><td colspan="3"><div class="empty-state">No projects in the system.</div></td></tr>
                 {% endfor %}
             </tbody>
         </table>

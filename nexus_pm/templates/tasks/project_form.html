@@ -61,7 +61,7 @@
 
     <form method="post" novalidate>
         {% csrf_token %}
-        <div class="grid-2" style="gap: 20px; align-items: start;">
+        <div class="{% if form.members %}grid-2{% else %}single-column{% endif %}" style="gap: 20px; align-items: start;">
 
             <!-- LEFT: Project Details -->
             <div style="display:flex; flex-direction:column; gap:16px;">
@@ -81,8 +81,9 @@
                         {{ form.description }}
                     </div>
                     <div class="grid-2">
+                        {% if form.module %}
                         <div class="form-group">
-                            <label class="form-label">Module <span style="color:var(--red)">*</span></label>
+                            <label class="form-label">Module</label>
                             {{ form.module }}
                             {% if form.module.errors %}<div class="form-error">{{ form.module.errors.0 }}</div>{% endif %}
                         </div>
@@ -94,27 +95,31 @@
                             <label class="form-label">Priority</label>
                             {{ form.priority }}
                         </div>
+                        {% endif %}
                         <div class="form-group">
                             <label class="form-label">Project Manager</label>
                             {{ form.manager }}
                             {% if form.manager.errors %}<div class="form-error">{{ form.manager.errors.0 }}</div>{% endif %}
                         </div>
+                        {% if form.start_date %}
                         <div class="form-group">
-                            <label class="form-label">Start Date <span style="color:var(--red)">*</span></label>
+                            <label class="form-label">Start Date</label>
                             {{ form.start_date }}
                             {% if form.start_date.errors %}<div class="form-error">{{ form.start_date.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="form-group">
-                            <label class="form-label">End Date <span style="color:var(--red)">*</span></label>
+                            <label class="form-label">End Date</label>
                             {{ form.end_date }}
                             {% if form.end_date.errors %}<div class="form-error">{{ form.end_date.errors.0 }}</div>{% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 
             </div>
 
             <!-- RIGHT: Members -->
+            {% if form.members %}
             <div class="card" style="height:fit-content;">
                 <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">
                     <i class="fas fa-users" style="color:var(--accent);margin-right:6px;"></i>Team Members
@@ -175,6 +180,7 @@
                     <i class="fas fa-info-circle"></i> <span id="selectedCount">0</span> member(s) selected
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- Submit -->

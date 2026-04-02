@@ -2,7 +2,6 @@
 {% block title %}Tasks — IIAP PM{% endblock %}
 {% block page_title %}{% if my_tasks %}My Tasks{% else %}All Tasks{% endif %}{% endblock %}
 {% block topbar_actions %}
-<a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Task</a>
 {% endblock %}
 {% block content %}
 <div class="page-header">
@@ -142,4 +141,6 @@
         </table>
     </div>
 </div>
+
+{% include 'pagination.html' %}
 {% endblock %}

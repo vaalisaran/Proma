@@ -5,10 +5,30 @@
 
 {% block topbar_actions %}
 <a href="{% url 'files:project_files' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-paperclip"></i> Files ({{ project.files.count }})</a>
-<a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
+<a href="{% url 'tasks:project_cicd' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-satellite-dish"></i> CI/CD</a>
+<a href="{% url 'finance:project_expenses' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-wallet"></i> Finance</a>
+
 {% if user.is_admin or user.is_project_manager %}
 <a href="{% url 'tasks:project_members' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-users"></i> Members</a>
 <a href="{% url 'tasks:project_edit' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+
+{% if user.is_admin or user == project.manager %}
+{% if project.deletion_requested_by_admin %}
+    {% if user.is_admin %}
+    <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="display:inline-block; margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Cancel Project Deletion</button></form>
+    {% elif user == project.manager %}
+    <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="display:inline-block; margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
+    {% endif %}
+{% elif project.deletion_requested_by_pm %}
+    {% if user.is_admin %}
+    <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="display:inline-block; margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
+    {% elif user == project.manager %}
+    <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="display:inline-block; margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Cancel Delete Request</button></form>
+    {% endif %}
+{% else %}
+    <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="display:inline-block; margin:0;"><input type="hidden" name="action" value="request_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-paper-plane"></i> Request to Delete</button></form>
+{% endif %}
+{% endif %}
 {% endif %}
 {% endblock %}
 
@@ -219,7 +239,7 @@
     {% if status_filter or priority_filter or type_filter or assignee_filter %}
     <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
     {% endif %}
-    <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}" class="btn btn-primary btn-sm" style="margin-left:auto;"><i class="fas fa-plus"></i> New Task</a>
+
 </form>
 
 <div class="card" style="padding:0;">

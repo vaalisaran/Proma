@@ -4,50 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}IIAP PM{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #0f1629;
-            --bg-card: #141b2d;
-            --bg-card-hover: #1a2338;
-            --bg-sidebar: #0c1220;
-            --border: #1e2d47;
-            --border-light: #243352;
+            --bg-primary: #f4f6f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f9fafb;
+            --bg-sidebar: #ffffff;
+            --border: #e2e8f0;
+            --border-light: #cbd5e1;
             {% if sys_settings.primary_color %}
             --accent: {{ sys_settings.primary_color }};
             --accent-hover: {{ sys_settings.primary_color }}cc;
             --accent-glow: {{ sys_settings.primary_color }}26;
             {% else %}
             --accent: #4f8ef7;
-            --accent-hover: #6ba3ff;
+            --accent-hover: #3b7ced;
             --accent-glow: rgba(79, 142, 247, 0.15);
             {% endif %}
-            --green: #22c55e;
-            --green-dim: rgba(34, 197, 94, 0.12);
+            --green: #10b981;
+            --green-dim: rgba(16, 185, 129, 0.12);
             --red: #ef4444;
             --red-dim: rgba(239, 68, 68, 0.12);
             --yellow: #f59e0b;
             --yellow-dim: rgba(245, 158, 11, 0.12);
-            --purple: #a855f7;
-            --purple-dim: rgba(168, 85, 247, 0.12);
+            --purple: #8b5cf6;
+            --purple-dim: rgba(139, 92, 246, 0.12);
             --cyan: #06b6d4;
             --cyan-dim: rgba(6, 182, 212, 0.12);
-            --text-primary: #e8eaf0;
-            --text-secondary: #7a8aaa;
-            --text-muted: #4a5568;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
             --sidebar-width: 260px;
             --radius: 10px;
             --radius-sm: 6px;
-            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
             --transition: all 0.2s ease;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: {{ sys_settings.font_size|default:'14px' }};
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -225,7 +225,7 @@
             color: var(--red);
             font-size: 12px;
             font-weight: 600;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             text-decoration: none;
             cursor: pointer;
             transition: var(--transition);
@@ -286,7 +286,7 @@
             border-radius: var(--radius-sm);
             font-size: 13px;
             font-weight: 500;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
             text-decoration: none;
             border: 1px solid transparent;
@@ -410,7 +410,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             color: var(--text-primary);
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             padding: 9px 12px;
             transition: var(--transition);
@@ -524,7 +524,7 @@
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             color: var(--text-primary);
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 13px;
             padding: 8px 12px 8px 36px;
             outline: none;
@@ -550,7 +550,7 @@
             border-radius: var(--radius-sm);
             cursor: pointer;
             outline: none;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             transition: var(--transition);
         }
         .filter-select:focus { border-color: var(--accent); }

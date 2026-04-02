@@ -35,18 +35,14 @@
 
 <!-- Stats bar -->
 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
-    {% for ft, label in type_choices %}
-    {% with cnt=stats.by_type|default:0 %}
-    {% if stats.by_type %}
+    {% for item in stats.by_type %}
     <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px;">
         <i class="fas
-            {% if ft == 'image' %}fa-file-image{% elif ft == 'pdf' %}fa-file-pdf{% elif ft == 'document' %}fa-file-word{% elif ft == 'spreadsheet' %}fa-file-excel{% elif ft == 'presentation' %}fa-file-powerpoint{% elif ft == 'code' %}fa-file-code{% elif ft == 'archive' %}fa-file-archive{% elif ft == 'video' %}fa-file-video{% elif ft == 'audio' %}fa-file-audio{% elif ft == 'cad' %}fa-cube{% else %}fa-file{% endif %}"
+            {% if item.key == 'image' %}fa-file-image{% elif item.key == 'pdf' %}fa-file-pdf{% elif item.key == 'document' %}fa-file-word{% elif item.key == 'spreadsheet' %}fa-file-excel{% elif item.key == 'presentation' %}fa-file-powerpoint{% elif item.key == 'code' %}fa-file-code{% elif item.key == 'archive' %}fa-file-archive{% elif item.key == 'video' %}fa-file-video{% elif item.key == 'audio' %}fa-file-audio{% elif item.key == 'cad' %}fa-cube{% else %}fa-file{% endif %}"
             style="opacity:.7;font-size:11px;"></i>
-        <span style="color:var(--text-muted);">{{ label }}</span>
-        <strong style="color:var(--text-primary);">{{ stats.by_type|default:0 }}</strong>
+        <span style="color:var(--text-muted);">{{ item.label }}</span>
+        <strong style="color:var(--text-primary);">{{ item.count }}</strong>
     </div>
-    {% endif %}
-    {% endwith %}
     {% endfor %}
 </div>
 

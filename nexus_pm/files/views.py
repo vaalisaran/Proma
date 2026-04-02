@@ -61,8 +61,16 @@ def file_list(request):
 
     stats['total_size_display'] = fmt_size(stats['total_size'])
 
+    from django.core.paginator import Paginator
+    
+    files_ordered = files.select_related('project', 'task', 'uploaded_by').order_by('-created_at')
+    paginator = Paginator(files_ordered, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'files/file_list.html', {
-        'files':           files.select_related('project', 'task', 'uploaded_by').order_by('-created_at'),
+        'files':           page_obj,
+        'page_obj':        page_obj,
         'projects':        projects,
         'stats':           stats,
         'type_choices':    ProjectFile.FILE_TYPE_CHOICES,
@@ -84,8 +92,11 @@ def file_upload(request):
         project_id = request.GET.get('project')
         task_id    = request.GET.get('task')
 
+    parent_id = request.GET.get('parent_id')
+
     project = None
     task    = None
+    parent  = None
     if project_id:
         try:
             project = Project.objects.get(pk=project_id)
@@ -96,11 +107,16 @@ def file_upload(request):
             task = Task.objects.get(pk=task_id)
         except (Task.DoesNotExist, ValueError):
             task = None
+    if parent_id:
+        try:
+            parent = ProjectFile.objects.get(pk=parent_id)
+        except (ProjectFile.DoesNotExist, ValueError):
+            parent = None
 
     form = FileUploadForm(
         request.POST or None,
         request.FILES or None,
-        user=request.user, project=project, task=task
+        user=request.user, project=project, task=task, initial={'parent_file': parent}
     )
 
     if request.method == 'POST':
@@ -338,7 +354,7 @@ def project_files(request, pk):
     stats = {
         'total':      files.count(),
         'total_size': files.aggregate(s=Sum('file_size'))['s'] or 0,
-        'by_type':    {ft: files.filter(file_type=ft).count() for ft, _ in ProjectFile.FILE_TYPE_CHOICES},
+        'by_type':    [{'key': ft, 'label': label, 'count': files.filter(file_type=ft).count()} for ft, label in ProjectFile.FILE_TYPE_CHOICES],
     }
 
     return render(request, 'files/project_files.html', {

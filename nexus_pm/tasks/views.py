@@ -102,8 +102,14 @@ def project_list(request):
     if search:
         projects = projects.filter(Q(name__icontains=search) | Q(description__icontains=search))
 
+    from django.core.paginator import Paginator
+    paginator = Paginator(projects.order_by('-created_at'), 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'tasks/project_list.html', {
-        'projects': projects.order_by('-created_at'),
+        'projects': page_obj,
+        'page_obj': page_obj,
         'module_choices': Project.MODULE_CHOICES,
         'status_choices': Project.STATUS_CHOICES,
         'module_filter': module_filter,
@@ -121,6 +127,16 @@ def project_create(request):
         project.created_by = request.user
         project.save()
         form.save_m2m()
+        
+        # Notify project manager if assigned
+        if project.manager and project.manager != request.user:
+            create_notification(
+                project.manager, request.user, 'project_update',
+                f'You were assigned as Project Manager: {project.name}',
+                f'{request.user.display_name} assigned you as the manager of project "{project.name}".',
+                project=project
+            )
+            
         # Notify all assigned members
         for member in project.members.all():
             create_notification(
@@ -255,30 +271,72 @@ def project_members(request, pk):
 @login_required
 @manager_or_admin_required
 def project_delete(request, pk):
+    from datetime import timedelta
+    from django.utils import timezone
     project = get_object_or_404(Project, pk=pk)
+    
     if request.method == 'POST':
+        action = request.POST.get('action', 'request_deletion')
         name = project.name
         
-        if request.user.is_admin:
-            project.deletion_requested_by_admin = True
-            project.save()
-            messages.info(request, f'Project "{name}" deletion requested. Waiting for Project Manager approval.')
-            if project.manager:
-                create_notification(project.manager, request.user, 'project_update', 'Project Deletion Requested', f'Admin {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
-        elif request.user.is_project_manager and project.manager == request.user:
-            project.deletion_requested_by_pm = True
-            project.save()
-            messages.info(request, f'Project "{name}" deletion requested. Waiting for Admin approval.')
-            for admin in User.objects.filter(role='admin'):
-                create_notification(admin, request.user, 'project_update', 'Project Deletion Requested', f'PM {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
-
-        if project.deletion_requested_by_admin and project.deletion_requested_by_pm:
-            project.delete()
-            messages.success(request, f'Project "{name}" fully deleted as both Admin and PM approved.')
-            
+        if action == 'request_deletion':
+            project.deletion_requested_at = timezone.now()
+            if request.user.is_admin:
+                project.deletion_requested_by_admin = True
+                project.save()
+                messages.info(request, f'Project "{name}" deletion requested. Waiting for Project Manager approval.')
+                if project.manager:
+                    create_notification(project.manager, request.user, 'project_update', 'Project Deletion Requested', f'Admin {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
+            elif request.user.is_project_manager and project.manager == request.user:
+                project.deletion_requested_by_pm = True
+                project.save()
+                messages.info(request, f'Project "{name}" deletion requested. Waiting for Admin approval.')
+                for admin in User.objects.filter(role='admin'):
+                    create_notification(admin, request.user, 'project_update', 'Project Deletion Requested', f'PM {request.user.display_name} has requested to delete project "{name}". Please approve.', project=project)
+        
+        elif action == 'cancel_deletion':
+            if request.user.is_admin and project.deletion_requested_by_admin:
+                project.deletion_requested_by_admin = False
+                project.deletion_requested_at = None
+                project.save()
+                messages.info(request, f'Deletion request for "{name}" cancelled.')
+            elif request.user.is_project_manager and project.manager == request.user and project.deletion_requested_by_pm:
+                project.deletion_requested_by_pm = False
+                project.deletion_requested_at = None
+                project.save()
+                messages.info(request, f'Deletion request for "{name}" cancelled.')
+                
+        elif action == 'approve_deletion':
+            if request.user.is_admin and project.deletion_requested_by_pm:
+                project.delete()
+                messages.success(request, f'Project "{name}" fully deleted.')
+                return redirect('tasks:project_list')
+            elif request.user.is_project_manager and project.manager == request.user and project.deletion_requested_by_admin:
+                project.delete()
+                messages.success(request, f'Project "{name}" fully deleted.')
+                return redirect('tasks:project_list')
+                
+        elif action == 'force_delete':
+            if request.user.is_admin and project.deletion_requested_by_admin and project.deletion_requested_at:
+                if timezone.now() > project.deletion_requested_at + timedelta(days=30):
+                    project.delete()
+                    messages.success(request, f'Project "{name}" was force deleted.')
+                    return redirect('tasks:project_list')
+                else:
+                    messages.error(request, 'You can only force delete after 30 days of requesting.')
+                    
         return redirect('tasks:project_list')
+        
+    # Check if 30 days have passed for force delete
+    from datetime import timedelta
+    from django.utils import timezone
+    can_force_delete = False
+    if request.user.is_admin and project.deletion_requested_by_admin and project.deletion_requested_at:
+        if timezone.now() > project.deletion_requested_at + timedelta(days=30):
+            can_force_delete = True
+
     return render(request, 'tasks/confirm_delete.html', {
-        'obj': project, 'obj_type': 'Project'
+        'obj': project, 'obj_type': 'Project', 'can_force_delete': can_force_delete
     })
 
 
@@ -315,8 +373,21 @@ def task_list(request):
     else:
         projects = Project.objects.filter(Q(manager=user) | Q(members=user)).distinct()
 
+    from django.core.paginator import Paginator
+    task_qs = tasks.select_related('project', 'assigned_to').order_by('-updated_at')
+    
+    # We might want to sort by project if my_tasks is active for better regroup logic, 
+    # but the instructions ask for standardized 10 item pagination, so we preserve default order.
+    if my_only:
+        task_qs = tasks.select_related('project', 'assigned_to').order_by('project', '-updated_at')
+        
+    paginator = Paginator(task_qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'tasks/task_list.html', {
-        'tasks':            tasks.select_related('project', 'assigned_to').order_by('-updated_at'),
+        'tasks':            page_obj,
+        'page_obj':         page_obj,
         'status_choices':   Task.STATUS_CHOICES,
         'priority_choices': Task.PRIORITY_CHOICES,
         'projects':         projects,
@@ -507,6 +578,20 @@ def bug_create(request):
         bug = form.save(commit=False)
         bug.reported_by = request.user
         bug.save()
+        
+        # When anybody reports a bug to a member, add it to assigned person's task list
+        if bug.assigned_to:
+            Task.objects.create(
+                title=f"[Bug] {bug.title}",
+                description=bug.description,
+                project=bug.project,
+                task_type='bug',
+                status='todo',
+                priority=bug.severity,
+                assigned_to=bug.assigned_to,
+                created_by=request.user
+            )
+        
         # Notify the person the bug is assigned to
         if bug.assigned_to and bug.assigned_to != request.user:
             create_notification(
@@ -531,10 +616,29 @@ def bug_detail(request, pk):
 @login_required
 def bug_edit(request, pk):
     bug          = get_object_or_404(BugReport, pk=pk)
+    
+    if request.user != bug.reported_by and request.user != bug.assigned_to and not request.user.is_admin:
+        messages.error(request, 'You do not have permission to edit this bug ticket.')
+        return redirect('tasks:bug_detail', pk=pk)
+
     old_assignee = bug.assigned_to
     form = BugReportForm(request.POST or None, instance=bug, user=request.user)
     if request.method == 'POST' and form.is_valid():
         bug = form.save()
+        
+        # Add to assigned person's task list if assigned newly or changed
+        if bug.assigned_to and bug.assigned_to != old_assignee:
+            Task.objects.create(
+                title=f"[Bug] {bug.title}",
+                description=bug.description,
+                project=bug.project,
+                task_type='bug',
+                status='todo',
+                priority=bug.severity,
+                assigned_to=bug.assigned_to,
+                created_by=request.user
+            )
+            
         # Notify newly assigned person
         if bug.assigned_to and bug.assigned_to != old_assignee:
             create_notification(
@@ -717,3 +821,20 @@ def kb_edit(request, pk):
         return redirect('tasks:kb_detail', pk=pk)
     return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'title': 'Edit Note', 'action': 'Update Note'})
 
+# ─── CI/CD & RELEASES ────────────────────────────────────────────────────────
+@login_required
+def project_cicd(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    if not request.user.is_admin:
+        if not (project.members.filter(pk=request.user.pk).exists() or project.manager == request.user):
+            messages.error(request, 'You do not have access to this project.')
+            return redirect('tasks:project_list')
+
+    pipeline_runs = project.pipeline_runs.all()[:10]
+    releases = project.releases.all()
+
+    return render(request, 'tasks/project_cicd.html', {
+        'project': project,
+        'pipeline_runs': pipeline_runs,
+        'releases': releases
+    })

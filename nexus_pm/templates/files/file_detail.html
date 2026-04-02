@@ -187,7 +187,7 @@
                 {% if file.is_previewable %}
                 <a href="{% url 'files:file_view' file.pk %}" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-external-link-alt"></i> Open in Browser</a>
                 {% endif %}
-                <a href="{% url 'files:file_upload' %}{% if file.project %}?project={{ file.project.pk }}{% endif %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-code-branch"></i> Upload New Version</a>
+                <a href="{% url 'files:file_upload' %}{% if file.project %}?project={{ file.project.pk }}&parent_id={{ file.pk }}{% else %}?parent_id={{ file.pk }}{% endif %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-code-branch"></i> Upload New Version</a>
                 {% if request.user == file.uploaded_by or request.user.is_admin %}
                 <a href="{% url 'files:file_edit' file.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Details</a>
                 <a href="{% url 'files:file_delete' file.pk %}" class="btn btn-danger" style="width:100%;justify-content:flex-start;" onclick="return confirm('Delete this file?')"><i class="fas fa-trash"></i> Delete</a>

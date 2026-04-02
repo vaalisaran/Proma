@@ -75,8 +75,14 @@ def user_list(request):
         'members': User.objects.filter(role='member').count(),
     }
 
+    from django.core.paginator import Paginator
+    paginator = Paginator(users, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'accounts/user_list.html', {
-        'users': users,
+        'users': page_obj,
+        'page_obj': page_obj,
         'stats': stats,
         'search': search,
         'role_filter': role_filter,

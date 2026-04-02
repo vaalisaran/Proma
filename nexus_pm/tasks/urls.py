@@ -13,6 +13,7 @@ urlpatterns = [
     path('projects/<int:pk>/delete/',           views.project_delete,      name='project_delete'),
     path('projects/<int:pk>/knowledge-base/',   views.kb_list,             name='kb_list'),
     path('projects/<int:pk>/knowledge-base/new/', views.kb_create,         name='kb_create'),
+    path('projects/<int:pk>/cicd/',             views.project_cicd,        name='project_cicd'),
     path('knowledge-base/<int:pk>/',            views.kb_detail,           name='kb_detail'),
     path('knowledge-base/<int:pk>/edit/',       views.kb_edit,             name='kb_edit'),
     path('tasks/',                              views.task_list,           name='task_list'),

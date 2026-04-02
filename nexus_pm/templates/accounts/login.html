@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login — IIAP PM</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'DM Sans', sans-serif;
-            background: #0a0e1a;
+            font-family: 'Inter', sans-serif;
+            background: #f4f6f8;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -24,8 +24,8 @@
             position: fixed;
             inset: 0;
             background-image:
-                linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+                linear-gradient(rgba(79,142,247,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,142,247,0.06) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
         }
@@ -39,12 +39,12 @@
         }
         .orb-1 {
             width: 400px; height: 400px;
-            background: rgba(79,142,247,0.08);
+            background: rgba(79,142,247,0.15);
             top: -100px; left: -100px;
         }
         .orb-2 {
             width: 300px; height: 300px;
-            background: rgba(124,58,237,0.08);
+            background: rgba(124,58,237,0.12);
             bottom: -80px; right: -80px;
             animation-delay: -4s;
         }
@@ -61,11 +61,11 @@
             z-index: 10;
         }
         .login-card {
-            background: #0f1629;
-            border: 1px solid #1e2d47;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 40px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
             animation: cardIn 0.5s ease;
         }
         @keyframes cardIn {
@@ -92,7 +92,7 @@
             font-family: 'Space Grotesk', sans-serif;
             font-size: 22px;
             font-weight: 700;
-            color: #e8eaf0;
+            color: #0f172a;
         }
         .logo-text span { color: #4f8ef7; }
 
@@ -100,12 +100,12 @@
             font-family: 'Space Grotesk', sans-serif;
             font-size: 20px;
             font-weight: 700;
-            color: #e8eaf0;
+            color: #0f172a;
             margin-bottom: 6px;
         }
         .login-sub {
             font-size: 13px;
-            color: #4a5568;
+            color: #64748b;
             margin-bottom: 28px;
         }
 
@@ -114,7 +114,7 @@
             display: block;
             font-size: 12px;
             font-weight: 600;
-            color: #7a8aaa;
+            color: #475569;
             margin-bottom: 7px;
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -124,17 +124,17 @@
             position: absolute;
             left: 13px; top: 50%;
             transform: translateY(-50%);
-            color: #4a5568;
+            color: #64748b;
             font-size: 14px;
             pointer-events: none;
         }
         .form-input {
             width: 100%;
-            background: #0a0e1a;
-            border: 1px solid #1e2d47;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
-            color: #e8eaf0;
-            font-family: 'DM Sans', sans-serif;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             padding: 11px 12px 11px 40px;
             outline: none;
@@ -144,7 +144,7 @@
             border-color: #4f8ef7;
             box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
         }
-        .form-input::placeholder { color: #2d3748; }
+        .form-input::placeholder { color: #94a3b8; }
         .password-toggle {
             position: absolute;
             right: 12px; top: 50%;
@@ -152,24 +152,11 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #4a5568;
+            color: #64748b;
             font-size: 14px;
             transition: color 0.2s;
         }
-        .password-toggle:hover { color: #7a8aaa; }
-
-        .error-msg {
-            background: rgba(239,68,68,0.08);
-            border: 1px solid rgba(239,68,68,0.2);
-            border-radius: 8px;
-            padding: 12px 14px;
-            color: #ef4444;
-            font-size: 13px;
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .password-toggle:hover { color: #1e293b; }
 
         .btn-login {
             width: 100%;
@@ -177,7 +164,7 @@
             border: none;
             border-radius: 8px;
             color: #fff;
-            font-family: 'DM Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             font-weight: 600;
             padding: 12px;
@@ -192,17 +179,17 @@
         .btn-login:hover {
             opacity: 0.92;
             transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(79,142,247,0.3);
+            box-shadow: 0 8px 16px rgba(79,142,247,0.25);
         }
         .btn-login:active { transform: translateY(0); }
 
         .login-footer {
             margin-top: 28px;
             padding-top: 20px;
-            border-top: 1px solid #1e2d47;
+            border-top: 1px solid #e2e8f0;
             text-align: center;
             font-size: 12px;
-            color: #2d3748;
+            color: #64748b;
         }
         .modules-info {
             margin-top: 20px;
@@ -216,14 +203,72 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 500;
-            border: 1px solid #1e2d47;
-            color: #4a5568;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
         }
+
+        /* Toast notification for errors */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #ef4444;
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            min-width: 300px;
+            max-width: 420px;
+            pointer-events: all;
+            animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideInToast {
+            from { opacity: 0; transform: translateX(80px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .toast-icon { color: #ef4444; font-size: 18px; flex-shrink: 0; }
+        .toast-text { font-size: 13px; color: #0f172a; line-height: 1.4; flex: 1; }
+        .toast-close {
+            background: none; border: none; color: #64748b;
+            cursor: pointer; font-size: 18px; padding: 0; line-height: 1;
+        }
+        .toast-close:hover { color: #0f172a; }
     </style>
 </head>
 <body>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+
+    <!-- Error Toasts -->
+    {% if form.non_field_errors or messages %}
+    <div class="toast-container">
+        {% for error in form.non_field_errors %}
+        <div class="toast">
+            <i class="fas fa-exclamation-circle toast-icon"></i>
+            <span class="toast-text">{{ error }}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+        {% for msg in messages %}
+        <div class="toast" style="{% if msg.tags == 'success' %}border-left-color:#10b981{% endif %}">
+            <i class="fas {% if msg.tags == 'success' %}fa-check-circle" style="color:#10b981"{% else %}fa-info-circle toast-icon{% endif %}></i>
+            <span class="toast-text">{{ msg }}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="login-container">
         <div class="login-card">
@@ -234,13 +279,6 @@
 
             <h1 class="login-heading">Welcome back</h1>
             <p class="login-sub">Sign in to your project management workspace</p>
-
-            {% if form.non_field_errors %}
-            <div class="error-msg">
-                <i class="fas fa-exclamation-circle"></i>
-                {{ form.non_field_errors.0 }}
-            </div>
-            {% endif %}
 
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
