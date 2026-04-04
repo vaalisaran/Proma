@@ -266,6 +266,14 @@ def settings_view(request):
             messages.success(request, 'Profile updated successfully.')
             return redirect('accounts:settings')
             
+        elif action == 'update_preferences':
+            user = request.user
+            user.theme_preference = request.POST.get('theme_preference', user.theme_preference)
+            user.email_notifications = request.POST.get('email_notifications') == 'on'
+            user.save()
+            messages.success(request, 'Preferences updated successfully.')
+            return redirect('accounts:settings')
+            
         elif action == 'report_issue':
             SystemIssue.objects.create(
                 title=request.POST.get('title'),

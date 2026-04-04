@@ -71,15 +71,18 @@
                             </div>
                             {% endif %}
                         </td>
-                        <td>—</td>
+                        <td>{% if task.module %}{{ task.module.name }}{% else %}—{% endif %}</td>
                         <td><span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:10px">{{ task.get_task_type_display }}</span></td>
                         <td><span class="{% if task.priority == 'critical' %}priority-critical{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}" style="font-size:12px;font-weight:600">● {{ task.get_priority_display }}</span></td>
                         <td><span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">{{ task.get_status_display }}</span></td>
                         <td>
-                            {% if task.assigned_to %}
-                            <div style="display:flex;align-items:center;gap:6px">
-                                <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}">{{ task.assigned_to.initials }}</div>
-                                <span style="font-size:12px">{{ task.assigned_to.display_name }}</span>
+                            {% if task.assignees.all %}
+                            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                                {% for assignee in task.assignees.all %}
+                                <a href="{% url 'accounts:user_detail' assignee.pk %}">
+                                    <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                                </a>
+                                {% endfor %}
                             </div>
                             {% else %}<span style="color:var(--text-muted);font-size:12px">—</span>{% endif %}
                         </td>
@@ -87,7 +90,9 @@
                         <td>
                             <div style="display:flex;gap:4px">
                                 <a href="{% url 'tasks:task_detail' task.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-eye"></i></a>
+                                {% if user.is_admin or user == task.created_by %}
                                 <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -112,24 +117,29 @@
                     </td>
                     <td>
                         <a href="{% url 'tasks:project_detail' task.project.pk %}" style="color:var(--accent);font-size:12px;text-decoration:none">{{ task.project.name }}</a>
-                        <div style="font-size:11px;color:var(--text-muted)">{{ task.project.get_module_display }}</div>
+                        <div style="font-size:11px;color:var(--text-muted)">{% if task.module %}{{ task.module.name }}{% else %}—{% endif %}</div>
                     </td>
                     <td><span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:10px">{{ task.get_task_type_display }}</span></td>
                     <td><span class="{% if task.priority == 'critical' %}priority-critical{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}" style="font-size:12px;font-weight:600">● {{ task.get_priority_display }}</span></td>
                     <td><span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">{{ task.get_status_display }}</span></td>
-                    <td>
-                        {% if task.assigned_to %}
-                        <div style="display:flex;align-items:center;gap:6px">
-                            <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}">{{ task.assigned_to.initials }}</div>
-                            <span style="font-size:12px">{{ task.assigned_to.display_name }}</span>
-                        </div>
-                        {% else %}<span style="color:var(--text-muted);font-size:12px">—</span>{% endif %}
-                    </td>
+                        <td>
+                            {% if task.assignees.all %}
+                            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                                {% for assignee in task.assignees.all %}
+                                <a href="{% url 'accounts:user_detail' assignee.pk %}">
+                                    <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% else %}<span style="color:var(--text-muted);font-size:12px">—</span>{% endif %}
+                        </td>
                     <td><span style="font-size:12px;color:{% if task.is_overdue %}var(--red){% else %}var(--text-muted){% endif %}">{% if task.due_date %}{% if task.is_overdue %}<i class="fas fa-exclamation-circle"></i> {% endif %}{{ task.due_date }}{% else %}—{% endif %}</span></td>
                     <td>
                         <div style="display:flex;gap:4px">
                             <a href="{% url 'tasks:task_detail' task.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-eye"></i></a>
+                            {% if user.is_admin or user == task.created_by %}
                             <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

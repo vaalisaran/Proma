@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.name }} — {{ project.name }}{% endblock %}
+{% block page_title %}{{ module.name }}{% endblock %}
+{% block topbar_actions %}
+    {% if user == project.manager %}
+    <a href="{% url 'tasks:module_edit' module.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+    <a href="{% url 'tasks:module_delete' module.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete</a>
+    <a href="{% url 'tasks:module_members' module.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-users"></i> Manage Members</a>
+    {% endif %}
+    <a href="{% url 'tasks:module_list' project.pk %}" class="btn btn-secondary btn-sm">Back to Modules</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>{{ module.name }}</h1>
+        <p>{{ module.description }}</p>
+    </div>
+</div>
+
+<div class="grid-3" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+    <div class="card">
+        <h3>Members ({{ members.count }})</h3>
+        <ul style="list-style:none; padding:0; margin-top:10px;">
+            {% for m in members %}
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+                {{ m.user.display_name }} <span class="badge badge-gray">{{ m.get_role_display }}</span>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No members assigned</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;">Tasks ({{ tasks.count }})</h3>
+            {% if user == project.manager %}
+            <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}&module={{ module.pk }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
+            {% endif %}
+        </div>
+        <ul style="list-style:none; padding:0; margin-top:10px;">
+            {% for t in tasks %}
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <a href="{% url 'tasks:task_detail' t.pk %}">{{ t.title }}</a>
+                <span class="badge badge-blue" style="float:right;">{{ t.get_status_display }}</span>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No tasks for this module</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <h3 style="margin:0;">Files ({{ files.count }})</h3>
+        </div>
+        <ul style="list-style:none; padding:0; margin-top:10px;">
+            {% for f in files %}
+            <li style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+                <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }}; width: 16px; margin-right: 4px;"></i>
+                <a href="{% url 'files:file_detail' f.pk %}">{{ f.display_name }}</a>
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">{{ f.file_size_display }} • {{ f.uploaded_by.display_name }}</div>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No files uploaded</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <h3>Module Forum</h3>
+    <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Communicate directly with the module team.</p>
+    
+    <div style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+        {% for post in forum_posts %}
+        <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+            <div class="avatar" style="background:{{ post.author.avatar_color|default:'#6366f1' }};width:32px;height:32px;font-size:12px;border-radius:8px;flex-shrink:0;">
+                {{ post.author.initials|default:post.author.username|slice:":2"|upper }}
+            </div>
+            <div>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:13px;font-weight:600;color:var(--text-primary);">{{ post.author.display_name }}</span>
+                    <span style="font-size:11px;color:var(--text-muted);">{{ post.created_at|timesince }} ago</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;">{{ post.content|linebreaksbr }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">No messages yet. Start the conversation!</div>
+        {% endfor %}
+    </div>
+    
+    <form method="post" style="margin-top:14px;">
+        {% csrf_token %}
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div class="avatar" style="background:{{ user.avatar_color|default:'#6366f1' }};width:32px;height:32px;font-size:12px;border-radius:8px;flex-shrink:0;margin-top:2px;">
+                {{ user.initials|default:user.username|slice:":2"|upper }}
+            </div>
+            <div style="flex:1;">
+                {{ forum_form.content }}
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;"><i class="fas fa-paper-plane"></i> Post Message</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

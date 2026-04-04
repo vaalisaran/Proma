@@ -5,6 +5,9 @@
 {% if request.user == note.author or request.user == project.manager or request.user.is_admin %}
 <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
 {% endif %}
+{% if request.user == project.manager or request.user.is_admin or request.user == note.author %}
+<a href="{% url 'tasks:kb_access' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-lock"></i> Manage Access</a>
+{% endif %}
 <a href="{% url 'tasks:kb_list' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-list"></i> All Notes</a>
 {% endblock %}
 

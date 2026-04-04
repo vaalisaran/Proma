@@ -6,10 +6,32 @@ from django.contrib import messages
 from django.http import FileResponse, Http404, JsonResponse, HttpResponse
 from django.db.models import Q, Sum, Count
 from django.views.decorators.http import require_POST
-from .models import ProjectFile, FileCategory, FileComment
+from .models import ProjectFile, FileCategory, FileComment, DocumentAccessRight
 from .forms import FileUploadForm, MultiFileUploadForm, FileCategoryForm, FileEditForm, FileCommentForm
 from tasks.decorators import admin_required
-from tasks.models import Project, Task
+from tasks.models import Project, Task, ModuleMember
+
+def check_file_access(pf, user, access_type='view'):
+    if pf.uploaded_by == user:
+        return True
+    if pf.project and pf.project.manager == user:
+        return True
+        
+    explicit = DocumentAccessRight.objects.filter(file=pf, user=user).first()
+    if explicit:
+        if access_type == 'view': return explicit.can_view
+        if access_type == 'edit': return explicit.can_edit
+        if access_type == 'delete': return explicit.can_delete
+        
+    if access_type != 'view':
+        return False
+        
+    module = pf.module or (pf.task.module if pf.task else None)
+    if module:
+         return ModuleMember.objects.filter(module=module, user=user).exists()
+    elif pf.project:
+         return pf.project.members.filter(pk=user.pk).exists()
+    return False
 
 
 # ─── FILE LIST ────────────────────────────────────────────────────────────────
@@ -20,18 +42,22 @@ def file_list(request):
     search      = request.GET.get('q', '')
     type_filter = request.GET.get('type', '')
     proj_filter = request.GET.get('project', '')
+    module_filter = request.GET.get('module', '')
 
-    if user.is_admin:
-        files = ProjectFile.objects.all()
-        projects = Project.objects.all()
-    else:
-        accessible_projects = Project.objects.filter(
-            Q(manager=user) | Q(members=user)
-        ).distinct()
-        files = ProjectFile.objects.filter(
-            Q(project__in=accessible_projects) | Q(uploaded_by=user)
-        ).distinct()
-        projects = accessible_projects
+    accessible_projects = Project.objects.filter(
+        Q(manager=user) | Q(members=user)
+    ).distinct()
+    
+    q_filter = (
+        Q(uploaded_by=user) |
+        Q(project__manager=user) |
+        Q(project__members=user, module__isnull=True, task__module__isnull=True) |
+        Q(module__members__user=user) |
+        Q(task__module__members__user=user)
+    )
+    
+    files = ProjectFile.objects.filter(q_filter).distinct()
+    projects = accessible_projects
 
     if search:
         files = files.filter(
@@ -43,6 +69,8 @@ def file_list(request):
         files = files.filter(file_type=type_filter)
     if proj_filter:
         files = files.filter(project_id=proj_filter)
+    if module_filter:
+        files = files.filter(module_id=module_filter)
 
     # Stats
     stats = {
@@ -186,16 +214,9 @@ def file_detail(request, pk):
     user = request.user
 
     # Access control
-    if not user.is_admin:
-        if pf.project:
-            has_access = (
-                pf.project.members.filter(pk=user.pk).exists() or
-                pf.project.manager == user or
-                pf.uploaded_by == user
-            )
-            if not has_access:
-                messages.error(request, 'You do not have access to this file.')
-                return redirect('files:file_list')
+    if not check_file_access(pf, user, 'view'):
+        messages.error(request, 'You do not have access to this file.')
+        return redirect('files:file_list')
 
     comments     = pf.comments.select_related('author').all()
     versions     = pf.versions.all() if not pf.parent_file else []
@@ -237,15 +258,8 @@ def file_download(request, pk):
     pf   = get_object_or_404(ProjectFile, pk=pk)
     user = request.user
 
-    if not user.is_admin:
-        if pf.project:
-            has_access = (
-                pf.is_public and pf.project.members.filter(pk=user.pk).exists() or
-                pf.project.manager == user or
-                pf.uploaded_by == user
-            )
-            if not has_access:
-                raise Http404
+    if not check_file_access(pf, user, 'view'):
+        raise Http404
 
     # Increment download counter
     ProjectFile.objects.filter(pk=pk).update(download_count=pf.download_count + 1)
@@ -269,15 +283,8 @@ def file_view(request, pk):
     pf = get_object_or_404(ProjectFile, pk=pk)
     user = request.user
 
-    if not user.is_admin:
-        if pf.project:
-            has_access = (
-                pf.project.members.filter(pk=user.pk).exists() or
-                pf.project.manager == user or
-                pf.uploaded_by == user
-            )
-            if not has_access:
-                raise Http404
+    if not check_file_access(pf, user, 'view'):
+        raise Http404
 
     try:
         mime, _ = mimetypes.guess_type(pf.original_name)
@@ -293,8 +300,8 @@ def file_view(request, pk):
 @login_required
 def file_edit(request, pk):
     pf = get_object_or_404(ProjectFile, pk=pk)
-    if pf.uploaded_by != request.user and not request.user.is_admin:
-        messages.error(request, 'You can only edit files you uploaded.')
+    if not check_file_access(pf, request.user, 'edit'):
+        messages.error(request, 'You do not have permission to edit this file.')
         return redirect('files:file_detail', pk=pk)
 
     form = FileEditForm(request.POST or None, instance=pf)
@@ -309,8 +316,8 @@ def file_edit(request, pk):
 @login_required
 def file_delete(request, pk):
     pf = get_object_or_404(ProjectFile, pk=pk)
-    if pf.uploaded_by != request.user and not request.user.is_admin:
-        messages.error(request, 'You can only delete files you uploaded.')
+    if not check_file_access(pf, request.user, 'delete'):
+        messages.error(request, 'You do not have permission to delete this file.')
         return redirect('files:file_detail', pk=pk)
 
     project = pf.project
@@ -339,13 +346,24 @@ def project_files(request, pk):
     cat_filter  = request.GET.get('category', '')
     search      = request.GET.get('q', '')
 
-    # Access check
-    if not user.is_admin:
-        if not (project.members.filter(pk=user.pk).exists() or project.manager == user):
-            messages.error(request, 'No access.')
-            return redirect('files:file_list')
+    # Access check (Removed admin override per requirements)
+    is_project_member = project.members.filter(pk=user.pk).exists() or project.manager == user
+    is_module_member = ModuleMember.objects.filter(module__project=project, user=user).exists()
+    
+    if not (is_project_member or is_module_member):
+        messages.error(request, 'No access to project files.')
+        return redirect('files:file_list')
 
-    files = project.files.all().select_related('uploaded_by', 'task', 'category')
+    # Filter files for visibility
+    q_filter = (
+        Q(uploaded_by=user) |
+        Q(project__manager=user) |
+        Q(project__members=user, module__isnull=True, task__module__isnull=True) |
+        Q(module__members__user=user) |
+        Q(task__module__members__user=user)
+    )
+    
+    files = project.files.filter(q_filter).select_related('uploaded_by', 'task', 'category').distinct()
     if type_filter: files = files.filter(file_type=type_filter)
     if cat_filter:  files = files.filter(category_id=cat_filter)
     if search:      files = files.filter(Q(original_name__icontains=search) | Q(title__icontains=search))
@@ -367,3 +385,40 @@ def project_files(request, pk):
         'cat_filter':  cat_filter,
         'search':      search,
     })
+
+# ─── FILE ACCESS MANAGEMENT ───────────────────────────────────────────────────
+
+@login_required
+def file_access(request, pk):
+    pf = get_object_or_404(ProjectFile, pk=pk)
+    if not (request.user.is_admin or (pf.project and pf.project.manager == request.user)):
+        messages.error(request, 'Only managers and admins can manage access rights.')
+        return redirect('files:file_detail', pk=pk)
+        
+    access_rights = DocumentAccessRight.objects.filter(file=pf)
+    from accounts.models import User
+    all_users = User.objects.filter(is_active=True)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'add':
+            user_id = request.POST.get('user_id')
+            can_view = request.POST.get('can_view') == 'on'
+            can_edit = request.POST.get('can_edit') == 'on'
+            can_delete = request.POST.get('can_delete') == 'on'
+            if user_id:
+                target_user = get_object_or_404(User, pk=user_id)
+                ar, created = DocumentAccessRight.objects.get_or_create(file=pf, user=target_user)
+                ar.can_view = can_view
+                ar.can_edit = can_edit
+                ar.can_delete = can_delete
+                ar.save()
+                messages.success(request, f'Access rights updated for {target_user.display_name}.')
+        elif action == 'remove':
+            ar_id = request.POST.get('access_id')
+            if ar_id:
+                DocumentAccessRight.objects.filter(pk=ar_id).delete()
+                messages.success(request, 'Access right removed.')
+        return redirect('files:file_access', pk=pk)
+        
+    return render(request, 'files/file_access.html', {'file': pf, 'access_rights': access_rights, 'all_users': all_users})

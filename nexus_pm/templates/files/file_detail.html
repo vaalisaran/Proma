@@ -192,6 +192,9 @@
                 <a href="{% url 'files:file_edit' file.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Details</a>
                 <a href="{% url 'files:file_delete' file.pk %}" class="btn btn-danger" style="width:100%;justify-content:flex-start;" onclick="return confirm('Delete this file?')"><i class="fas fa-trash"></i> Delete</a>
                 {% endif %}
+                {% if request.user.is_admin or user == file.project.manager %}
+                <a href="{% url 'files:file_access' file.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-lock"></i> Manage Access</a>
+                {% endif %}
             </div>
         </div>
     </div>

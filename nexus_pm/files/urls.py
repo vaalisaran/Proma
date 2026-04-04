@@ -11,5 +11,6 @@ urlpatterns = [
     path('<int:pk>/view/',                views.file_view,      name='file_view'),
     path('<int:pk>/edit/',                views.file_edit,      name='file_edit'),
     path('<int:pk>/delete/',              views.file_delete,    name='file_delete'),
+    path('<int:pk>/access/',              views.file_access,    name='file_access'),
     path('project/<int:pk>/',             views.project_files,  name='project_files'),
 ]

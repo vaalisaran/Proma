@@ -262,7 +262,7 @@
         {% endfor %}
         {% for msg in messages %}
         <div class="toast" style="{% if msg.tags == 'success' %}border-left-color:#10b981{% endif %}">
-            <i class="fas {% if msg.tags == 'success' %}fa-check-circle" style="color:#10b981"{% else %}fa-info-circle toast-icon{% endif %}></i>
+            <i class="fas {% if msg.tags == 'success' %}fa-check-circle{% else %}fa-info-circle toast-icon{% endif %}"{% if msg.tags == 'success' %} style="color:#10b981"{% endif %}></i>
             <span class="toast-text">{{ msg }}</span>
             <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
         </div>

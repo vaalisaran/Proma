@@ -131,10 +131,11 @@
                     <td><a href="{% url 'tasks:task_detail' task.pk %}" style="color:var(--text-primary); text-decoration:none; font-weight:500; font-size:13px;">{{ task.title }}</a></td>
                     <td style="font-size:12px;"><a href="{% url 'tasks:project_detail' task.project.pk %}" style="color:var(--accent); text-decoration:none;">{{ task.project.name }}</a></td>
                     <td>
-                        {% if task.assigned_to %}
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ task.assigned_to.initials }}</div>
-                            <span style="font-size:12px;">{{ task.assigned_to.display_name }}</span>
+                        {% if task.assignees.all %}
+                        <div style="display:flex; align-items:center; gap:2px; flex-wrap:wrap;">
+                            {% for assignee in task.assignees.all|slice:":3" %}
+                            <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                            {% endfor %}
                         </div>
                         {% else %}<span style="color:var(--text-muted); font-size:12px;">—</span>{% endif %}
                     </td>

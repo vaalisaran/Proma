@@ -95,6 +95,14 @@
                             <label class="form-label">Priority</label>
                             {{ form.priority }}
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">Budget</label>
+                            <div style="display:flex;align-items:center;">
+                                <span style="padding:10px 14px;background:var(--bg-secondary);border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);color:var(--text-muted);font-weight:600;">$</span>
+                                {{ form.budget }}
+                            </div>
+                            {% if form.budget.errors %}<div class="form-error">{{ form.budget.errors.0 }}</div>{% endif %}
+                        </div>
                         {% endif %}
                         <div class="form-group">
                             <label class="form-label">Project Manager</label>

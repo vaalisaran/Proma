@@ -71,6 +71,10 @@ class ProjectFile(models.Model):
     # Relations
     project     = models.ForeignKey('tasks.Project', on_delete=models.CASCADE,
                                     related_name='files', null=True, blank=True)
+    module      = models.ForeignKey('tasks.ProjectModule', on_delete=models.SET_NULL,
+                                    related_name='files', null=True, blank=True)
+    release     = models.ForeignKey('tasks.Release', on_delete=models.SET_NULL,
+                                    related_name='direct_files', null=True, blank=True)
     task        = models.ForeignKey('tasks.Task', on_delete=models.SET_NULL,
                                     related_name='files', null=True, blank=True)
     category    = models.ForeignKey(FileCategory, on_delete=models.SET_NULL,
@@ -207,3 +211,18 @@ class FileComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author} on {self.file}"
+
+
+class DocumentAccessRight(models.Model):
+    """Explicit access rights for a file or a knowledge base note."""
+    file = models.ForeignKey(ProjectFile, on_delete=models.CASCADE, null=True, blank=True, related_name='access_rights')
+    kb_note = models.ForeignKey('tasks.KnowledgeBaseNote', on_delete=models.CASCADE, null=True, blank=True, related_name='access_rights')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='document_access_rights')
+    can_view = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        doc = self.file or self.kb_note
+        return f"Access for {self.user} on {doc}"

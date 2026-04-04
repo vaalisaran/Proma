@@ -66,10 +66,11 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ['title', 'project', 'task_type', 'status_badge', 'priority_badge', 'assigned_to', 'due_date', 'is_overdue_badge']
+    list_display = ['title', 'project', 'task_type', 'status_badge', 'priority_badge', 'get_assignees', 'due_date', 'is_overdue_badge']
     list_filter = ['status', 'priority', 'task_type', 'project']
     search_fields = ['title', 'description']
-    raw_id_fields = ['project', 'assigned_to', 'created_by']
+    raw_id_fields = ['project', 'created_by']
+    filter_horizontal = ['assignees']
     date_hierarchy = 'created_at'
     actions = [mark_tasks_done]
     list_per_page = 25
@@ -89,6 +90,10 @@ class TaskAdmin(admin.ModelAdmin):
     @admin.display(description='Overdue', boolean=True)
     def is_overdue_badge(self, obj):
         return obj.is_overdue
+
+    @admin.display(description='Assignees')
+    def get_assignees(self, obj):
+        return ", ".join([user.username for user in obj.assignees.all()])
 
 
 # ─── Comment Admin ────────────────────────────────────────────────────────────

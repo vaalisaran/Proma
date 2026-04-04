@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}{{ release.name }} — {{ project.name }}{% endblock %}
+{% block page_title %}{{ release.name }}{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'tasks:release_download' release.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-download"></i> Checkout & Download</a>
+    {% if user.is_admin or user == project.manager %}
+    <a href="{% url 'tasks:release_edit' release.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+    <a href="{% url 'tasks:release_delete' release.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete</a>
+    {% endif %}
+    <a href="{% url 'tasks:release_list' project.pk %}" class="btn btn-secondary btn-sm">Back to Releases</a>
+{% endblock %}
+{% block content %}
+<div class="page-header" style="margin-bottom: 20px;">
+    <div class="page-header-left">
+        <h1>{{ release.name }}</h1>
+        <p>{{ release.description }}</p>
+        <div style="margin-top: 10px; display:flex; gap:10px;">
+            <span class="badge badge-purple">{{ release.get_release_type_display }}</span>
+            <span class="badge badge-blue">Status: {{ release.get_status_display }}</span>
+            <span class="badge badge-gray"><i class="fas fa-calendar"></i> Target: {{ release.target_date|default:"TBD" }}</span>
+        </div>
+    </div>
+</div>
+
+{% if user.is_admin or user == project.manager %}
+<div class="card" style="margin-bottom: 20px;">
+    <h4>Update Sprint Status</h4>
+    <form method="post" style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+        {% csrf_token %}
+        <select name="status" class="form-control" style="width: auto;">
+            <option value="planning" {% if release.status == 'planning' %}selected{% endif %}>Planning</option>
+            <option value="active" {% if release.status == 'active' %}selected{% endif %}>Active</option>
+            <option value="completed" {% if release.status == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Update</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div>
+                <h3 style="margin:0;">Sprint Tasks ({{ tasks.count }})</h3>
+                <p style="color:var(--text-muted); font-size:12px; margin:0;">Assign tasks to this release to manage the sprint workflow.</p>
+            </div>
+            {% if user.is_admin or user == project.manager %}
+            <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}&release={{ release.pk }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
+            {% endif %}
+        </div>
+        <ul style="list-style:none; padding:0;">
+            {% for t in tasks %}
+            <li style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <a href="{% url 'tasks:task_detail' t.pk %}">{{ t.title }}</a>
+                <span class="badge badge-blue" style="float:right;">{{ t.get_status_display }}</span>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No tasks have been assigned to this release sprint.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h3>Bundled Modules ({{ module_versions.count }})</h3>
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Module versions included when checking out this release.</p>
+        <ul style="list-style:none; padding:0;">
+            {% for mv in module_versions %}
+            <li style="padding: 10px 0; border-bottom: 1px solid var(--border);">
+                <strong>{{ mv.module.name }}</strong> 
+                <span class="badge badge-gray" style="float:right;">{{ mv.version_string|default:"latest" }}</span>
+                {% if mv.file %}
+                <br><small style="color:var(--text-muted);"><i class="fas fa-file"></i> {{ mv.file.original_name }}</small>
+                {% endif %}
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No specific module versions mapped to this release yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="grid-2" style="margin-top: 20px;">
+    <div class="card">
+        <h3>Release Files</h3>
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Files directly uploaded and attached to this release.</p>
+        <ul style="list-style:none; padding:0;">
+            {% for f in release.direct_files.all %}
+            <li style="padding: 10px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <a href="{{ f.file.url }}" target="_blank" style="font-weight: 500;">
+                        <i class="fas fa-file"></i> {{ f.original_name }}
+                    </a>
+                    <span style="font-size: 11px; color: var(--text-muted); margin-left: 10px;">{{ f.file_size|filesizeformat }}</span>
+                </div>
+                <span class="badge badge-gray">{{ f.get_file_type_display }}</span>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No files have been attached to this release directly.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    {% if user.is_admin or user == project.manager or request.user == release.author %}
+    <div class="card">
+        <h3>Upload Files</h3>
+        <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Upload binaries, release notes, or other files (any format).</p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="file" name="file" class="form-control" multiple required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

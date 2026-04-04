@@ -49,12 +49,17 @@
                         {% if form.project.errors %}<div class="form-error">{{ form.project.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Assign To</label>
-                        {{ form.assigned_to }}
-                        {% if form.assigned_to.errors %}<div class="form-error">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+                        <label class="form-label">Assignees</label>
+                        {{ form.assignees }}
+                        {% if form.assignees.errors %}<div class="form-error">{{ form.assignees.errors.0 }}</div>{% endif %}
                         {% if project %}
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;"><i class="fas fa-info-circle"></i> Only project members are shown.</div>
                         {% endif %}
+                    </div>
+                    <div class="form-group" id="module-container" style="display:block;">
+                        <label class="form-label">Module (Optional)</label>
+                        {{ form.module }}
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Select a project first to load its modules.</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Task Type</label>
@@ -104,4 +109,58 @@
         </div>
     </form>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const projectSel = document.getElementById('id_task_project');
+const moduleSel = document.getElementById('id_task_module');
+
+function loadProjectModules(projectId, keepModule) {
+    const moduleGroup = moduleSel ? moduleSel.closest('.form-group') : null;
+    
+    if (!projectId) {
+        if (moduleSel) {
+            moduleSel.innerHTML = '<option value="">— Select a project first —</option>';
+            moduleSel.disabled = true;
+        }
+        if (moduleGroup) moduleGroup.style.display = 'block';
+        return;
+    }
+    
+    moduleSel.disabled = false;
+    
+    fetch(`/tasks/api/project-modules/?project_id=${projectId}`)
+        .then(r => r.json())
+        .then(data => {
+            const saved = keepModule || (moduleSel ? moduleSel.value : '');
+            if (moduleSel) {
+                moduleSel.innerHTML = '<option value="">— No module selected —</option>';
+                (data.modules || []).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    if (String(m.id) === String(saved)) opt.selected = true;
+                    moduleSel.appendChild(opt);
+                });
+                
+                // Always show for everyone
+                const moduleGroup = moduleSel.closest('.form-group');
+                if (moduleGroup) {
+                    moduleGroup.style.display = 'block';
+                }
+            }
+        })
+        .catch(() => {});
+}
+
+if (projectSel) {
+    projectSel.addEventListener('change', function() {
+        loadProjectModules(this.value, '');
+    });
+    // On page load for edit mode, restore existing selections
+    if (projectSel.value) {
+        loadProjectModules(projectSel.value, '{{ form.module.value|default:"" }}');
+    }
+}
+</script>
 {% endblock %}

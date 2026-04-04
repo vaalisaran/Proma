@@ -51,7 +51,13 @@
             <option value="">All Projects</option>
             {% for p in projects %}<option value="{{ p.pk }}"{% if proj_filter == p.pk|stringformat:"s" %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
         </select>
-        {% if search or type_filter or proj_filter %}<a href="{% url 'files:file_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>{% endif %}
+        {% if modules %}
+        <select name="module" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Modules</option>
+            {% for m in modules %}<option value="{{ m.pk }}"{% if module_filter == m.pk|stringformat:"s" %} selected{% endif %}>{{ m.name }} ({{ m.project.name }})</option>{% endfor %}
+        </select>
+        {% endif %}
+        {% if search or type_filter or proj_filter or module_filter %}<a href="{% url 'files:file_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>{% endif %}
     </form>
     <div class="view-toggle">
         <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')"><i class="fas fa-th"></i></button>

@@ -26,6 +26,8 @@ class User(AbstractUser):
     designation = models.CharField(max_length=100, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
+    theme_preference = models.CharField(max_length=20, default='light')
+    email_notifications = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

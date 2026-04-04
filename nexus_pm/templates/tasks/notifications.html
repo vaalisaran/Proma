@@ -12,6 +12,23 @@
     </div>
 </div>
 
+<form method="get" style="display:flex; gap:10px; margin-bottom:20px; align-items:center; flex-wrap:wrap; max-width:700px;">
+    <select name="status" class="filter-select" onchange="this.form.submit()">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Notifications</option>
+        <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread Only</option>
+        <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+    </select>
+    <select name="type" class="filter-select" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        {% for val,label in type_choices %}
+        <option value="{{ val }}" {% if type_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    {% if status_filter != 'unread' or type_filter %}
+    <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Clear</a>
+    {% endif %}
+</form>
+
 <div style="max-width:700px">
     {% if notifications %}
     <div class="card" style="padding:0">
@@ -49,4 +66,10 @@
     </div>
     {% endif %}
 </div>
+
+{% if notifications %}
+<div style="max-width:700px; margin-top:20px;">
+    {% include 'pagination.html' %}
+</div>
+{% endif %}
 {% endblock %}

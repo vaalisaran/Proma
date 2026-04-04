@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Manage Members — {{ module.name }}{% endblock %}
+{% block page_title %}Manage Members{% endblock %}
+{% block topbar_actions %}
+    <a href="{% url 'tasks:module_detail' module.pk %}" class="btn btn-secondary btn-sm">Back to Module</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Manage Members for {{ module.name }}</h1>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3>Current Members</h3>
+        <ul style="list-style:none; padding:0; margin-top:10px;">
+            {% for m in current_members %}
+            <li style="padding: 12px 0; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong>{{ m.user.display_name }}</strong>
+                    <span class="badge badge-gray">{{ m.get_role_display }}</span>
+                </div>
+                <form method="post" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove">
+                    <input type="hidden" name="user_id" value="{{ m.user.pk }}">
+                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-times"></i> Remove</button>
+                </form>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No members assigned</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div class="card">
+        <h3>Add Member</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display:block;margin-bottom:5px;">Select User</label>
+                <select name="user_id" class="form-control" required>
+                    <option value="">— Select User —</option>
+                    {% for u in all_users %}
+                    <option value="{{ u.pk }}">{{ u.display_name }} ({{ u.team }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display:block;margin-bottom:5px;">Module Role</label>
+                <select name="role" class="form-control" required>
+                    <option value="designer">Designer</option>
+                    <option value="developer" selected>Developer</option>
+                    <option value="tester">Tester</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add User</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

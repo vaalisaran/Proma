@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Releases — {{ project.name }}{% endblock %}
+{% block page_title %}{{ project.name }} Releases{% endblock %}
+{% block topbar_actions %}
+    {% if user.is_admin or user == project.manager %}
+    <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Release</a>
+    {% endif %}
+    <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm">Back to Project</a>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Releases</h1>
+        <p>{{ releases.count }} release{{ releases.count|pluralize }} found</p>
+    </div>
+</div>
+
+{% if releases %}
+<div class="grid-3">
+    {% for release in releases %}
+    <div class="card" style="transition:var(--transition);cursor:pointer" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+            <span class="badge {% if release.release_type == 'phase' %}badge-purple{% else %}badge-blue{% endif %}">
+                {{ release.get_release_type_display }}
+            </span>
+            <span class="badge {% if release.status == 'active' %}badge-green{% elif release.status == 'planning' %}badge-blue{% else %}badge-gray{% endif %}">
+                {{ release.get_status_display }}
+            </span>
+        </div>
+
+        <a href="{% url 'tasks:release_detail' release.pk %}" style="text-decoration:none">
+            <h3 style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px">{{ release.name }}</h3>
+        </a>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">
+            {{ release.description|truncatewords:15|default:"No description." }}
+        </p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
+            <span style="font-size:11px;color:var(--text-muted);"><i class="fas fa-calendar"></i> Target: {{ release.target_date|default:"TBD" }}</span>
+        </div>
+
+        <div style="display:flex;gap:6px;margin-top:12px">
+            <a href="{% url 'tasks:release_detail' release.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-eye"></i> View</a>
+            
+            {% if user.is_admin or user == project.manager %}
+            <a href="{% url 'tasks:release_edit' release.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-edit"></i> Edit</a>
+            <a href="{% url 'tasks:release_delete' release.pk %}" class="btn btn-danger btn-sm" title="Delete Release"><i class="fas fa-trash"></i></a>
+            {% endif %}
+            
+            <a href="{% url 'tasks:release_download' release.pk %}" class="btn btn-primary btn-sm" title="Download ZIP"><i class="fas fa-download"></i></a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <h3>No releases found</h3>
+        <p>No releases have been created for this project yet.</p>
+        {% if user.is_admin or user == project.manager %}
+        <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-plus"></i> New Release</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -102,16 +102,15 @@
 
                     <div class="form-group">
                         <label class="form-label">Assign To</label>
-                        <select name="assigned_to" id="id_assigned_to" class="form-control">
-                            <option value="">— Unassigned —</option>
-                            {% for u in form.assigned_to.field.queryset %}
-                            <option value="{{ u.pk }}" {% if form.assigned_to.value == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.display_name }}</option>
+                        <select name="assignees" id="id_assignees" class="form-control" multiple>
+                            {% for u in form.assignees.field.queryset %}
+                            <option value="{{ u.pk }}" {% if u.pk|stringformat:"s" in form.assignees.value|default:"" %}selected{% endif %}>{{ u.display_name }}</option>
                             {% endfor %}
                         </select>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                            <i class="fas fa-info-circle"></i> Select a project first to see its members.
+                            <i class="fas fa-info-circle"></i> Select a project first to see its members. Hold Ctrl/Cmd to select multiple.
                         </div>
-                        {% if form.assigned_to.errors %}<div class="form-error">{{ form.assigned_to.errors.0 }}</div>{% endif %}
+                        {% if form.assignees.errors %}<div class="form-error">{{ form.assignees.errors.0 }}</div>{% endif %}
                     </div>
 
                     <div class="form-group">
@@ -165,16 +164,16 @@
 {% block extra_js %}
 <script>
 const projectSel  = document.getElementById('id_bug_project');
-const assignedSel = document.getElementById('id_assigned_to');
+const assignedSel = document.getElementById('id_assignees');
 const linkedSel   = document.getElementById('id_linked_task');
 
 // Store current selections so we can restore them after AJAX reload
-const currentAssignee = assignedSel ? assignedSel.value : '';
+const currentAssignees = assignedSel ? Array.from(assignedSel.selectedOptions).map(o => o.value) : [];
 const currentTask     = linkedSel   ? linkedSel.value   : '';
 
-function loadProjectData(projectId, keepAssignee, keepTask) {
+function loadProjectData(projectId, keepAssignees, keepTask) {
     if (!projectId) {
-        resetSelect(assignedSel, '— Unassigned —');
+        assignedSel.innerHTML = '';
         resetSelect(linkedSel,   '— None —');
         return;
     }
@@ -183,13 +182,20 @@ function loadProjectData(projectId, keepAssignee, keepTask) {
     fetch(`/tasks/api/project-members/?project_id=${projectId}`)
         .then(r => r.json())
         .then(data => {
-            const saved = keepAssignee || assignedSel.value;
-            resetSelect(assignedSel, '— Unassigned —');
+            let saved = keepAssignees || [];
+            if (!Array.isArray(saved)) {
+                try {
+                    saved = JSON.parse(saved);
+                } catch(e) {
+                    saved = [saved];
+                }
+            }
+            assignedSel.innerHTML = '';
             (data.members || []).forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.id;
                 opt.textContent = m.name;
-                if (String(m.id) === String(saved)) opt.selected = true;
+                if (saved.includes(String(m.id))) opt.selected = true;
                 assignedSel.appendChild(opt);
             });
         })
@@ -218,12 +224,12 @@ function resetSelect(sel, emptyLabel) {
 
 if (projectSel) {
     projectSel.addEventListener('change', function() {
-        loadProjectData(this.value, '', '');
+        loadProjectData(this.value, [], '');
     });
 
     // On page load for edit mode, restore existing selections
     if (projectSel.value) {
-        loadProjectData(projectSel.value, '{{ form.assigned_to.value }}', '{{ form.linked_task.value }}');
+        loadProjectData(projectSel.value, currentAssignees, '{{ form.linked_task.value }}');
     }
 }
 </script>

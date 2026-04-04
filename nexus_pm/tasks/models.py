@@ -84,6 +84,37 @@ class Project(models.Model):
         self.save(update_fields=['progress'])
 
 
+class ProjectModule(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='modules')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.project.name} - {self.name}"
+
+
+class ModuleMember(models.Model):
+    ROLE_CHOICES = [
+        ('designer', 'Designer'),
+        ('developer', 'Developer'),
+        ('tester', 'Tester'),
+    ]
+    module = models.ForeignKey(ProjectModule, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='module_memberships')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='developer')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('module', 'user')
+
+    def __str__(self):
+        return f"{self.user} ({self.get_role_display()}) in {self.module.name}"
+
+
 class Task(models.Model):
     STATUS_CHOICES = [
         ('todo', 'To Do'),
@@ -109,12 +140,14 @@ class Task(models.Model):
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    module = models.ForeignKey('ProjectModule', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    release = models.ForeignKey('Release', on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
     task_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='task')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
-    assigned_to = models.ForeignKey(
+    assignees = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL, null=True, blank=True,
+        blank=True,
         related_name='assigned_tasks'
     )
     created_by = models.ForeignKey(
@@ -224,7 +257,7 @@ class BugReport(models.Model):
     description = models.TextField()
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='bug_reports', null=True, blank=True)
     reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reported_bugs')
-    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_bugs')
+    assignees = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='assigned_bugs')
     severity = models.CharField(max_length=10, choices=SEVERITY_CHOICES, default='medium')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     steps_to_reproduce = models.TextField(blank=True)
@@ -271,6 +304,7 @@ class CalendarEvent(models.Model):
 
 class KnowledgeBaseNote(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='kb_notes')
+    module = models.ForeignKey('ProjectModule', on_delete=models.SET_NULL, related_name='kb_notes', null=True, blank=True)
     title = models.CharField(max_length=200)
     content = models.TextField(help_text="Markdown format supported")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -352,17 +386,54 @@ class PipelineRun(models.Model):
         return f"{self.name} - {self.get_status_display()} ({self.project.name})"
 
 class Release(models.Model):
+    TYPE_CHOICES = [
+        ('partial', 'Partial (Minor/Nightly)'),
+        ('phase', 'Phase (Major)'),
+    ]
+    STATUS_CHOICES = [
+        ('planning', 'Planning'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+    ]
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='releases')
-    version = models.CharField(max_length=50, help_text="e.g. v1.0.0")
-    title = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, help_text="e.g. May 2025 Release")
+    release_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='partial')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning')
     description = models.TextField(blank=True, help_text="Release notes (Markdown supported)")
+    target_date = models.DateField(null=True, blank=True)
     release_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    files = models.ManyToManyField('files.ProjectFile', blank=True, related_name='releases', help_text="Build artifacts")
 
     class Meta:
         ordering = ['-release_date']
-        unique_together = ('project', 'version')
+        unique_together = ('project', 'name')
 
     def __str__(self):
-        return f"{self.project.name} - {self.version}"
+        return f"{self.project.name} - {self.name}"
+
+
+class ReleaseModuleVersion(models.Model):
+    release = models.ForeignKey(Release, on_delete=models.CASCADE, related_name='module_versions')
+    module = models.ForeignKey('ProjectModule', on_delete=models.CASCADE, related_name='release_versions')
+    version_string = models.CharField(max_length=50, blank=True)
+    file = models.ForeignKey('files.ProjectFile', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
+    class Meta:
+        unique_together = ('release', 'module')
+
+    def __str__(self):
+        return f"{self.module.name} ({self.version_string}) for {self.release.name}"
+
+class ModuleForumPost(models.Model):
+    module = models.ForeignKey(ProjectModule, on_delete=models.CASCADE, related_name='forum_posts')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Post by {self.author} in {self.module.name}"

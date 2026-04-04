@@ -3,7 +3,7 @@
 {% block page_title %}Task Detail{% endblock %}
 
 {% block topbar_actions %}
-{% if user.is_admin or user.is_project_manager %}
+{% if user.is_admin or user == task.created_by %}
 <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
 <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i></a>
 {% endif %}
@@ -68,8 +68,12 @@
                     <i class="fas {% if sub.status == 'done' %}fa-check-circle{% elif sub.status == 'in_progress' %}fa-spinner{% else %}fa-circle{% endif %}"
                        style="color:{% if sub.status == 'done' %}var(--green){% elif sub.status == 'in_progress' %}var(--accent){% else %}var(--text-muted){% endif %}; flex-shrink:0;"></i>
                     <a href="{% url 'tasks:task_detail' sub.pk %}" style="color:var(--text-primary); text-decoration:none; font-size:13px; flex:1;">{{ sub.title }}</a>
-                    {% if sub.assigned_to %}
-                    <div class="avatar" style="background:{{ sub.assigned_to.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ sub.assigned_to.initials }}</div>
+                    {% if sub.assignees.all %}
+                    <div style="display:flex;gap:2px;">
+                        {% for assignee in sub.assignees.all|slice:":3" %}
+                        <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                        {% endfor %}
+                    </div>
                     {% endif %}
                     <span class="badge {% if sub.status == 'done' %}badge-green{% elif sub.status == 'in_progress' %}badge-blue{% elif sub.status == 'blocked' %}badge-red{% else %}badge-gray{% endif %}" style="font-size:10px;">{{ sub.get_status_display }}</span>
                 </div>
@@ -129,6 +133,7 @@
     <div style="display:flex; flex-direction:column; gap:14px;">
 
         <!-- Quick Status -->
+        {% if user in task.assignees.all or user.is_admin %}
         <div class="card">
             <div class="card-title" style="margin-bottom:12px;"><i class="fas fa-exchange-alt" style="color:var(--accent); margin-right:6px;"></i>Update Status</div>
             <div style="display:flex; flex-direction:column; gap:5px;">
@@ -144,6 +149,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 
         <!-- Details -->
         <div class="card">
@@ -155,11 +161,15 @@
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                     <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-user" style="width:14px;"></i> Assigned To</span>
-                    {% if task.assigned_to %}
-                    <a href="{% url 'accounts:user_detail' task.assigned_to.pk %}" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
-                        <div class="avatar" style="background:{{ task.assigned_to.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ task.assigned_to.initials }}</div>
-                        <span style="font-size:12px; color:var(--text-primary);">{{ task.assigned_to.display_name }}</span>
-                    </a>
+                    {% if task.assignees.all %}
+                    <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+                        {% for assignee in task.assignees.all %}
+                        <a href="{% url 'accounts:user_detail' assignee.pk %}" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
+                            <div class="avatar" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                            <span style="font-size:12px; color:var(--text-primary);">{{ assignee.display_name }}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
                     {% else %}
                     <span style="color:var(--text-muted); font-size:12px;">Unassigned</span>
                     {% endif %}
@@ -210,14 +220,16 @@
         <div class="card">
             <div class="card-title" style="margin-bottom:12px;">Actions</div>
             <div style="display:flex; flex-direction:column; gap:7px;">
-                {% if user.is_admin or user.is_project_manager %}
+                {% if user.is_admin or user == task.created_by %}
                 <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Task</a>
+                {% endif %}
+                {% if user.is_admin or user.is_project_manager %}
                 <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-code-branch"></i> Add Subtask</a>
                 {% endif %}
                 <a href="{% url 'tasks:bug_create' %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-bug"></i> Report Bug</a>
                 <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-paperclip"></i> Attach File</a>
                 <a href="{% url 'tasks:project_detail' task.project.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-folder"></i> View Project</a>
-                {% if user.is_admin or user.is_project_manager %}
+                {% if user.is_admin or user == task.created_by %}
                 <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger" style="width:100%; justify-content:flex-start;" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i> Delete Task</a>
                 {% endif %}
             </div>
