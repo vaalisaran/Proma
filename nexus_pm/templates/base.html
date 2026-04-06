@@ -93,6 +93,12 @@
             letter-spacing: 0.5px;
         }
         .logo-text span { color: var(--accent); }
+        .logo-subtitle {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            letter-spacing: 0.4px;
+        }
 
         .sidebar-nav {
             flex: 1;
@@ -669,11 +675,31 @@
         <div class="sidebar-logo">
             <a href="{% url 'tasks:dashboard' %}" class="logo-mark">
                 <div class="logo-icon">N</div>
-                <div class="logo-text">IIAP <span>PM</span></div>
+                <div>
+                    <div class="logo-text">IIAP <span>PM</span></div>
+                    <div class="logo-subtitle">Project Management Tool</div>
+                </div>
             </a>
         </div>
 
         <div class="sidebar-nav">
+            {% if user.is_admin %}
+            <div class="nav-section-label">Admin Workspace</div>
+            <a href="{% url 'tasks:project_list' %}" class="nav-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-folder-open"></i><span>Projects</span>
+            </a>
+            <a href="{% url 'tasks:bug_list' %}" class="nav-item {% if 'bug' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-bug"></i><span>Bug Reports</span>
+            </a>
+            <a href="{% url 'tasks:notifications' %}" class="nav-item {% if 'notification' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+                {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
+            </a>
+            <a href="{% url 'accounts:user_list' %}" class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-users"></i><span>Users</span>
+            </a>
+            {% else %}
             <div class="nav-section-label">Overview</div>
             <a href="{% url 'tasks:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <i class="fas fa-th-large"></i><span>Dashboard</span>
@@ -714,11 +740,6 @@
                 {% if unread_count %}<span class="nav-badge">{{ unread_count }}</span>{% endif %}
             </a>
 
-            {% if user.is_admin %}
-            <div class="nav-section-label">Admin</div>
-            <a href="{% url 'accounts:user_list' %}" class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-users"></i><span>Users</span>
-            </a>
             {% endif %}
         </div>
 

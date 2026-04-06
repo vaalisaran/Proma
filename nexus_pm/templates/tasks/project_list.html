@@ -2,7 +2,7 @@
 {% block title %}Projects — IIAP PM{% endblock %}
 {% block page_title %}Projects{% endblock %}
 {% block topbar_actions %}
-    {% if user.is_admin or user.is_project_manager %}
+    {% if user.is_project_manager %}
     <a href="{% url 'tasks:project_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Project</a>
     {% endif %}
 {% endblock %}
@@ -121,7 +121,7 @@
         <i class="fas fa-folder-open"></i>
         <h3>No projects found</h3>
         <p>{% if search or module_filter or status_filter %}Try adjusting your filters.{% else %}Create your first project to get started.{% endif %}</p>
-        {% if user.is_admin or user.is_project_manager %}
+        {% if user.is_project_manager %}
         <a href="{% url 'tasks:project_create' %}" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-plus"></i> New Project</a>
         {% endif %}
     </div>

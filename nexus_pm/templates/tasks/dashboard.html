@@ -2,10 +2,6 @@
 {% block title %}Dashboard — IIAP PM{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 {% block topbar_actions %}
-    {% if user.is_admin or user.is_project_manager %}
-    <a href="{% url 'tasks:project_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Project</a>
-    {% endif %}
-    <a href="{% url 'tasks:task_create' %}" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> New Task</a>
 {% endblock %}
 
 {% block content %}

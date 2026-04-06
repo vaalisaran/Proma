@@ -224,6 +224,9 @@ def project_detail(request, pk):
 @manager_or_admin_required
 def project_edit(request, pk):
     project = get_object_or_404(Project, pk=pk)
+    if request.user.is_project_manager and request.user != project.manager:
+        messages.error(request, 'Only the assigned project manager can edit this project.')
+        return redirect('tasks:project_detail', pk=project.pk)
     old_members = set(project.members.values_list('pk', flat=True))
     form = ProjectForm(request.POST or None, instance=project, user=request.user)
     if request.method == 'POST' and form.is_valid():
@@ -842,8 +845,8 @@ def event_create(request):
 @login_required
 def reports(request):
     if request.user.is_admin:
-        projects = Project.objects.all()
-        tasks    = Task.objects.all()
+        messages.info(request, 'Reports are not available in admin mode.')
+        return redirect('tasks:project_list')
     else:
         projects = Project.objects.filter(Q(manager=request.user) | Q(members=request.user)).distinct()
         tasks    = get_visible_tasks_qs(request.user, Task.objects.filter(project__in=projects))
