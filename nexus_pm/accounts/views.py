@@ -116,7 +116,7 @@ def user_detail(request, pk):
     from tasks.models import Project, Task
     profile_user = get_object_or_404(User, pk=pk)
 
-    assigned_tasks = Task.objects.filter(assigned_to=profile_user).select_related('project')
+    assigned_tasks = Task.objects.filter(assignees=profile_user).select_related('project')
     managed_projects = Project.objects.filter(manager=profile_user)
     member_projects = Project.objects.filter(members=profile_user)
 
@@ -209,7 +209,7 @@ def user_toggle_active(request, pk):
 def profile_view(request):
     from tasks.models import Task, Project
     u = request.user
-    my_tasks = Task.objects.filter(assigned_to=u)
+    my_tasks = Task.objects.filter(assignees=u)
     my_projects = Project.objects.filter(Q(manager=u) | Q(members=u)).distinct()
     task_stats = {
         'total': my_tasks.count(),

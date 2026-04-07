@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge Base — IIAP PM{% endblock %}
+{% block page_title %}Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Knowledge Base</h1>
+        <p>{{ notes.count }} note{{ notes.count|pluralize }}</p>
+    </div>
+    <div class="page-header-right">
+        <a href="{% url 'tasks:kb_create_global' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Note</a>
+    </div>
+</div>
+
+<div class="card" style="padding:0">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Project</th>
+                    <th>Author</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for note in notes %}
+                <tr>
+                    <td>
+                        <a href="{% url 'tasks:kb_detail' note.pk %}" style="color:var(--text-primary);text-decoration:none;font-weight:500;">
+                            <i class="fas fa-file-alt" style="color:var(--text-muted);margin-right:8px;"></i> {{ note.title }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{% url 'tasks:project_detail' note.project.pk %}" style="color:var(--text-primary);text-decoration:none;">
+                            {{ note.project.name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if note.author %}
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <div class="avatar" style="background:{{ note.author.avatar_color }}">{{ note.author.initials }}</div>
+                            <span style="font-size:12px">{{ note.author.display_name }}</span>
+                        </div>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ note.updated_at|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <div style="display:flex;gap:4px">
+                            <a href="{% url 'tasks:kb_detail' note.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-eye"></i></a>
+                            {% if request.user == note.author or request.user == note.project.manager or request.user.is_admin %}
+                            <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5"><div class="empty-state"><i class="fas fa-book"></i><h3>No notes available</h3><p>Visit a project knowledge base to create and manage notes.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

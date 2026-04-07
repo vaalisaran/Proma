@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}New Knowledge Base Note — IIAP PM{% endblock %}
+{% block page_title %}Create New Note{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>Select a project</h1>
+        <p>Choose a project to add your note to.</p>
+    </div>
+</div>
+
+<div class="card" style="padding:20px; max-width: 640px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="project_id">Project</label>
+            <select id="project_id" name="project_id" class="form-control">
+                <option value="">Select a project</option>
+                {% for project in projects %}
+                <option value="{{ project.pk }}">{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+            <button type="submit" class="btn btn-primary">Continue</button>
+            <a href="{% url 'tasks:kb_overview' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

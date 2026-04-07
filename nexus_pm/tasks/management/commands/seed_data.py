@@ -249,7 +249,10 @@ class Command(BaseCommand):
 
         for td in tasks_data:
             if not Task.objects.filter(title=td['title'], project=td['project']).exists():
-                Task.objects.create(**td)
+                assigned_to = td.pop('assigned_to', None)  # Extract assigned_to before create
+                task = Task.objects.create(**td)
+                if assigned_to:
+                    task.assignees.add(assigned_to)  # Add as assignee using M2M
                 self.stdout.write(f'  Created task: {td["title"][:50]}')
 
         # Update project progress
@@ -285,7 +288,10 @@ class Command(BaseCommand):
         ]
         for bd in bugs_data:
             if not BugReport.objects.filter(title=bd['title']).exists():
-                BugReport.objects.create(**bd)
+                assigned_to = bd.pop('assigned_to', None)  # Extract assigned_to before create
+                bug = BugReport.objects.create(**bd)
+                if assigned_to:
+                    bug.assignees.add(assigned_to)  # Add as assignee using M2M
                 self.stdout.write(f'  Created bug: {bd["title"][:50]}')
 
         # ── CREATE CALENDAR EVENTS ────────────────────────────────────────────

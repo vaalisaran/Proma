@@ -6,13 +6,23 @@
 <div class="page-header">
     <div class="page-header-left">
         <h1><a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> KB Notes</a> / {{ title }}</h1>
-        <p>Note for project: {{ project.name }}</p>
+        <p>
+            Note for project: {{ project.name }}
+            {% if module %}· Module: {{ module.name }}{% endif %}
+        </p>
     </div>
 </div>
 
 <div class="card">
     <form method="post" style="max-width: 800px;">
         {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label" for="markdownFileInput">Import markdown file</label>
+            <input type="file" id="markdownFileInput" accept=".md,.markdown,.txt">
+            <small class="form-text" style="color:var(--text-muted);font-size:12px;margin-top:4px;display:block;">
+                Select an offline markdown file; its contents will be loaded into the note editor so you can review and save it.
+            </small>
+        </div>
         {% for field in form %}
             <div class="form-group">
                 <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }} {% if field.field.required %}*{% endif %}</label>
@@ -32,4 +42,26 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('markdownFileInput');
+    const contentField = document.getElementById('id_content');
+    if (!fileInput || !contentField) return;
+
+    fileInput.addEventListener('change', function() {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result || '';
+            // Replace existing content with imported markdown
+            contentField.value = text;
+        };
+        reader.readAsText(file);
+    });
+});
+</script>
 {% endblock %}

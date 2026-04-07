@@ -52,17 +52,38 @@
     
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <h3 style="margin:0;">Files ({{ files.count }})</h3>
+            <h3 style="margin:0;">Resources</h3>
+            {% if user == project.manager %}
+            <a href="{% url 'tasks:kb_create' project.pk %}?module={{ module.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-sticky-note"></i> New Note</a>
+            {% endif %}
         </div>
-        <ul style="list-style:none; padding:0; margin-top:10px;">
+
+        <h4 style="font-size:13px;margin:0 0 6px 0;color:var(--text-muted);">Files ({{ files.count }})</h4>
+        <ul style="list-style:none; padding:0; margin-top:4px;margin-bottom:10px;">
             {% for f in files %}
-            <li style="padding: 8px 0; border-bottom: 1px solid var(--border);">
+            <li style="padding: 6px 0; border-bottom: 1px solid var(--border);">
                 <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }}; width: 16px; margin-right: 4px;"></i>
                 <a href="{% url 'files:file_detail' f.pk %}">{{ f.display_name }}</a>
                 <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">{{ f.file_size_display }} • {{ f.uploaded_by.display_name }}</div>
             </li>
             {% empty %}
             <li style="color:var(--text-muted)">No files uploaded</li>
+            {% endfor %}
+        </ul>
+
+        <h4 style="font-size:13px;margin:10px 0 6px 0;color:var(--text-muted);">Notes ({{ kbs.count }})</h4>
+        <ul style="list-style:none; padding:0; margin-top:4px;">
+            {% for note in kbs %}
+            <li style="padding: 6px 0; border-bottom: 1px solid var(--border);">
+                <a href="{% url 'tasks:kb_detail' note.pk %}" style="font-size:13px;color:var(--text-primary);text-decoration:none;">
+                    <i class="fas fa-file-alt" style="color:var(--text-muted);margin-right:6px;"></i>{{ note.title }}
+                </a>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                    {% if note.author %}{{ note.author.display_name }} • {% endif %}{{ note.updated_at|date:"M d, Y H:i" }}
+                </div>
+            </li>
+            {% empty %}
+            <li style="color:var(--text-muted)">No notes created yet</li>
             {% endfor %}
         </ul>
     </div>

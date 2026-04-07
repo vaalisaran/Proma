@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Count
 from django.utils import timezone
-from .models import Project, Task, Comment, Notification, BugReport, CalendarEvent, ProjectModule, ModuleMember, Release, ReleaseModuleVersion
+from .models import Project, Task, Comment, Notification, BugReport, CalendarEvent, ProjectModule, ModuleMember, Release, ReleaseModuleVersion, KnowledgeBaseNote
 from .forms import ProjectForm, TaskForm, CommentForm, BugReportForm, CalendarEventForm, ProjectModuleForm, ReleaseForm
 from .decorators import manager_or_admin_required, admin_required
 from accounts.models import User
@@ -28,6 +28,16 @@ def get_visible_tasks_qs(user, tasks_qs):
         Q(project__manager=user) |
         Q(assignees=user) |
         Q(created_by=user)
+    ).distinct()
+
+
+def get_visible_notes_qs(user):
+    if user.is_admin:
+        return KnowledgeBaseNote.objects.all()
+    return KnowledgeBaseNote.objects.filter(
+        Q(project__manager=user) |
+        Q(project__members=user) |
+        Q(access_rights__user=user, access_rights__can_view=True)
     ).distinct()
 
 # ─── DASHBOARD ───────────────────────────────────────────────────────────────
@@ -947,6 +957,32 @@ def check_kb_access(kb, user, access_type='view'):
     return False
 
 @login_required
+def kb_overview(request):
+    notes = get_visible_notes_qs(request.user)
+    return render(request, 'tasks/kb_overview.html', {'notes': notes})
+
+
+@login_required
+def kb_create_global(request):
+    if request.user.is_admin:
+        projects = Project.objects.all().order_by('name')
+    else:
+        projects = Project.objects.filter(
+            Q(manager=request.user) | Q(members=request.user)
+        ).distinct().order_by('name')
+
+    if request.method == 'POST':
+        project_id = request.POST.get('project_id')
+        if project_id:
+            return redirect('tasks:kb_create', pk=project_id)
+        messages.error(request, 'Select a project before creating a note.')
+
+    return render(request, 'tasks/kb_create_global.html', {
+        'projects': projects,
+    })
+
+
+@login_required
 def kb_list(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if not request.user.is_admin:
@@ -960,16 +996,26 @@ def kb_list(request, pk):
 @login_required
 def kb_create(request, pk):
     project = get_object_or_404(Project, pk=pk)
+    from .models import ProjectModule
+    module = None
+    module_id = request.GET.get('module')
+    if module_id:
+        try:
+            module = ProjectModule.objects.get(pk=module_id, project=project)
+        except ProjectModule.DoesNotExist:
+            module = None
     from .forms import KnowledgeBaseNoteForm
     form = KnowledgeBaseNoteForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         note = form.save(commit=False)
         note.project = project
+        if module:
+            note.module = module
         note.author = request.user
         note.save()
         messages.success(request, 'Note created.')
         return redirect('tasks:kb_list', pk=project.pk)
-    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'title': 'Create Note', 'action': 'Save Note'})
+    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'module': module, 'title': 'Create Note', 'action': 'Save Note'})
 
 
 @login_required
@@ -998,7 +1044,7 @@ def kb_edit(request, pk):
         form.save()
         messages.success(request, 'Note updated.')
         return redirect('tasks:kb_detail', pk=pk)
-    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'title': 'Edit Note', 'action': 'Update Note'})
+    return render(request, 'tasks/kb_form.html', {'form': form, 'project': project, 'module': note.module, 'title': 'Edit Note', 'action': 'Update Note'})
 
 @login_required
 def kb_access(request, pk):
