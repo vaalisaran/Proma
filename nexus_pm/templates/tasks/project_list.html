@@ -121,10 +121,12 @@
         <i class="fas fa-folder-open"></i>
         <h3>No projects found</h3>
         <p>{% if search or module_filter or status_filter %}Try adjusting your filters.{% else %}Create your first project to get started.{% endif %}</p>
-        {% if user.is_project_manager %}
-        <a href="{% url 'tasks:project_create' %}" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-plus"></i> New Project</a>
-        {% endif %}
     </div>
+    {% if user.is_project_manager %}
+    <div style="padding:20px;border-top:1px solid var(--border);text-align:left">
+        <a href="{% url 'tasks:project_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Project</a>
+    </div>
+    {% endif %}
 </div>
 {% endif %}
 

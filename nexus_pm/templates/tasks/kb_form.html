@@ -5,9 +5,19 @@
 {% block content %}
 <div class="page-header">
     <div class="page-header-left">
-        <h1><a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> KB Notes</a> / {{ title }}</h1>
+        <h1>
+            {% if project %}
+            <a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> KB Notes</a> / {{ title }}
+            {% else %}
+            <a href="{% url 'tasks:kb_overview' %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> KB Notes</a> / {{ title }}
+            {% endif %}
+        </h1>
         <p>
+            {% if project %}
             Note for project: {{ project.name }}
+            {% else %}
+            General note
+            {% endif %}
             {% if module %}· Module: {{ module.name }}{% endif %}
         </p>
     </div>
@@ -38,7 +48,11 @@
         
         <div style="margin-top:24px;display:flex;gap:12px;">
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
+            {% if project %}
             <a href="{% url 'tasks:kb_list' project.pk %}" class="btn btn-secondary">Cancel</a>
+            {% else %}
+            <a href="{% url 'tasks:kb_overview' %}" class="btn btn-secondary">Cancel</a>
+            {% endif %}
         </div>
     </form>
 </div>

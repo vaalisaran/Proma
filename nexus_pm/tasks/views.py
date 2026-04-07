@@ -1099,6 +1099,27 @@ def kb_access(request, pk):
         
     return render(request, 'tasks/kb_access.html', {'note': note, 'access_rights': access_rights, 'all_users': all_users})
 
+@login_required
+def kb_delete(request, pk):
+    from .models import KnowledgeBaseNote
+    note = get_object_or_404(KnowledgeBaseNote, pk=pk)
+    project = note.project
+    
+    if not check_kb_access(note, request.user, 'delete'):
+        messages.error(request, 'You do not have permission to delete this note.')
+        return redirect('tasks:kb_detail', pk=pk)
+    
+    if request.method == 'POST':
+        title = note.title
+        note.delete()
+        messages.success(request, f'Note "{title}" has been deleted.')
+        if project:
+            return redirect('tasks:kb_list', pk=project.pk)
+        else:
+            return redirect('tasks:kb_overview')
+    
+    return render(request, 'tasks/kb_confirm_delete.html', {'note': note, 'project': project})
+
 # ─── CI/CD & RELEASES ────────────────────────────────────────────────────────
 @login_required
 def project_cicd(request, pk):

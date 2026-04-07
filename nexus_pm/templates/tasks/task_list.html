@@ -144,13 +144,19 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8"><div class="empty-state"><i class="fas fa-check-square"></i><h3>No tasks found</h3><p>{% if search or status_filter or priority_filter or project_filter %}Adjust your filters.{% else %}<a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-sm" style="margin-top:10px"><i class="fas fa-plus"></i> Create Task</a>{% endif %}</p></div></td></tr>
+                <tr><td colspan="8"><div class="empty-state"><i class="fas fa-check-square"></i><h3>No tasks found</h3><p>{% if search or status_filter or priority_filter or project_filter %}Adjust your filters.{% else %}Create your first task to get started.{% endif %}</p></div></td></tr>
                 {% endfor %}
             </tbody>
             {% endif %}
         </table>
     </div>
 </div>
+
+{% if not my_tasks and not search and not status_filter and not priority_filter and not project_filter %}
+<div class="card" style="margin-top:20px;padding:20px;text-align:left">
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Task</a>
+</div>
+{% endif %}
 
 {% include 'pagination.html' %}
 {% endblock %}

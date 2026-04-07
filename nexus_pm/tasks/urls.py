@@ -31,6 +31,7 @@ urlpatterns = [
     path('knowledge-base/<int:pk>/',            views.kb_detail,           name='kb_detail'),
     path('knowledge-base/<int:pk>/edit/',       views.kb_edit,             name='kb_edit'),
     path('knowledge-base/<int:pk>/access/',     views.kb_access,           name='kb_access'),
+    path('knowledge-base/<int:pk>/delete/',     views.kb_delete,           name='kb_delete'),
     path('tasks/',                              views.task_list,           name='task_list'),
     path('tasks/new/',                          views.task_create,         name='task_create'),
     path('tasks/<int:pk>/',                     views.task_detail,         name='task_detail'),
