@@ -1,14 +1,22 @@
 {% extends 'base.html' %}
-{% block title %}{{ note.title }} — {{ project.name }} — IIAP PM{% endblock %}
+{% block title %}{{ note.title }}{% if project %} — {{ project.name }}{% endif %} — IIAP PM{% endblock %}
 {% block page_title %}Knowledge Base{% endblock %}
 {% block topbar_actions %}
-{% if request.user == note.author or request.user == project.manager or request.user.is_admin %}
+{% if request.user == note.author or request.user.is_admin %}
+<a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
+{% elif project and request.user == project.manager %}
 <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
 {% endif %}
-{% if request.user == project.manager or request.user.is_admin or request.user == note.author %}
+{% if request.user == note.author or request.user.is_admin %}
+<a href="{% url 'tasks:kb_access' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-lock"></i> Manage Access</a>
+{% elif project and request.user == project.manager %}
 <a href="{% url 'tasks:kb_access' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-lock"></i> Manage Access</a>
 {% endif %}
+{% if project %}
 <a href="{% url 'tasks:kb_list' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-list"></i> All Notes</a>
+{% else %}
+<a href="{% url 'tasks:kb_overview' %}" class="btn btn-primary btn-sm"><i class="fas fa-list"></i> All Notes</a>
+{% endif %}
 {% endblock %}
 
 {% block extra_css %}
@@ -65,7 +73,13 @@
 {% block content %}
 <div class="page-header">
     <div class="page-header-left">
-        <h1><a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> {{ project.name }}</a> / <a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)">Knowledge Base</a> / {{ note.title }}</h1>
+        <h1>
+            {% if project %}
+            <a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> {{ project.name }}</a> / <a href="{% url 'tasks:kb_list' project.pk %}" style="text-decoration:none; color:var(--text-secondary)">Knowledge Base</a> / {{ note.title }}
+            {% else %}
+            <a href="{% url 'tasks:kb_overview' %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> Notes</a> / {{ note.title }}
+            {% endif %}
+        </h1>
         <p>By {% if note.author %}{{ note.author.display_name }}{% else %}Unknown{% endif %} &bull; Last updated {{ note.updated_at|date:"M d, Y H:i" }}</p>
     </div>
 </div>

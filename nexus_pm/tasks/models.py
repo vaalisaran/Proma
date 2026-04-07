@@ -303,7 +303,7 @@ class CalendarEvent(models.Model):
 
 
 class KnowledgeBaseNote(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='kb_notes')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='kb_notes', null=True, blank=True)
     module = models.ForeignKey('ProjectModule', on_delete=models.SET_NULL, related_name='kb_notes', null=True, blank=True)
     title = models.CharField(max_length=200)
     content = models.TextField(help_text="Markdown format supported")

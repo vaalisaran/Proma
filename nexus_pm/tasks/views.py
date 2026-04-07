@@ -37,7 +37,8 @@ def get_visible_notes_qs(user):
     return KnowledgeBaseNote.objects.filter(
         Q(project__manager=user) |
         Q(project__members=user) |
-        Q(access_rights__user=user, access_rights__can_view=True)
+        Q(access_rights__user=user, access_rights__can_view=True) |
+        Q(project__isnull=True, author=user)  # Include general notes authored by the user
     ).distinct()
 
 # ─── DASHBOARD ───────────────────────────────────────────────────────────────
@@ -954,7 +955,9 @@ def check_kb_access(kb, user, access_type='view'):
          return ModuleMember.objects.filter(module=kb.module, user=user).exists()
     elif kb.project:
          return kb.project.members.filter(pk=user.pk).exists()
-    return False
+    else:
+         # For general notes (no project), allow viewing by all authenticated users
+         return True
 
 @login_required
 def kb_overview(request):
@@ -971,14 +974,24 @@ def kb_create_global(request):
             Q(manager=request.user) | Q(members=request.user)
         ).distinct().order_by('name')
 
-    if request.method == 'POST':
+    from .forms import KnowledgeBaseNoteForm
+    form = KnowledgeBaseNoteForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        note = form.save(commit=False)
         project_id = request.POST.get('project_id')
         if project_id:
-            return redirect('tasks:kb_create', pk=project_id)
-        messages.error(request, 'Select a project before creating a note.')
+            try:
+                note.project = Project.objects.get(pk=project_id)
+            except Project.DoesNotExist:
+                note.project = None
+        note.author = request.user
+        note.save()
+        messages.success(request, 'Note created.')
+        return redirect('tasks:kb_overview')
 
     return render(request, 'tasks/kb_create_global.html', {
         'projects': projects,
+        'form': form,
     })
 
 
@@ -1055,7 +1068,7 @@ def kb_access(request, pk):
     note = get_object_or_404(KnowledgeBaseNote, pk=pk)
     project = note.project
     
-    if not (request.user.is_admin or project.manager == request.user or note.author == request.user):
+    if not (request.user.is_admin or note.author == request.user or (project and project.manager == request.user)):
         messages.error(request, 'Only managers, admins, and the author can manage access rights for this KB Note.')
         return redirect('tasks:kb_detail', pk=pk)
         
