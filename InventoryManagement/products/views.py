@@ -453,7 +453,6 @@ class ProductDetailView(View):
         # If there's an error or invalid action, redirect back
         return redirect('product-detail', pk=pk)
 
-@method_decorator(admin_required, name='dispatch')
 class CategoryListPageView(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -473,7 +472,6 @@ class CategoryListPageView(View):
             'page_obj': page_obj
         })
 
-@method_decorator(admin_required, name='dispatch')
 class CategoryPageView(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -523,7 +521,6 @@ class ProductEditView(View):
         messages.success(request, 'Product updated successfully!')
         return redirect('products')
 
-@method_decorator(admin_required, name='dispatch')
 class CategoryEditView(View):
     def get(self, request, pk):
         if not request.user.is_authenticated:
@@ -553,7 +550,6 @@ class ProductDeleteView(View):
         messages.success(request, 'Product deleted successfully!')
         return redirect('products')
 
-@method_decorator(admin_required, name='dispatch')
 class CategoryCreateView(View):
     def get(self, request):
         if not request.user.is_authenticated:
@@ -575,7 +571,6 @@ class CategoryCreateView(View):
         messages.success(request, 'Category added successfully!')
         return redirect('categories')
 
-@method_decorator(admin_required, name='dispatch')
 class CategoryDeleteView(View):
     def post(self, request, pk):
         if not request.user.is_authenticated:

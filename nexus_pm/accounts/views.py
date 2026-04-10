@@ -21,12 +21,15 @@ def login_view(request):
                 messages.error(request, 'Your account has been deactivated. Contact the administrator.')
                 return render(request, 'accounts/login.html', {'form': form})
             login(request, user)
+            if 'inv_user_id' in request.session:
+                del request.session['inv_user_id']
             messages.success(request, f'Welcome back, {user.display_name}!')
             next_url = request.POST.get('next') or request.GET.get('next', 'tasks:dashboard')
             return redirect(next_url)
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'accounts/login.html', {'form': form})
+
 def inventory_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -35,6 +38,9 @@ def inventory_login(request):
             from inventory.models import InventoryUser
             user = InventoryUser.objects.get(username=username)
             if user.check_password(password) and user.is_active:
+                # Flush any existing PM session completely
+                logout(request)
+                # Now set the inventory session
                 request.session['inv_user_id'] = user.id
                 messages.success(request, f'Welcome back, {user.username}!')
                 return redirect('/inventory/dashboard/')
@@ -48,11 +54,29 @@ def inventory_login(request):
     return redirect('accounts:login')
 
 
-@login_required
 def logout_view(request):
-    name = request.user.display_name
+
+    name = getattr(request.user, 'display_name', '')
+    
+    # Safely get the inventory user name if present
+    if 'inv_user_id' in request.session:
+        try:
+            from inventory.models import InventoryUser
+            inv_user = InventoryUser.objects.get(id=request.session['inv_user_id'])
+            if not name:
+                name = inv_user.username
+        except Exception:
+            pass
+            
+    # CRITICAL: Manually and cleanly flush the ENTIRE session dictionary to guarantee 100% wiped cookies
+    request.session.flush()
     logout(request)
-    messages.info(request, f'Goodbye, {name}! You have been logged out.')
+    
+    if name:
+        messages.info(request, f'Goodbye, {name}! You have been logged out.')
+    else:
+        messages.info(request, 'You have been logged out.')
+        
     return redirect('accounts:login')
 
 

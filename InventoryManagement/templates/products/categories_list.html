@@ -50,8 +50,8 @@
                                     <span class="text-secondary"><i class="fas fa-folder-open fa-lg"></i></span>
                                 {% endif %}
                             </td>
-                            <td><strong class="text-white" style="text-shadow:0 1px 2px #333;">{{ category.name|default:"" }}</strong></td>
-                            <td><span class="text-white-75" style="text-shadow:0 1px 2px #333;">{{ category.description|default:"" }}</span></td>
+                            <td><strong class="text-white" style="text-shadow:0 1px 2px #333;">{{ category.name|default:"-" }}</strong></td>
+                            <td><span class="text-white-75" style="text-shadow:0 1px 2px #333;">{{ category.description|default:"-" }}</span></td>
                             <td>
                                 <a href="{% url 'edit-category' category.pk %}" class="btn btn-edit-glass btn-sm" title="Edit">
                                     <i class="fas fa-edit"></i>

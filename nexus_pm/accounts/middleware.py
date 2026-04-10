@@ -14,7 +14,8 @@ class InventoryAccessMiddleware:
         path = request.path
         
         # Check standard user
-        is_pm_user = hasattr(request, 'user') and request.user.is_authenticated and not hasattr(request.user, 'role')
+        from django.contrib.auth.models import AnonymousUser
+        is_pm_user = hasattr(request, 'user') and request.user.is_authenticated and not isinstance(request.user, AnonymousUser)
         
         # Check explicit inventory session
         inv_user_id = request.session.get('inv_user_id')

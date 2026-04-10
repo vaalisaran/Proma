@@ -74,8 +74,8 @@
                         {% for product in products %}
                         <tr>
                             <td><strong>{{ product.name }}</strong></td>
-                            <td>{{ product.brand|default:"" }}</td>
-                            <td>{{ product.description|truncatechars:50|default:"" }}</td>
+                            <td>{{ product.brand|default:"-" }}</td>
+                            <td>{{ product.description|truncatechars:50|default:"-" }}</td>
                             <td><code>{{ product.sku }}</code></td>
                             <td><span class="badge bg-success">${{ product.price }}</span></td>
                             <td><span class="badge bg-info">{{ product.category.name }}</span></td>

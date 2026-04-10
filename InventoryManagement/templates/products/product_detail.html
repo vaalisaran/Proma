@@ -64,8 +64,8 @@
                     <p><strong>Brand:</strong> {{ product.brand|default:"Not specified" }}</p>
                     <p><strong>SKU:</strong> <span class="badge bg-dark">{{ product.sku }}</span></p>
                     <p><strong>Serial Number:</strong> <span class="badge bg-info">{{ product.serial_number|default:"Not specified" }}</span></p>
-                    <p><strong>Rack Number:</strong> {{ product.rack_number|default:"" }}</p>
-                    <p><strong>Shelf Number:</strong> {{ product.shelf_number|default:"" }}</p>
+                    <p><strong>Rack Number:</strong> {{ product.rack_number|default:"-" }}</p>
+                    <p><strong>Shelf Number:</strong> {{ product.shelf_number|default:"-" }}</p>
                 </div>
                 <div class="col-md-6">
                     <p><strong>Category:</strong> 

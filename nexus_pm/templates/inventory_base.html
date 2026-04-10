@@ -1093,10 +1093,6 @@
                 class="nav-item {% if 'audit' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-history me-2"></i><span>Audit Logs</span>
             </a>
-            <a href="{% url 'inventory-user-list' %}"
-                class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-users me-2"></i><span>Manage Users</span>
-            </a>
             <a href="{% url 'inventory_settings' %}"
                 class="nav-item {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-cog me-2"></i><span>Settings</span>

@@ -9,7 +9,6 @@ urlpatterns = [
     path('profile/', views.UserProfileView.as_view(), name='profile'),
 
     # HTML User Management pages
-    path('inventory-users/', views.PublicUserListView.as_view(), name='inventory-users'),
     path('profiles/', views.UserListView.as_view(), name='profiles-page'),
     path('profiles/add/', views.UserCreateView.as_view(), name='add-user'),
     path('profiles/edit/<int:pk>/', views.UserEditView.as_view(), name='edit-user'),

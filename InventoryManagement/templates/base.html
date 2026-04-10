@@ -557,13 +557,10 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
+                <!-- <ul class="navbar-nav me-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'dashboard-overview' %}"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'products' %}"><i class="fas fa-box me-1"></i>Products</a></li>
-                        {% if user.role and user.role.name == 'Admin' %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'categories' %}"><i class="fas fa-tags me-1"></i>Categories</a></li>
-                        {% endif %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'stock-in-page' %}"><i class="fas fa-box-arrow-in-down me-1"></i>Stock In</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'stock-out-page' %}"><i class="fas fa-box-arrow-up me-1"></i>Stock Out</a></li>
                         <li class="nav-item">
@@ -573,20 +570,8 @@
                         <li class="nav-item"><a class="nav-link" href="{% url 'inventory-serials-page' %}"><i class="fas fa-hashtag me-1"></i>Serials</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'inventory-limits-page' %}"><i class="fas fa-exclamation-triangle me-1"></i>Limits</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'inventory-alerts-page' %}"><i class="fas fa-bell me-1"></i>Alerts</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'inventory-users' %}"><i class="fas fa-users me-1"></i>User Directory</a></li>
-                        {% if user.role and user.role.name == 'Admin' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="adminSettingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fas fa-cog me-1"></i>Settings
-                                </a>
-                                <ul class="dropdown-menu glass" aria-labelledby="adminSettingsDropdown">
-                                    <li><a class="dropdown-item text-white" href="{% url 'profiles-page' %}">Manage Users</a></li>
-                                    <li><a class="dropdown-item text-white" href="{% url 'roles-page' %}">Manage Roles</a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
                     {% endif %}
-                </ul>
+                </ul> -->
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'inventory-alerts-page' %}"><i class="fas fa-bell me-1"></i>Alerts</a></li>

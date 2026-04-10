@@ -5,18 +5,8 @@ from .views import (
     AlertsAPI, AlertDetailAPI, AcknowledgeAlertAPI, ResolveAlertAPI, RentalManagementView, set_standard_limit, inventory_shortage_view, inventory_shortage_export_csv, inventory_shortage_export_pdf
 )
 from .settings_views import DatabaseBackupView
-from .user_views import (
-    InventoryUserListView, InventoryUserCreateView, 
-    InventoryUserUpdateView, InventoryUserDeleteView
-)
 
 urlpatterns = [
-    # User Management routes
-    path('users/', InventoryUserListView.as_view(), name='inventory-user-list'),
-    path('users/add/', InventoryUserCreateView.as_view(), name='inventory-user-add'),
-    path('users/edit/<int:pk>/', InventoryUserUpdateView.as_view(), name='inventory-user-edit'),
-    path('users/delete/<int:pk>/', InventoryUserDeleteView.as_view(), name='inventory-user-delete'),
-
     # HTML page routes
     path('settings/', DatabaseBackupView.as_view(), name='inventory_settings'),
     path('adjustments/', InventoryAdjustmentPageView.as_view(), name='inventory-adjustments-page'),

@@ -322,9 +322,9 @@ class ProductListPageView(View):
                 models.Q(brand__icontains=search_query) |
                 models.Q(sku__icontains=search_query) |
                 models.Q(serial_number__icontains=search_query)
-            ).order_by('id')
+            )
         else:
-            products = Product.objects.select_related('category').all().order_by('id')
+            products = Product.objects.select_related('category').all()
         
         # Pagination: 50 per page
         paginator = Paginator(products, 50)
@@ -458,7 +458,7 @@ class CategoryListPageView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return redirect('accounts:login')
-        categories = Category.objects.all().order_by('id')
+        categories = Category.objects.all()
         # Pagination: 50 per page
         paginator = Paginator(categories, 50)
         page_number = request.GET.get('page')

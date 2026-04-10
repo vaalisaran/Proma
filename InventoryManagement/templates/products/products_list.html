@@ -101,14 +101,14 @@
                             </td>
                             <td>
                                 <a href="{% url 'product-detail' product.pk %}" class="text-decoration-none product-link">
-                                    <strong class="text-primary">{{ product.name|default:"" }}</strong>
+                                    <strong class="text-primary">{{ product.name|default:"-" }}</strong>
                                     <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.7rem;"></i>
                                 </a>
                             </td>
-                            <td>{{ product.brand|default:"" }}</td>
-                            <td class="d-none d-md-table-cell">{{ product.description|truncatechars:50|default:"" }}</td>
-                            <td><span class="badge bg-dark">{{ product.sku|default:"" }}</span></td>
-                            <td><span class="badge bg-info">{{ product.serial_number|default:"" }}</span></td>
+                            <td>{{ product.brand|default:"-" }}</td>
+                            <td class="d-none d-md-table-cell">{{ product.description|truncatechars:50|default:"-" }}</td>
+                            <td><span class="badge bg-dark">{{ product.sku|default:"-" }}</span></td>
+                            <td><span class="badge bg-info">{{ product.serial_number|default:"-" }}</span></td>
                             <td>
                                 <span class="badge bg-success">
                                     ${{ product.price|floatformat:2|default:"0.00" }}
@@ -130,8 +130,8 @@
                                     -
                                 {% endif %}
                             </td>
-                            <td>{{ product.rack_number|default:'' }}</td>
-                            <td>{{ product.shelf_number|default:'' }}</td>
+                            <td>{{ product.rack_number|default:'-' }}</td>
+                            <td>{{ product.shelf_number|default:'-' }}</td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'product-detail' product.pk %}" class="btn btn-primary-glass btn-sm" title="View Details">

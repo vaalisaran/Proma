@@ -104,13 +104,6 @@ class UserListView(View):
         users = User.objects.select_related('role').all()
         return render(request, 'users/profiles.html', {'users': users})
 
-class PublicUserListView(View):
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        users = User.objects.select_related('role').exclude(is_active=False)
-        return render(request, 'users/inventory_users.html', {'users': users})
-
 @method_decorator(admin_required, name='dispatch')
 class UserCreateView(View):
     def get(self, request):
