@@ -2,17 +2,20 @@ from django.urls import path
 from .views import (
     InventoryAdjustmentPageView, SerialNumbersPageView, QuantityLimitsPageView, AlertsPageView,
     InventoryAdjustmentAPI, SerialNumbersAPI, QuantityLimitsAPI, QuantityLimitDetailAPI,
-    AlertsAPI, AlertDetailAPI, AcknowledgeAlertAPI, ResolveAlertAPI, RentalManagementView, set_standard_limit, inventory_shortage_view, inventory_shortage_export_csv, inventory_shortage_export_pdf
+    AlertsAPI, AlertDetailAPI, AcknowledgeAlertAPI, ResolveAlertAPI, RentalManagementView, set_standard_limit, inventory_shortage_view, inventory_shortage_export_csv, inventory_shortage_export_pdf, InventoryNotificationsPageView
 )
 from .settings_views import DatabaseBackupView
+from .user_management_views import InventoryUserManagementView
 
 urlpatterns = [
     # HTML page routes
     path('settings/', DatabaseBackupView.as_view(), name='inventory_settings'),
+    path('users/', InventoryUserManagementView.as_view(), name='inventory-users-management'),
     path('adjustments/', InventoryAdjustmentPageView.as_view(), name='inventory-adjustments-page'),
     path('serials/', SerialNumbersPageView.as_view(), name='inventory-serials-page'),
     path('limits/', QuantityLimitsPageView.as_view(), name='inventory-limits-page'),
     path('alerts/', AlertsPageView.as_view(), name='inventory-alerts-page'),
+    path('notifications/', InventoryNotificationsPageView.as_view(), name='inventory-notifications-page'),
     
     # API routes
     path('adjustments/', InventoryAdjustmentAPI.as_view(), name='inventory-adjustments-api'),

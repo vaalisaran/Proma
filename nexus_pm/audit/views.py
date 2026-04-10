@@ -1,18 +1,19 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from .models import AuditLog
-from django.contrib.auth import get_user_model
+from inventory.models import InventoryUser
 from django.db.models import Q
+from functools import reduce
+from operator import or_
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse
 import pandas as pd
 from datetime import datetime
+from urllib.parse import urlencode
 from fpdf import FPDF
 from tasks.decorators import admin_required
 from django.utils.decorators import method_decorator
 # PDF export will be added later
-
-User = get_user_model()
 
 @method_decorator(admin_required, name='dispatch')
 class AuditLogPageView(View):
@@ -20,7 +21,7 @@ class AuditLogPageView(View):
         if not request.user.is_authenticated:
             return redirect('accounts:login')
         logs = AuditLog.objects.all().order_by('-timestamp')
-        users = User.objects.all()
+        users = InventoryUser.objects.all().order_by('username')
 
         # Filters
         user_id = request.GET.get('user')
@@ -31,25 +32,41 @@ class AuditLogPageView(View):
         export = request.GET.get('export')
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
+        action_filter = request.GET.get('action', '').strip()
+        model_filter = request.GET.get('model', '').strip()
 
-        if user_id:
-            logs = logs.filter(user_id=user_id)
-        if year:
-            logs = logs.filter(timestamp__year=year)
-        if month:
-            logs = logs.filter(timestamp__month=month)
+        # ANY-match filtering: if multiple inputs are provided, match logs that satisfy
+        # at least one of them (OR), so even a single parameter is enough.
+        filter_clauses = []
+        if user_id and str(user_id).isdigit():
+            filter_clauses.append(Q(user_id=user_id))
+        if year and str(year).isdigit():
+            filter_clauses.append(Q(timestamp__year=year))
+        if month and str(month).isdigit():
+            filter_clauses.append(Q(timestamp__month=month))
         if date:
-            logs = logs.filter(timestamp__date=date)
+            filter_clauses.append(Q(timestamp__date=date))
         if start_date and end_date:
-            logs = logs.filter(timestamp__date__range=[start_date, end_date])
+            filter_clauses.append(Q(timestamp__date__range=[start_date, end_date]))
+        elif start_date:
+            filter_clauses.append(Q(timestamp__date__gte=start_date))
+        elif end_date:
+            filter_clauses.append(Q(timestamp__date__lte=end_date))
         if search:
-            logs = logs.filter(
+            filter_clauses.append(
                 Q(action__icontains=search) |
                 Q(model_name__icontains=search) |
                 Q(object_id__icontains=search) |
                 Q(changes__icontains=search) |
                 Q(user__username__icontains=search)
             )
+        if action_filter:
+            filter_clauses.append(Q(action__icontains=action_filter))
+        if model_filter:
+            filter_clauses.append(Q(model_name__icontains=model_filter))
+
+        if filter_clauses:
+            logs = logs.filter(reduce(or_, filter_clauses))
 
         # Export Excel
         if export == 'excel':
@@ -115,6 +132,10 @@ class AuditLogPageView(View):
         # Years for filter dropdown
         years = AuditLog.objects.dates('timestamp', 'year', order='DESC')
         months = range(1, 13)
+        query_params = request.GET.copy()
+        query_params.pop('page', None)
+        query_params.pop('export', None)
+        preserved_query = urlencode(query_params, doseq=True)
 
         context = {
             'logs': page_obj.object_list,
@@ -129,5 +150,8 @@ class AuditLogPageView(View):
             'search': search,
             'start_date': start_date,
             'end_date': end_date,
+            'action_filter': action_filter,
+            'model_filter': model_filter,
+            'preserved_query': preserved_query,
         }
         return render(request, 'audit/logs.html', context)

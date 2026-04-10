@@ -126,6 +126,18 @@ class InventoryUser(models.Model):
     ])
     email = models.EmailField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    can_access_adjustments_page = models.BooleanField(default=True)
+    can_manage_adjustments = models.BooleanField(default=True)
+    can_access_serials_page = models.BooleanField(default=True)
+    can_manage_serials = models.BooleanField(default=True)
+    can_access_limits_page = models.BooleanField(default=True)
+    can_manage_limits = models.BooleanField(default=True)
+    can_access_alerts_page = models.BooleanField(default=True)
+    can_manage_alerts = models.BooleanField(default=True)
+    can_access_rentals_page = models.BooleanField(default=True)
+    can_manage_rentals = models.BooleanField(default=True)
+    can_access_shortage_page = models.BooleanField(default=True)
+    can_manage_shortage_exports = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def set_password(self, raw_password):
@@ -171,3 +183,27 @@ class InventoryUser(models.Model):
     def is_project_manager(self):
         # We simulate manager access for both Inventory Managers and Admins
         return self.role in ['admin', 'manager']
+
+
+class InventoryNotification(models.Model):
+    NOTIFICATION_TYPE_CHOICES = [
+        ('stock_in', 'Stock In'),
+        ('stock_out', 'Stock Out'),
+        ('procurement_request', 'Procurement Request'),
+        ('inventory_action', 'Inventory Action'),
+    ]
+
+    recipient = models.ForeignKey('inventory.InventoryUser', on_delete=models.CASCADE, related_name='inventory_notifications')
+    sender = models.ForeignKey('inventory.InventoryUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='sent_inventory_notifications')
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES, default='inventory_action')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    target_url = models.CharField(max_length=300, blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} -> {self.recipient.username}"

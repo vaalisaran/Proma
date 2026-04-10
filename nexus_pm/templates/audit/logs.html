@@ -7,7 +7,7 @@
     <h1 class="page-title mb-0">
         Audit Logs
     </h1>
-    <a href="/" class="btn btn btn-secondary">
+    <a href="/" class="btn btn-secondary">
         Dashboard
     </a>
 </div>
@@ -49,12 +49,25 @@
             <label class="form-label">Search</label>
             <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Action, Model, Changes..." />
         </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Action</label>
+            <input type="text" name="action" value="{{ action_filter }}" class="form-control" placeholder="create/update..." />
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Model</label>
+            <input type="text" name="model" value="{{ model_filter }}" class="form-control" placeholder="stockentry..." />
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">From</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-control" />
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">To</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-control" />
+        </div>
         <div class="col-md-2 col-6 d-grid">
             <button type="submit" class="btn btn-primary">Filter</button>
         </div>
-        <!-- Preserve all other filter values -->
-        {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
-        {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
     </form>
     <div class="d-flex flex-wrap gap-2 mb-3">
         <form method="get" class="d-inline">
@@ -64,9 +77,11 @@
             {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
             {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
             {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            {% if action_filter %}<input type="hidden" name="action" value="{{ action_filter }}">{% endif %}
+            {% if model_filter %}<input type="hidden" name="model" value="{{ model_filter }}">{% endif %}
             {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
             {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
-            <button type="submit" class="btn btn btn-secondary">Export Excel</button>
+            <button type="submit" class="btn btn-secondary">Export Excel</button>
         </form>
         <form method="get" class="d-inline">
             <input type="hidden" name="export" value="pdf" />
@@ -75,9 +90,11 @@
             {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
             {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
             {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            {% if action_filter %}<input type="hidden" name="action" value="{{ action_filter }}">{% endif %}
+            {% if model_filter %}<input type="hidden" name="model" value="{{ model_filter }}">{% endif %}
             {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
             {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
-            <button type="submit" class="btn btn btn-secondary">Export PDF</button>
+            <button type="submit" class="btn btn-secondary">Export PDF</button>
         </form>
         <form method="get" class="d-inline">
             <input type="hidden" name="export" value="excel" />
@@ -86,10 +103,12 @@
             {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
             {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
             {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            {% if action_filter %}<input type="hidden" name="action" value="{{ action_filter }}">{% endif %}
+            {% if model_filter %}<input type="hidden" name="model" value="{{ model_filter }}">{% endif %}
             <input type="date" name="start_date" value="{{ start_date }}" class="form-control d-inline w-auto" style="display:inline-block;max-width:140px;" required />
             <span class="mx-1">to</span>
             <input type="date" name="end_date" value="{{ end_date }}" class="form-control d-inline w-auto" style="display:inline-block;max-width:140px;" required />
-            <button type="submit" class="btn btn btn-secondary ms-2">Advanced Export</button>
+            <button type="submit" class="btn btn-secondary ms-2">Advanced Export</button>
         </form>
     </div>
     {% if logs %}
@@ -137,58 +156,35 @@
                 </table>
             </div>
         </div>
-        {% comment %} Helper to build querystring without 'page' {% endcomment %}
-        {% with request.GET.urlencode as querystring %}
-            {% if querystring %}
-                {% with querystring|cut:'page=' as qs %}
-                    {% with qs|cut:'&&' as qs2 %}
-                        {% with qs2|cut:'&page=' as qs3 %}
-                            {% with qs3|cut:'?page=' as qs4 %}
-                                {% with qs4|cut:'page' as qs5 %}
-                                    {% with qs5|cut:'=' as qs6 %}
-                                        {% with qs6|cut:'&&' as qs7 %}
-                                            {% with qs7|cut:'&' as qs8 %}
-                                                {% with qs8 as clean_query %}
-                                                    <nav aria-label="Audit log pagination" class="mt-3">
-                                                        <ul class="pagination justify-content-center">
-                                                            {% if page_obj.has_previous %}
-                                                                <li class="page-item">
-                                                                    <a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                                                                        <span aria-hidden="true">&laquo;</span>
-                                                                    </a>
-                                                                </li>
-                                                            {% else %}
-                                                                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-                                                            {% endif %}
-                                                            {% for num in page_obj.paginator.page_range %}
-                                                                {% if page_obj.number == num %}
-                                                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                                                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                                                    <li class="page-item"><a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ num }}">{{ num }}</a></li>
-                                                                {% endif %}
-                                                            {% endfor %}
-                                                            {% if page_obj.has_next %}
-                                                                <li class="page-item">
-                                                                    <a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
-                                                                        <span aria-hidden="true">&raquo;</span>
-                                                                    </a>
-                                                                </li>
-                                                            {% else %}
-                                                                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-                                                            {% endif %}
-                                                        </ul>
-                                                    </nav>
-                                                {% endwith %}
-                                            {% endwith %}
-                                        {% endwith %}
-                                    {% endwith %}
-                                {% endwith %}
-                            {% endwith %}
-                        {% endwith %}
-                    {% endwith %}
-                {% endwith %}
-            {% endif %}
-        {% endwith %}
+        <nav aria-label="Audit log pagination" class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ preserved_query }}{% if preserved_query %}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?{{ preserved_query }}{% if preserved_query %}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ preserved_query }}{% if preserved_query %}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
     {% else %}
         <div class="text-center py-5">
             

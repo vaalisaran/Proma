@@ -335,6 +335,11 @@ class ProductListPageView(View):
             page_obj = paginator.page(1)
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
+
+        for product in page_obj.object_list:
+            stock_in = StockEntry.objects.filter(product=product, entry_type='in').aggregate(total=Sum('quantity'))['total'] or 0
+            stock_out = StockEntry.objects.filter(product=product, entry_type='out').aggregate(total=Sum('quantity'))['total'] or 0
+            product.current_quantity = stock_in - stock_out
         
         return render(request, 'products/products_list.html', {
             'products': page_obj.object_list,
@@ -396,6 +401,7 @@ class ProductDetailView(View):
         
         # Get rental count for this product
         rental_count = product.rentals.count()
+        rental_quantity = product.rentals.filter(status='active').aggregate(total=Sum('quantity'))['total'] or 0
         
         context = {
             'product': product,
@@ -405,6 +411,7 @@ class ProductDetailView(View):
             'recent_alerts': recent_alerts,
             'active_alerts': active_alerts,
             'rental_count': rental_count,
+            'rental_quantity': rental_quantity,
         }
         
         return render(request, 'products/product_detail.html', context)
@@ -417,6 +424,9 @@ class ProductDetailView(View):
         action = request.POST.get('action')
         
         if action == 'stock_adjustment':
+            if not request.user.is_admin:
+                messages.error(request, 'Only admin can perform stock adjustments.')
+                return redirect('product-detail', pk=pk)
             adjustment_type = request.POST.get('adjustment_type')
             quantity = request.POST.get('quantity')
             reason = request.POST.get('reason', '')

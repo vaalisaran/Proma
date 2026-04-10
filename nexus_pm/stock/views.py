@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.db.models import Sum
 from rest_framework.exceptions import ValidationError
 from openpyxl import load_workbook
+from inventory.notifications import notify_inventory_admins
 
 class StockInPageView(View):
     def get(self, request):
@@ -51,6 +52,14 @@ class StockInPageView(View):
             
         entry = StockEntry.objects.create(product=product, quantity=quantity, entry_type='in', location_from=location_from, location_to=location_to, description=description, created_by=request.user)
         AuditLog.log(request.user, 'stock in', entry)
+        if not request.user.is_admin:
+            notify_inventory_admins(
+                request.user,
+                'stock_in',
+                f'Stock In by {request.user.username}',
+                f'{request.user.username} added {quantity} unit(s) of {product.name} to stock.',
+                target_url='/inventory/stock/in/',
+            )
         messages.success(request, f'Successfully added {quantity} units of {product.name} to stock.')
         return redirect('stock-in-page')
 
@@ -96,6 +105,14 @@ class StockInPageView(View):
                     'message': 'Stock in successful',
                 })
                 success_count += 1
+            if success_count and not request.user.is_admin:
+                notify_inventory_admins(
+                    request.user,
+                    'stock_in',
+                    f'Bulk Stock In by {request.user.username}',
+                    f'{request.user.username} completed bulk stock-in for {success_count} item(s).',
+                    target_url='/inventory/stock/in/',
+                )
         if success_count:
             messages.success(request, f'Bulk stock in successful for {success_count} item(s).')
         if fail_count:
@@ -145,6 +162,14 @@ class StockOutPageView(View):
             return redirect('stock-out-page')
         entry = StockEntry.objects.create(product=product, quantity=quantity, entry_type='out', location_from=location_from, location_to=location_to, description=description, created_by=request.user)
         AuditLog.log(request.user, 'stock out', entry)
+        if not request.user.is_admin:
+            notify_inventory_admins(
+                request.user,
+                'stock_out',
+                f'Stock Out by {request.user.username}',
+                f'{request.user.username} removed {quantity} unit(s) of {product.name} from stock.',
+                target_url='/inventory/stock/out/',
+            )
         messages.success(request, f'Successfully removed {quantity} units of {product.name} from stock.')
         return redirect('stock-out-page')
 
@@ -200,6 +225,14 @@ class StockOutPageView(View):
                     'message': 'Stock out successful',
                 })
                 success_count += 1
+            if success_count and not request.user.is_admin:
+                notify_inventory_admins(
+                    request.user,
+                    'stock_out',
+                    f'Bulk Stock Out by {request.user.username}',
+                    f'{request.user.username} completed bulk stock-out for {success_count} item(s).',
+                    target_url='/inventory/stock/out/',
+                )
         if success_count:
             messages.success(request, f'Bulk stock out successful for {success_count} item(s).')
         if fail_count:

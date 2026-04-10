@@ -1029,7 +1029,7 @@
     <nav class="sidebar">
         <div class="sidebar-logo">
             <a href="{% url 'tasks:dashboard' %}" class="logo-mark">
-                <div class="logo-icon">N</div>
+                <div class="logo-icon">PM</div>
                 <div>
                     <div class="logo-text">IIAP <span>PM</span></div>
                     <div class="logo-subtitle">Project Management Tool</div>
@@ -1152,7 +1152,8 @@
                 <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-icon" title="Notifications">
                     <i class="fas fa-bell"></i>
                     {% if unread_count %}
-                    <span style="background:var(--red);color:#fff;border-radius:50%;width:8px;height:8px;display:inline-block;margin-left:-4px;margin-top:-8px;vertical-align:top;"></span>
+                    <span
+                        style="background:var(--red);color:#fff;border-radius:50%;width:8px;height:8px;display:inline-block;margin-left:-4px;margin-top:-8px;vertical-align:top;"></span>
                     {% endif %}
                 </a>
                 {% if not request.user.is_admin %}

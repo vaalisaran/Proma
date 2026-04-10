@@ -3,6 +3,8 @@ from django.views import View
 from products.models import Product, Category
 from stock.models import StockEntry
 from inventory.models import Rental, InventoryAdjustment, Alert
+from audit.models import AuditLog
+from procurement.models import ProcurementRequest
 from django.db.models import Sum, Count
 import pandas as pd
 from django.http import HttpResponse
@@ -80,6 +82,33 @@ class StatisticsReportView(View):
         alert_product_names = [a['product__name'] for a in alert_product_breakdown]
         alert_product_counts = [a['count'] for a in alert_product_breakdown]
 
+        recent_transactions = []
+        for entry in StockEntry.objects.select_related('product', 'created_by').order_by('-timestamp')[:40]:
+            recent_transactions.append({
+                'timestamp': entry.timestamp,
+                'type': f"stock_{entry.entry_type}",
+                'ref': f"StockEntry#{entry.id}",
+                'user': entry.created_by.username if entry.created_by else 'System',
+                'description': f"{entry.product.name} ({entry.quantity})",
+            })
+        for adj in InventoryAdjustment.objects.select_related('product', 'created_by').order_by('-timestamp')[:40]:
+            recent_transactions.append({
+                'timestamp': adj.timestamp,
+                'type': f"adjustment_{adj.adjustment_type}",
+                'ref': f"Adjustment#{adj.id}",
+                'user': adj.created_by.username if adj.created_by else 'System',
+                'description': f"{adj.product.name} ({adj.quantity})",
+            })
+        for req in ProcurementRequest.objects.select_related('requester').order_by('-created_at')[:40]:
+            recent_transactions.append({
+                'timestamp': req.created_at,
+                'type': 'procurement_request',
+                'ref': f"Procurement#{req.id}",
+                'user': req.requester.username if req.requester else 'System',
+                'description': f"{req.product_name} ({req.requested_quantity}) [{req.status}]",
+            })
+        recent_transactions = sorted(recent_transactions, key=lambda x: x['timestamp'], reverse=True)[:50]
+
         context = {
             'total_products': total_products,
             'total_stock_in': total_stock_in,
@@ -110,6 +139,9 @@ class StatisticsReportView(View):
             'alert_type_counts': alert_type_counts,
             'alert_product_names': alert_product_names,
             'alert_product_counts': alert_product_counts,
+            'total_procurement_requests': ProcurementRequest.objects.count(),
+            'pending_procurement_requests': ProcurementRequest.objects.filter(status='pending').count(),
+            'recent_transactions': recent_transactions,
         }
         return render(request, 'reports/statistics.html', context)
 
@@ -131,8 +163,39 @@ def statistics_report_export(request, format):
     rental_product_breakdown = list(Rental.objects.values('product__name').annotate(count=Count('id')).order_by('-count')[:10])
     alert_type_breakdown = list(Alert.objects.values('alert_type').annotate(count=Count('id')))
     alert_product_breakdown = list(Alert.objects.values('product__name').annotate(count=Count('id')).order_by('-count')[:10])
+    stock_entries_df = pd.DataFrame(list(StockEntry.objects.select_related('product', 'created_by').values(
+        'id', 'entry_type', 'quantity', 'location_from', 'location_to', 'timestamp', 'description',
+        'product__name', 'created_by__username'
+    )))
+    inventory_adjustments_df = pd.DataFrame(list(InventoryAdjustment.objects.select_related('product', 'created_by').values(
+        'id', 'adjustment_type', 'quantity', 'reason', 'timestamp', 'product__name', 'created_by__username'
+    )))
+    rentals_df = pd.DataFrame(list(Rental.objects.select_related('product', 'created_by').values(
+        'id', 'product__name', 'quantity', 'rented_to', 'reason', 'rental_date', 'return_date', 'status', 'created_by__username', 'created_at'
+    )))
+    alerts_df = pd.DataFrame(list(Alert.objects.select_related('product').values(
+        'id', 'product__name', 'alert_type', 'status', 'message', 'current_quantity', 'limit_quantity', 'created_at'
+    )))
+    procurement_df = pd.DataFrame(list(ProcurementRequest.objects.select_related('requester', 'decided_by').values(
+        'id', 'product_name', 'requested_quantity', 'current_stock', 'status',
+        'requester__username', 'decision_reason', 'fulfilled_quantity',
+        'decided_by__username', 'decided_at', 'created_at'
+    )))
+    audit_df = pd.DataFrame(list(AuditLog.objects.select_related('user').values(
+        'id', 'user__username', 'action', 'model_name', 'object_id', 'timestamp', 'changes'
+    )))
+
     # Prepare dataframes
     dfs = {
+        'Summary': pd.DataFrame([{
+            'Total Products': Product.objects.count(),
+            'Total Stock In': StockEntry.objects.filter(entry_type='in').aggregate(total=Sum('quantity'))['total'] or 0,
+            'Total Stock Out': StockEntry.objects.filter(entry_type='out').aggregate(total=Sum('quantity'))['total'] or 0,
+            'Current Stock': (StockEntry.objects.filter(entry_type='in').aggregate(total=Sum('quantity'))['total'] or 0) - (StockEntry.objects.filter(entry_type='out').aggregate(total=Sum('quantity'))['total'] or 0),
+            'Total Rentals': Rental.objects.count(),
+            'Total Alerts': Alert.objects.count(),
+            'Total Procurement Requests': ProcurementRequest.objects.count(),
+        }]),
         'Products by Category': pd.DataFrame(category_breakdown),
         'Stock In-Out by Month': pd.DataFrame({
             'Month': month_labels,
@@ -143,6 +206,12 @@ def statistics_report_export(request, format):
         'Rentals by Product': pd.DataFrame(rental_product_breakdown),
         'Alerts by Type': pd.DataFrame(alert_type_breakdown),
         'Alerts by Product': pd.DataFrame(alert_product_breakdown),
+        'Stock Entries': stock_entries_df,
+        'Inventory Adjustments': inventory_adjustments_df,
+        'Rental Transactions': rentals_df,
+        'Alert Transactions': alerts_df,
+        'Procurement Requests': procurement_df,
+        'Audit Logs': audit_df,
     }
     def sanitize_sheetname(name):
         return name.replace('/', '-').replace('\\', '-').replace('?', '').replace('*', '').replace('[', '').replace(']', '').replace(':', '')

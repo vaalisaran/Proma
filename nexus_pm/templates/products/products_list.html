@@ -75,6 +75,7 @@
                         <th>SKU</th>
                         <th>Serial Number</th>
                         <th>Price</th>
+                        <th>Quantity</th>
                         <th class="d-none d-lg-table-cell">Category</th>
                         <th class="d-none d-lg-table-cell">Created</th>
                         <th>Rack Number</th>
@@ -107,6 +108,11 @@
                         <td>
                             <span class="badge bg-success">
                                 ${{ product.price|floatformat:2|default:"0.00" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.current_quantity > 0 %}bg-primary{% else %}bg-danger{% endif %}">
+                                {{ product.current_quantity|default:"0" }}
                             </span>
                         </td>
                         <td class="d-none d-lg-table-cell">

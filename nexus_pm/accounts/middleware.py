@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.contrib import messages
 import logging
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,41 @@ class InventoryAccessMiddleware:
             if inv_user:
                 # Override request.user to prevent rewriting 100+ lines of codebase!
                 request.user = inv_user
+                if not inv_user.is_admin:
+                    page_permissions = [
+                        ('/inventory/main/adjustments/', 'can_access_adjustments_page', 'can_manage_adjustments'),
+                        ('/inventory/main/serials/', 'can_access_serials_page', 'can_manage_serials'),
+                        ('/inventory/main/limits/', 'can_access_limits_page', 'can_manage_limits'),
+                        ('/inventory/main/alerts/', 'can_access_alerts_page', 'can_manage_alerts'),
+                        ('/inventory/main/rentals/', 'can_access_rentals_page', 'can_manage_rentals'),
+                        ('/inventory/main/shortage/', 'can_access_shortage_page', None),
+                    ]
+                    for page_prefix, access_field, manage_field in page_permissions:
+                        if path.startswith(page_prefix):
+                            if not getattr(inv_user, access_field, True):
+                                messages.error(request, 'You do not have access to this inventory page.')
+                                return redirect('/inventory/dashboard/')
+                            if request.method == 'POST' and manage_field and not getattr(inv_user, manage_field, True):
+                                messages.error(request, 'You do not have permission to manage actions on this page.')
+                                return redirect('/inventory/dashboard/')
+
+                    if path.startswith('/inventory/main/shortage/export/') and not getattr(inv_user, 'can_manage_shortage_exports', True):
+                        messages.error(request, 'You do not have permission to export shortage data.')
+                        return redirect('/inventory/main/shortage/')
+                    api_permissions = [
+                        ('/inventory/main/adjustments/', 'can_access_adjustments_page', 'can_manage_adjustments'),
+                        ('/inventory/main/serials/', 'can_access_serials_page', 'can_manage_serials'),
+                        ('/inventory/main/limits/', 'can_access_limits_page', 'can_manage_limits'),
+                        ('/inventory/main/alerts/', 'can_access_alerts_page', 'can_manage_alerts'),
+                    ]
+                    for api_prefix, access_field, manage_field in api_permissions:
+                        if path.startswith(api_prefix):
+                            if not getattr(inv_user, access_field, True):
+                                messages.error(request, 'You do not have access to this inventory API.')
+                                return redirect('/inventory/dashboard/')
+                            if request.method != 'GET' and manage_field and not getattr(inv_user, manage_field, True):
+                                messages.error(request, 'You do not have permission to manage this inventory API action.')
+                                return redirect('/inventory/dashboard/')
             else:
                 # Block PM users and anonymous users
                 return redirect('accounts:login')

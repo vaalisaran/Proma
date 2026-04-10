@@ -30,6 +30,7 @@ class AlertAdmin(admin.ModelAdmin):
 
 from django import forms
 from .models import InventoryUser
+from .models import InventoryNotification
 
 class InventoryUserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(attrs={'placeholder': 'Leave blank to keep current password'}), required=False, help_text="Set or change the user's password here.")
@@ -50,3 +51,10 @@ class InventoryUserAdmin(admin.ModelAdmin):
         if password:
             obj.set_password(password)
         super().save_model(request, obj, form, change)
+
+
+@admin.register(InventoryNotification)
+class InventoryNotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'notification_type', 'title', 'is_read', 'created_at')
+    list_filter = ('notification_type', 'is_read', 'created_at')
+    search_fields = ('recipient__username', 'sender__username', 'title', 'message')

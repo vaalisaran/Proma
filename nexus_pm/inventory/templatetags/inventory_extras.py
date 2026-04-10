@@ -9,3 +9,8 @@ def subtract(value, arg):
         return float(value) - float(arg)
     except (ValueError, TypeError):
         return 0 
+
+@register.filter
+def attr(obj, field_name):
+    """Read dynamic attribute value in templates."""
+    return getattr(obj, field_name, None)

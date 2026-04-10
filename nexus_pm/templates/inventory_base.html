@@ -89,7 +89,14 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            font-size: {{ sys_settings.font_size|default:'14px' }};
+
+            font-size: {
+                    {
+                    sys_settings.font_size|default: '14px'
+                }
+            }
+
+            ;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
@@ -391,7 +398,8 @@
             gap: 10px;
         }
 
-        h1.page-title, h2.section-title {
+        h1.page-title,
+        h2.section-title {
             font-size: 1.25rem !important;
             font-weight: 700;
         }
@@ -471,7 +479,7 @@
         .btn-icon {
             padding: 7px 9px;
         }
-        
+
         /* ── INVENTORY COMPATIBILITY CARDS REMOVED ── */
         .page-title {
             font-family: 'Space Grotesk', sans-serif !important;
@@ -480,14 +488,16 @@
             color: var(--accent) !important;
             margin-bottom: 20px !important;
         }
-        
+
         /* ── PAGE TITLE FALLBACK FOR RAW H1 ── */
-        h1, .h1 {
+        h1,
+        .h1 {
             font-family: 'Space Grotesk', sans-serif !important;
             font-size: 1.5rem !important;
             font-weight: 600 !important;
             color: var(--accent) !important;
         }
+
         /* ── CARDS ── */
         .card {
             background: var(--bg-card);
@@ -1048,7 +1058,7 @@
     <nav class="sidebar">
         <div class="sidebar-logo">
             <a href="{% url 'dashboard-page' %}" class="logo-mark">
-                <div class="logo-icon"></div>
+                <div class="logo-icon">IM</div>
                 <div>
                     <div class="logo-text">IIAP <span>IM</span></div>
                     <div class="logo-subtitle">Inventory Management Tool</div>
@@ -1062,7 +1072,7 @@
                 class="nav-item {% if 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-chart-pie me-2"></i><span>Dashboard</span>
             </a>
-            
+
             <div class="nav-section-label">Management</div>
             <a href="{% url 'products' %}"
                 class="nav-item {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
@@ -1093,6 +1103,10 @@
                 class="nav-item {% if 'audit' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-history me-2"></i><span>Audit Logs</span>
             </a>
+            <a href="{% url 'inventory-users-management' %}"
+                class="nav-item {% if 'inventory-users-management' in request.resolver_match.url_name %}active{% endif %}">
+                <i class="fas fa-users-cog me-2"></i><span>Inventory Users</span>
+            </a>
             <a href="{% url 'inventory_settings' %}"
                 class="nav-item {% if 'settings' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-cog me-2"></i><span>Settings</span>
@@ -1106,13 +1120,13 @@
                     <div class="user-name">{{ user.display_name }}</div>
                     <div class="user-role">{{ user.get_role_display }}</div>
                 </div>
-                <i class="fas fa-chevron-up ms-auto" style="font-size:10px;color:var(--text-muted)"></i>
-                
-                <div class="user-dropdown" id="userMenu">
+                <!-- <i class="fas fa-chevron-up ms-auto" style="font-size:10px;color:var(--text-muted)"></i> -->
+
+                <!-- <div class="user-dropdown" id="userMenu">
                     <a href="{% url 'accounts:profile' %}"><i class="fas fa-user me-2"></i> My Profile</a>
                     <a href="{% url 'accounts:settings' %}"><i class="fas fa-cog me-2"></i> Settings</a>
                     <a href="{% url 'accounts:logout' %}" class="danger"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
-                </div>
+                </div> -->
             </div>
         </div>
         <div class="sidebar-logout">
@@ -1128,14 +1142,16 @@
         <div class="topbar">
             <div class="topbar-title">{% block page_title %}{% endblock %}</div>
             <div class="topbar-actions">
-                <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-icon" title="Notifications">
+                <a href="{% url 'inventory-notifications-page' %}" class="btn btn-secondary btn-icon" title="Notifications">
                     <i class="fas fa-bell"></i>
                     {% if unread_count %}
-                    <span style="background:var(--red);color:#fff;border-radius:50%;width:8px;height:8px;display:inline-block;margin-left:-4px;margin-top:-8px;vertical-align:top;"></span>
+                    <span
+                        style="background:var(--red);color:#fff;border-radius:50%;width:8px;height:8px;display:inline-block;margin-left:-4px;margin-top:-8px;vertical-align:top;"></span>
                     {% endif %}
                 </a>
                 {% if not request.user.is_admin %}
-                <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> New
+                <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>
+                    New
                     Task</a>
                 {% endif %}
                 {% block topbar_actions %}{% endblock %}
@@ -1162,8 +1178,7 @@
                 <i class="fas {% if msg.tags == 'success' %}fa-check-circle"
                     style="color:#22c55e{% elif msg.tags == 'error' %}fa-times-circle"
                     style="color:#ef4444{% elif msg.tags == 'warning' %}fa-exclamation-triangle"
-                    style="color:#f59e0b{% else %}fa-info-circle"
-                    style="color:#4f8ef7{% endif %};font-size:18px;"></i>
+                    style="color:#f59e0b{% else %}fa-info-circle" style="color:#4f8ef7{% endif %};font-size:18px;"></i>
                 <span style="font-size:13px;color:var(--text-primary);line-height:1.4;flex:1;">{{ msg }}</span>
                 <button
                     style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;padding:0;"

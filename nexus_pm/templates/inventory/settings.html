@@ -1,10 +1,11 @@
 {% extends "inventory_base.html" %}
+{% load inventory_extras %}
 
 {% block title %}Inventory Settings{% endblock %}
 
 {% block content %}
-<div class="row min-vh-100 p-4 min-vw-100">
-    <div class="col-md-8 mx-auto mt-4">
+<div class="container-fluid px-2 px-md-4">
+    <div class="settings-container mt-3">
         <h1 class="page-title mb-4">Inventory Settings & Backup</h1>
 
         <div class="card shadow-sm mb-4">
@@ -15,6 +16,60 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="export">
                     <button type="submit" class="btn btn-outline-primary px-4 py-2 mt-2">Download Backup</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-info"><i class="fas fa-user-shield me-2"></i> Inventory User Control Restrictions</h5>
+                <p class="card-text text-muted mb-3">
+                    Configure page access and action-management permissions for each inventory user through checkboxes.
+                </p>
+
+                <form method="post" action="{% url 'inventory_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_controls">
+
+                    <div class="table-responsive control-table-wrap">
+                        <table class="table table-bordered table-hover align-middle control-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    {% for field_name, field_label in permission_fields %}
+                                    <th class="small">{{ field_label }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inv_user in inventory_users %}
+                                <tr>
+                                    <td>{{ inv_user.username }}</td>
+                                    <td class="text-capitalize">{{ inv_user.role }}</td>
+                                    {% for field_name, field_label in permission_fields %}
+                                    <td class="text-center">
+                                        <input
+                                            type="checkbox"
+                                            class="form-check-input"
+                                            name="{{ field_name }}_{{ inv_user.id }}"
+                                            {% if inv_user|attr:field_name %}checked{% endif %}
+                                        >
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="14" class="text-center text-muted py-4">No inventory users found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button type="submit" class="btn btn-info px-4 py-2 mt-2 text-white">
+                        Save Control Restrictions
+                    </button>
                 </form>
             </div>
         </div>
@@ -45,7 +100,10 @@
 </div>
 
 <style>
-/* Remove local styling to force usage of standard layout! */
+.settings-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 .page-title {
     font-size: 28px;
     font-weight: 700;
@@ -55,6 +113,17 @@
 }
 .btn-outline-primary {
     border-width: 2px;
+}
+.control-table th,
+.control-table td {
+    white-space: nowrap;
+    font-size: 13px;
+}
+.control-table th.small {
+    min-width: 155px;
+}
+.control-table-wrap {
+    max-height: 60vh;
 }
 </style>
 {% endblock %}

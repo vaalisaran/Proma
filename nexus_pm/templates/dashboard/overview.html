@@ -60,12 +60,6 @@
             </a>
         </div>
         <div class="col d-flex">
-            <a href="{% url 'inventory-alerts-page' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-bell fa-2x mb-2"></i>
-                <span>View Alerts</span>
-            </a>
-        </div>
-        <div class="col d-flex">
             <a href="{% url 'categories' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-tags fa-2x mb-2"></i>
                 <span>Categories</span>
@@ -83,24 +77,28 @@
                 <span>Stock Out</span>
             </a>
         </div>
+        {% if request.user.is_admin %}
         <div class="col d-flex">
             <a href="{% url 'inventory-adjustments-page' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-sliders-h fa-2x mb-2"></i>
                 <span>Adjustments</span>
             </a>
         </div>
+        {% endif %}
         <div class="col d-flex">
             <a href="{% url 'inventory-serials-page' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-hashtag fa-2x mb-2"></i>
                 <span>Serials</span>
             </a>
         </div>
+        {% if request.user.is_admin %}
         <div class="col d-flex">
-            <a href="{% url 'accounts:user_list' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-users fa-2x mb-2"></i>
-                <span>Users</span>
+            <a href="{% url 'inventory-users-management' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-users-cog fa-2x mb-2"></i>
+                <span>Inventory Users</span>
             </a>
         </div>
+        {% endif %}
         <div class="col d-flex">
             <a href="{% url 'inventory-limits-page' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
@@ -128,7 +126,7 @@
         <div class="col d-flex">
             <a href="{% url 'procurement-upload' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
                 <i class="fas fa-shopping-cart fa-2x mb-2"></i>
-                <span>BOM</span>
+                <span>Procurement</span>
             </a>
         </div>
         <!-- <div class="col d-flex">
@@ -139,39 +137,11 @@
         </div> -->
         <div class="col d-flex">
             <a href="{% url 'inventory-shortage-page' %}" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-warehouse fa-2x mb-2"></i>
-                <span>Procurement</span>
+                <i class="fas fa-triangle-exclamation fa-2x mb-2"></i>
+                <span>Shortage</span>
             </a>
         </div>
-        {% if request.user.is_admin %}
-        <div class="col d-flex">
-            <a href="/admin/" class="btn btn btn-secondary btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
-                <i class="fas fa-user-shield fa-2x mb-2"></i>
-                <span>Super Admin</span>
-            </a>
-        </div>
-        {% endif %}
     </div>
-</div>
-
-<div class="card">
-    <h2 class="section-title">
-        <i class="fas fa-bell me-2"></i>System Alerts ({{ alerts|length }})
-    </h2>
-    {% if alerts %}
-        <div class="list-group">
-            {% for alert in alerts %}
-                <div class="alert ">
-                    <i class="fas fa-info-circle me-2"></i>{{ alert }}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center">
-            <i class="fas fa-check-circle fa-3x mb-3" style="color: #43e97b;"></i>
-            <p class="fs-5">No alerts at this time. Everything is running smoothly!</p>
-        </div>
-    {% endif %}
 </div>
 
 <style>
