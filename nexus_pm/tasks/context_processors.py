@@ -8,15 +8,17 @@ def system_settings(request):
     except Exception:
         return {}
 
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 def notifications_count(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and isinstance(request.user, User):
         count = Notification.objects.filter(recipient=request.user, is_read=False).count()
         return {'unread_count': count}
     return {}
 
-
 def notes_count(request):
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and isinstance(request.user, User):
         if request.user.is_admin:
             count = KnowledgeBaseNote.objects.count()
         else:

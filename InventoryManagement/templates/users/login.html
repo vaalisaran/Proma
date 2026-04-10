@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="glass-form" style="width: 100%; max-width: 400px;">
+        <div class="text-center mb-4">
+            <i class="fas fa-user-circle fa-4x mb-3" style="color: #667eea;"></i>
+            <h2 class="mb-0">Welcome Back</h2>
+            <p>Sign in to your account</p>
+        </div>
+        
+        {% if error %}
+            <div class="alert alert-glass mb-4">
+                <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+            </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required autofocus />
+            </div>
+            <div class="mb-4">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required />
+            </div>
+            <button type="submit" class="btn btn-primary-glass w-100 py-3 mb-4">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+            </button>
+        </form>
+        
+        <div class="text-center">
+            <p class="mb-0">
+                Don't have an account? 
+                <a href="{% url 'signup' %}" class="fw-bold text-decoration-none" style="color: #667eea;">Sign up here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile responsive adjustments */
+@media (max-width: 576px) {
+    .glass-form {
+        margin: 1rem;
+        padding: 1.5rem !important;
+    }
+    
+    .fa-4x {
+        font-size: 3rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1rem !important;
+    }
+}
+</style>
+{% endblock %}

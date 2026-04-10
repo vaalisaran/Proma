@@ -24,6 +24,15 @@ INSTALLED_APPS = [
     'tasks',
     'files',
     'finance',
+
+    # Inventory Apps
+    'inventory',
+    'products',
+    'stock',
+    'audit',
+    'reports',
+    'procurement',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -34,6 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.InventoryAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'

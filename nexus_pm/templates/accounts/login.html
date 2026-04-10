@@ -321,8 +321,11 @@
                 <input type="hidden" name="next" value="{{ next }}">
                 {% endif %}
 
-                <button type="submit" class="btn-login">
+                <button type="submit" class="btn-login" style="margin-bottom: 12px;">
                     <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <button type="submit" formaction="{% url 'accounts:inventory_login' %}" formmethod="POST" class="btn-login" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); text-decoration: none; width: 100%;">
+                    <i class="fas fa-boxes" style="color: var(--accent);"></i> Login as Inventory
                 </button>
             </form>
 

@@ -1,0 +1,76 @@
+{% extends 'inventory_base.html' %}
+{% block title %}{{ title }} — IIAP PM{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 24px;">
+    <h1 class="page-title">{{ title }}</h1>
+    <a href="{% url 'inventory-user-list' %}" style="display:inline-flex; align-items:center; gap:6px; color:var(--text-muted); text-decoration:none; font-size:14px; margin-top:8px;">
+        <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0;">
+    <div class="card-header">
+        <div class="card-title">User Details</div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="alert alert-error" style="margin-bottom:16px;">
+            <i class="fas fa-exclamation-circle" style="color:var(--red);"></i>
+            <span>{{ form.non_field_errors|join:", " }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label class="form-label" for="id_username">Username <span style="color:var(--red);">*</span></label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <div class="form-error">{{ form.username.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="id_email">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="form-error">{{ form.email.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="id_role">Role <span style="color:var(--red);">*</span></label>
+            {{ form.role }}
+            {% if form.role.errors %}
+            <div class="form-error">{{ form.role.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="id_password">Password {% if not object %}<span style="color:var(--red);">*</span>{% endif %}</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+            <div class="form-error">{{ form.password.errors|join:", " }}</div>
+            {% endif %}
+            {% if form.password.help_text %}
+            <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">{{ form.password.help_text }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+            {{ form.is_active }}
+            <label for="id_is_active" style="margin:0; font-weight:500; font-size:14px;">Active Account</label>
+            {% if form.is_active.errors %}
+            <div class="form-error" style="display:block; width:100%;">{{ form.is_active.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+        
+        <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:12px;">
+            <a href="{% url 'inventory-user-list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

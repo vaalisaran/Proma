@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="fas fa-tachometer-alt me-3"></i>Dashboard Overview
+</h1>
+
+<div class="row g-4 mb-5">
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="stats-card">
+            <i class="fas fa-boxes fa-3x mb-3" style="color: #667eea;"></i>
+            <div class="stats-number">{{ total_products }}</div>
+            <div class="stats-label">Total Products</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="stats-card">
+            <i class="fas fa-layer-group fa-3x mb-3" style="color: #4facfe;"></i>
+            <div class="stats-number">{{ total_stock }}</div>
+            <div class="stats-label">Volume </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="stats-card">
+            <i class="fas fa-sync-alt fa-3x mb-3" style="color: #43e97b;"></i>
+            <div class="stats-number">
+                {{ stock_turnover|default:"0"|floatformat:2 }}
+            </div>
+            <div class="stats-label">Stock Turnover</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="stats-card">
+            <i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: #fa709a;"></i>
+            <div class="stats-number">
+                {{ shrinkage_rate|default:"0"|floatformat:2 }}%
+            </div>
+            <div class="stats-label">Shrinkage Rate</div>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <h2 class="section-title text-center mb-4">
+        <i class="fas fa-cogs me-2"></i>Quick Actions
+    </h2>
+    <div class="row row-cols-2 row-cols-lg-5 row-cols-md-3 row-cols-sm-2 g-3 justify-content-center">
+        <div class="col d-flex">
+            <a href="{% url 'add-product' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-plus-circle fa-2x mb-2"></i>
+                <span>Add Product</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'products' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-box fa-2x mb-2"></i>
+                <span>View Products</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'inventory-alerts-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-bell fa-2x mb-2"></i>
+                <span>View Alerts</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'categories' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-tags fa-2x mb-2"></i>
+                <span>Categories</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'stock-in-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-arrow-down fa-2x mb-2"></i>
+                <span>Stock In</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'stock-out-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-arrow-up fa-2x mb-2"></i>
+                <span>Stock Out</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'inventory-adjustments-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-sliders-h fa-2x mb-2"></i>
+                <span>Adjustments</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'inventory-serials-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-hashtag fa-2x mb-2"></i>
+                <span>Serials</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'profiles-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <span>User Profiles</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'roles-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-user-tag fa-2x mb-2"></i>
+                <span>Roles</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'inventory-limits-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <span>Limits</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'inventory-alerts-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-bell fa-2x mb-2"></i>
+                <span>Alerts</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'audit-logs' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                <span>Audit Logs</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'rental-management' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                <span>Rentals</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'statistics-report' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                <span>Statistics</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="{% url 'procurement-upload' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                <span>BOM</span>
+            </a>
+        </div>
+        <!-- <div class="col d-flex">
+            <a href="" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-list-alt fa-2x mb-2"></i>
+                <span>BOM</span>Inventory Shortage
+            </a>
+        </div> -->
+        <div class="col d-flex">
+            <a href="{% url 'inventory-shortage-page' %}" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-warehouse fa-2x mb-2"></i>
+                <span>Procurement</span>
+            </a>
+        </div>
+        <div class="col d-flex">
+            <a href="/admin/" class="btn btn-glass btn-action flex-fill d-flex flex-column align-items-center justify-content-center">
+                <i class="fas fa-user-shield fa-2x mb-2"></i>
+                <span>Super Admin</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <h2 class="section-title">
+        <i class="fas fa-bell me-2"></i>System Alerts ({{ alerts|length }})
+    </h2>
+    {% if alerts %}
+        <div class="list-group">
+            {% for alert in alerts %}
+                <div class="alert alert-glass">
+                    <i class="fas fa-info-circle me-2"></i>{{ alert }}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center">
+            <i class="fas fa-check-circle fa-3x mb-3" style="color: #43e97b;"></i>
+            <p class="fs-5">No alerts at this time. Everything is running smoothly!</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.btn-action {
+    min-width: 120px;
+    min-height: 80px;
+    max-width: 160px;
+    max-height: 100px;
+    margin: 0 auto;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.10);
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.25);
+    color: var(--text-primary) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-action:hover, .btn-action:focus {
+    background: linear-gradient(135deg, #7f53ac 0%, #647dee 100%);
+    color: #fff !important;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+    text-decoration: none;
+}
+
+.btn-action i {
+    display: block;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .btn-action {
+        min-width: 100px;
+        min-height: 70px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-action i {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn-action {
+        min-width: 90px;
+        min-height: 60px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-action i {
+        font-size: 1.2rem !important;
+    }
+    
+    .btn-action span {
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

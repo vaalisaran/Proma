@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}User Roles - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">
+        <i class="fas fa-user-tag me-3"></i>User Roles
+    </h1>
+    <a href="{% url 'add-role' %}" class="btn btn-primary-glass">
+        <i class="fas fa-plus me-2"></i>Add Role
+    </a>
+</div>
+
+<div class="glass-card">
+    <h2 class="section-title mb-4">
+        <i class="fas fa-list me-2"></i>All Roles ({{ roles|length }})
+    </h2>
+    {% if roles %}
+        <div class="glass-table">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user-tag me-2"></i>Name</th>
+                            <th><i class="fas fa-info-circle me-2"></i>Description</th>
+                            <th><i class="fas fa-edit me-2"></i>Edit</th>
+                            <th><i class="fas fa-trash me-2"></i>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for role in roles %}
+                        <tr>
+                            <td><strong class="text-white" style="text-shadow:0 1px 2px #333;">{{ role.name|default:"-" }}</strong></td>
+                            <td><span class="text-white-75" style="text-shadow:0 1px 2px #333;">{{ role.description|default:"-" }}</span></td>
+                            <td>
+                                <a href="{% url 'edit-role' role.pk %}" class="btn btn-edit-glass btn-sm" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'delete-role' role.pk %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this role?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-user-tag fa-4x text-white-75 mb-4"></i>
+            <h3 class="text-white mb-3">No Roles Found</h3>
+            <p class="text-white-75 mb-4">Start by adding your first role.</p>
+            <a href="{% url 'add-role' %}" class="btn btn-primary-glass">
+                <i class="fas fa-plus me-2"></i>Add Your First Role
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

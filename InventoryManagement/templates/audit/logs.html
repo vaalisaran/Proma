@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">
+        <i class="fas fa-clipboard-list me-3"></i>Audit Logs
+    </h1>
+    <a href="/" class="btn btn-glass">
+        <i class="fas fa-home me-2"></i>Dashboard
+    </a>
+</div>
+
+<div class="glass-card">
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2 col-6">
+            <label class="form-label">User</label>
+            <select name="user" class="form-select">
+                <option value="">All</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:'s' == selected_user %}selected{% endif %}>{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Year</label>
+            <select name="year" class="form-select">
+                <option value="">All</option>
+                {% for y in years %}
+                    <option value="{{ y.year }}" {% if y.year|stringformat:'s' == selected_year %}selected{% endif %}>{{ y.year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Month</label>
+            <select name="month" class="form-select">
+                <option value="">All</option>
+                {% for m in months %}
+                    <option value="{{ m }}" {% if m|stringformat:'s' == selected_month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Date</label>
+            <input type="date" name="date" value="{{ selected_date }}" class="form-control" />
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Action, Model, Changes..." />
+        </div>
+        <div class="col-md-2 col-6 d-grid">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter me-2"></i>Filter</button>
+        </div>
+        <!-- Preserve all other filter values -->
+        {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
+        {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
+    </form>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <form method="get" class="d-inline">
+            <input type="hidden" name="export" value="excel" />
+            {% if selected_user %}<input type="hidden" name="user" value="{{ selected_user }}">{% endif %}
+            {% if selected_year %}<input type="hidden" name="year" value="{{ selected_year }}">{% endif %}
+            {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
+            {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
+            {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
+            {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
+            <button type="submit" class="btn btn-glass"><i class="fas fa-file-excel me-2"></i>Export Excel</button>
+        </form>
+        <form method="get" class="d-inline">
+            <input type="hidden" name="export" value="pdf" />
+            {% if selected_user %}<input type="hidden" name="user" value="{{ selected_user }}">{% endif %}
+            {% if selected_year %}<input type="hidden" name="year" value="{{ selected_year }}">{% endif %}
+            {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
+            {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
+            {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
+            {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
+            <button type="submit" class="btn btn-glass"><i class="fas fa-file-pdf me-2"></i>Export PDF</button>
+        </form>
+        <form method="get" class="d-inline">
+            <input type="hidden" name="export" value="excel" />
+            {% if selected_user %}<input type="hidden" name="user" value="{{ selected_user }}">{% endif %}
+            {% if selected_year %}<input type="hidden" name="year" value="{{ selected_year }}">{% endif %}
+            {% if selected_month %}<input type="hidden" name="month" value="{{ selected_month }}">{% endif %}
+            {% if selected_date %}<input type="hidden" name="date" value="{{ selected_date }}">{% endif %}
+            {% if search %}<input type="hidden" name="search" value="{{ search }}">{% endif %}
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-control d-inline w-auto" style="display:inline-block;max-width:140px;" required />
+            <span class="mx-1">to</span>
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-control d-inline w-auto" style="display:inline-block;max-width:140px;" required />
+            <button type="submit" class="btn btn-glass ms-2"><i class="fas fa-calendar-alt me-2"></i>Advanced Export</button>
+        </form>
+    </div>
+    {% if logs %}
+        <div class="glass-table">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-2"></i>User</th>
+                            <th><i class="fas fa-tasks me-2"></i>Action</th>
+                            <th><i class="fas fa-database me-2"></i>Model</th>
+                            <th><i class="fas fa-hashtag me-2"></i>Object ID</th>
+                            <th><i class="fas fa-calendar me-2"></i>Timestamp</th>
+                            <th><i class="fas fa-edit me-2"></i>Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td><strong>{{ log.user|default:"System" }}</strong></td>
+                            <td>
+                                {% if log.action == 'CREATE' %}
+                                    <span class="badge bg-success">{{ log.action }}</span>
+                                {% elif log.action == 'UPDATE' %}
+                                    <span class="badge bg-warning">{{ log.action }}</span>
+                                {% elif log.action == 'DELETE' %}
+                                    <span class="badge bg-danger">{{ log.action }}</span>
+                                {% else %}
+                                    <span class="badge bg-info">{{ log.action }}</span>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ log.model_name }}</code></td>
+                            <td><code>{{ log.object_id }}</code></td>
+                            <td>{{ log.timestamp|date:'M d, Y H:i' }}</td>
+                            <td>
+                                {% if log.changes %}
+                                    <span class="text-white-75">{{ log.changes|truncatechars:50 }}</span>
+                                {% else %}
+                                    <span class="text-white-75">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% comment %} Helper to build querystring without 'page' {% endcomment %}
+        {% with request.GET.urlencode as querystring %}
+            {% if querystring %}
+                {% with querystring|cut:'page=' as qs %}
+                    {% with qs|cut:'&&' as qs2 %}
+                        {% with qs2|cut:'&page=' as qs3 %}
+                            {% with qs3|cut:'?page=' as qs4 %}
+                                {% with qs4|cut:'page' as qs5 %}
+                                    {% with qs5|cut:'=' as qs6 %}
+                                        {% with qs6|cut:'&&' as qs7 %}
+                                            {% with qs7|cut:'&' as qs8 %}
+                                                {% with qs8 as clean_query %}
+                                                    <nav aria-label="Audit log pagination" class="mt-3">
+                                                        <ul class="pagination justify-content-center">
+                                                            {% if page_obj.has_previous %}
+                                                                <li class="page-item">
+                                                                    <a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                                                        <span aria-hidden="true">&laquo;</span>
+                                                                    </a>
+                                                                </li>
+                                                            {% else %}
+                                                                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                                            {% endif %}
+                                                            {% for num in page_obj.paginator.page_range %}
+                                                                {% if page_obj.number == num %}
+                                                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                                                    <li class="page-item"><a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            {% if page_obj.has_next %}
+                                                                <li class="page-item">
+                                                                    <a class="page-link" href="?{{ clean_query }}{% if clean_query %}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                                                                        <span aria-hidden="true">&raquo;</span>
+                                                                    </a>
+                                                                </li>
+                                                            {% else %}
+                                                                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                                            {% endif %}
+                                                        </ul>
+                                                    </nav>
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% endwith %}
+                            {% endwith %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endwith %}
+            {% endif %}
+        {% endwith %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-clipboard fa-4x text-white-75 mb-4"></i>
+            <h3 class="text-white mb-3">No Audit Logs Found</h3>
+            <p class="text-white-75 mb-4">System activity will be logged here as you perform actions.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #b3b3b3 #f5f5f5;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #b3b3b3;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+@media (max-width: 768px) {
+    .glass-table table {
+        font-size: 0.95rem;
+    }
+    .form-label, .btn, .form-control, .form-select {
+        font-size: 0.95rem;
+    }
+}
+</style>
+{% endblock %} 

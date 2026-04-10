@@ -6,6 +6,7 @@ app_name = 'accounts'
 urlpatterns = [
     # Auth
     path('login/',  views.login_view,  name='login'),
+    path('inventory_login/',  views.inventory_login,  name='inventory_login'),
     path('logout/', views.logout_view, name='logout'),
 
     # User Management (Admin only)

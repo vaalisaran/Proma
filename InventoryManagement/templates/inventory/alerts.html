@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts Management{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="fas fa-bell me-3"></i>Alerts Management
+</h1>
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="glass-card">
+            <h2 class="section-title">
+                <i class="fas fa-list me-2"></i>System Alerts
+            </h2>
+            
+            {% if alerts %}
+                <div class="glass-table">
+                    <div class="table-responsive" style="overflow-x: auto;">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-box me-2"></i>Product</th>
+                                    <th><i class="fas fa-hashtag me-2"></i>Serial Number</th>
+                                    <th><i class="fas fa-exclamation-triangle me-2"></i>Alert Type</th>
+                                    <th><i class="fas fa-layer-group me-2"></i>Current Qty</th>
+                                    <th><i class="fas fa-shield-alt me-2"></i>Limit Qty</th>
+                                    <th><i class="fas fa-info-circle me-2"></i>Message</th>
+                                    <th><i class="fas fa-toggle-on me-2"></i>Status</th>
+                                    <th class="d-none d-md-table-cell"><i class="fas fa-calendar me-2"></i>Created</th>
+                                    <th><i class="fas fa-cogs me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in alerts %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'product-detail' alert.product.id %}" class="text-decoration-none product-link">
+                                            <strong class="text-primary">{{ alert.product.name }}</strong>
+                                            <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                                        </a>
+                                    </td>
+                                    <td><span class="badge bg-info">{{ alert.product.serial_number|default:"-" }}</span></td>
+                                    <td>
+                                        {% if alert.alert_type == 'low_stock' %}
+                                            <span class="badge bg-warning">Low Stock</span>
+                                        {% elif alert.alert_type == 'out_of_stock' %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% elif alert.alert_type == 'limit_reached' %}
+                                            <span class="badge bg-danger">Limit Reached</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ alert.current_quantity }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ alert.limit_quantity|default:"-" }}</span></td>
+                                    <td>
+                                        <small class="text-muted">{{ alert.message|truncatechars:50 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if alert.status == 'active' %}
+                                            <span class="badge bg-danger">Active</span>
+                                        {% elif alert.status == 'acknowledged' %}
+                                            <span class="badge bg-warning">Acknowledged</span>
+                                        {% elif alert.status == 'resolved' %}
+                                            <span class="badge bg-success">Resolved</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="d-none d-md-table-cell">{{ alert.created_at|date:'M d, Y H:i' }}</td>
+                                    <td>
+                                        {% if alert.status == 'active' %}
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="alert_id" value="{{ alert.id }}">
+                                                <button type="submit" name="action" value="acknowledge" class="btn btn-warning-glass btn-sm">
+                                                    <i class="fas fa-check me-1"></i>Acknowledge
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        {% if alert.status != 'resolved' %}
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="alert_id" value="{{ alert.id }}">
+                                                <button type="submit" name="action" value="resolve" class="btn btn-success-glass btn-sm">
+                                                    <i class="fas fa-check-double me-1"></i>Resolve
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Pagination Controls -->
+                <nav aria-label="Alerts pagination" class="mt-4">
+                    <ul class="pagination justify-content-center flex-wrap">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        {% endif %}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                            {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-bell-slash fa-3x mb-3" style="color: #7f8c8d;"></i>
+                    <p>No alerts found.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Alert Details Modal -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px);">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">Alert Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-refresh alerts every 30 seconds
+        setInterval(function() {
+            location.reload();
+        }, 30000);
+        
+        // Add click handlers for alert details
+        document.querySelectorAll('.alert-details').forEach(function(element) {
+            element.addEventListener('click', function() {
+                const alertId = this.dataset.alertId;
+                // You can implement AJAX call here to get alert details
+                // For now, we'll just show a simple message
+                document.getElementById('alertDetails').innerHTML = `
+                    <p>Loading alert details...</p>
+                `;
+                new bootstrap.Modal(document.getElementById('alertModal')).show();
+            });
+        });
+    });
+</script>
+
+<!-- Add horizontal scroll bar for .table-responsive always visible -->
+<style>
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #b3b3b3 #f5f5f5;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #b3b3b3;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+.product-link {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.5rem;
+}
+.product-link:hover {
+    background: rgba(102, 126, 234, 0.08);
+    color: #764ba2 !important;
+    text-decoration: underline;
+}
+</style>
+{% endblock %} 

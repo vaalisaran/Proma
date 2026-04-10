@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Procurement Upload{% endblock %}
+
+{% block content %}
+<h1 class="page-title"><i class="fas fa-file-excel me-2"></i>BOM Excel Upload</h1>
+
+<div class="glass-card mb-4">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="excel_file" class="form-label">Upload Excel File</label>
+            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i>Upload</button>
+        <a href="/static/sample_procurement.xlsx" class="btn btn-outline-secondary ms-2"><i class="fas fa-download me-1"></i>Download Sample Excel</a>
+    </form>
+</div>
+
+{% if results %}
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="section-title mb-0"><i class="fas fa-list me-2"></i>Procurement Report</h2>
+        <button id="sendAllAlertsBtn" class="btn btn-warning"><i class="fas fa-bell me-1"></i>Send All Alerts</button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Requested Quantity</th>
+                    <th>Current Stock</th>
+                    <th>Rack Number</th>
+                    <th>Shelf Number</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in results %}
+                <tr{% if row.alert %} class="table-warning"{% endif %}>
+                    <td>{{ row.product_name }}</td>
+                    <td>{{ row.requested_qty }}</td>
+                    <td>{{ row.current_stock }}</td>
+                    <td>{{ row.rack_number }}</td>
+                    <td>{{ row.shelf_number }}</td>
+                    <td>
+                        {% if row.status == 'out_of_stock' %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                        {% elif row.status == 'insufficient' %}
+                            <span class="badge bg-warning">Insufficient</span>
+                        {% else %}
+                            <span class="badge bg-success">OK</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.status == 'insufficient' %}
+                        <form method="post" action="{% url 'procurement-restock' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ row.product_id }}">
+                            <input type="hidden" name="requested_qty" value="{{ row.requested_qty }}">
+                            <button type="submit" class="btn btn-sm btn-success">Add</button>
+                        </form>
+                        {% elif row.status == 'out_of_stock' %}
+                        <form method="post" action="{% url 'procurement-restock' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ row.product_id }}">
+                            <input type="number" name="restock_qty" min="1" class="form-control d-inline-block" style="width:90px;" placeholder="Qty" required>
+                            <button type="submit" class="btn btn-sm btn-success ms-1">Add</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+document.getElementById('sendAllAlertsBtn').onclick = function() {
+    if (!confirm('Send alerts for all insufficient or out-of-stock products?')) return;
+    const alerts = [];
+    {% for row in results %}
+    {% if row.alert %}
+    alerts.push({product_id: {{ row.product_id|default:'null' }}, requested_qty: {{ row.requested_qty|default:'null' }}, current_stock: {{ row.current_stock|default:'null' }}});
+    {% endif %}
+    {% endfor %}
+    fetch('{% url "send-all-alerts" %}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({alerts: alerts})
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Sent ' + data.alert_count + ' alerts!');
+        location.reload();
+    })
+    .catch(() => alert('Failed to send alerts.'));
+};
+</script>
+{% endif %}
+{% endblock %} 

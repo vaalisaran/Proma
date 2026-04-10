@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Product - Inventory Management{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="fas fa-edit me-3"></i>Edit Product
+</h1>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="glass-form">
+            <div class="text-center mb-4">
+                <i class="fas fa-box fa-3x mb-3" style="color: #4facfe;"></i>
+                <h2 class="mb-0">Edit Product Information</h2>
+                <p>Update the details and image for this product</p>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="name" class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ product.name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}" {% if product.category and product.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="brand" class="form-label">Brand</label>
+                        <input type="text" class="form-control" id="brand" name="brand" value="{{ product.brand }}">
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label for="sku" class="form-label">SKU</label>
+                        <input type="text" class="form-control" id="sku" name="sku" value="{{ product.sku }}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label for="serial_number" class="form-label">Serial Number</label>
+                        <input type="text" class="form-control" id="serial_number" name="serial_number" value="{{ product.serial_number }}">
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label for="price" class="form-label">Price</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.4); color: var(--text-primary);">$</span>
+                            <input type="number" step="0.01" class="form-control" id="price" name="price" value="{{ product.price }}" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="rack_number" class="form-label">Rack Number</label>
+                    <input type="text" class="form-control" id="rack_number" name="rack_number" value="{{ product.rack_number }}">
+                </div>
+                <div class="mb-3">
+                    <label for="shelf_number" class="form-label">Shelf Number</label>
+                    <input type="text" class="form-control" id="shelf_number" name="shelf_number" value="{{ product.shelf_number }}">
+                </div>
+                <div class="mb-4">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3">{{ product.description }}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="image" class="form-label">Product Image</label>
+                    {% if product.image %}
+                        <div class="mb-2">
+                            <img src="{{ product.image.url }}" alt="Current Image" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover; border-radius: 1rem;">
+                        </div>
+                    {% endif %}
+                    <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                </div>
+                <div class="mb-4">
+                    <label for="datasheet" class="form-label">Datasheet (PDF, Excel, Word)</label>
+                    {% if product.datasheet %}
+                        <div class="mb-2">
+                            <a href="{{ product.datasheet.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-file-alt me-1"></i>View Current Datasheet
+                            </a>
+                        </div>
+                    {% endif %}
+                    <input type="file" class="form-control" id="datasheet" name="datasheet" accept=".pdf,.xls,.xlsx,.doc,.docx,.csv">
+                    <small class="form-text text-muted">Optional. Upload a new datasheet to replace the current one.</small>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'products' %}" class="btn btn-glass me-md-2">
+                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success-glass">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .glass-form {
+        padding: 1.5rem !important;
+    }
+    
+    .fa-3x {
+        font-size: 2.5rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .glass-form {
+        padding: 1rem !important;
+    }
+    
+    .fa-3x {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .input-group-text {
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock %} 

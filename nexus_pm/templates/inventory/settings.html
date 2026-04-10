@@ -1,0 +1,60 @@
+{% extends "inventory_base.html" %}
+
+{% block title %}Inventory Settings{% endblock %}
+
+{% block content %}
+<div class="row min-vh-100 p-4 min-vw-100">
+    <div class="col-md-8 mx-auto mt-4">
+        <h1 class="page-title mb-4">Inventory Settings & Backup</h1>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary"><i class="fas fa-download me-2"></i> Export Database</h5>
+                <p class="card-text text-muted">Generate a secure JSON dump of all your Inventory datasets (`products`, `stock`, `inventory`, `procurement`). Keep this safe.</p>
+                <form method="post" action="{% url 'inventory_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="export">
+                    <button type="submit" class="btn btn-outline-primary px-4 py-2 mt-2">Download Backup</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-danger"><i class="fas fa-upload me-2"></i> Restore Database</h5>
+                <p class="card-text text-muted mb-3">Upload a previously exported JSON backup file to restore your Inventory data structure.</p>
+                
+                <div class="alert alert-warning d-flex align-items-center">
+                    <div>
+                        <strong>Warning:</strong> Restoring a backup might overwrite existing objects unconditionally depending on your active states. Ensure you backup your current DB first.
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'inventory_settings' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="import">
+                    <div class="mb-3 mt-4">
+                        <label for="backup_file" class="form-label fw-bold">Select JSON Backup File</label>
+                        <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".json" required>
+                    </div>
+                    <button type="submit" class="btn btn-danger px-4 py-2">Upload & Restore Database</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Remove local styling to force usage of standard layout! */
+.page-title {
+    font-size: 28px;
+    font-weight: 700;
+}
+.card {
+    border-radius: 12px;
+}
+.btn-outline-primary {
+    border-width: 2px;
+}
+</style>
+{% endblock %}

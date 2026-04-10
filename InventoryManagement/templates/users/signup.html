@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="glass-form" style="width: 400px;">
+        <div class="text-center mb-4">
+            <i class="fas fa-user-plus fa-4x text-white mb-3"></i>
+            <h2 class="text-white mb-0">Create Account</h2>
+            <p class="text-white-75">Join our inventory management system</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-glass mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="Choose a username" required autofocus />
+            </div>
+            <div class="mb-4">
+                <label for="password1" class="form-label">Password</label>
+                <input type="password" name="password1" id="password1" class="form-control" placeholder="Create a strong password" required />
+            </div>
+            <div class="mb-4">
+                <label for="password2" class="form-label">Confirm Password</label>
+                <input type="password" name="password2" id="password2" class="form-control" placeholder="Confirm your password" required />
+            </div>
+            <button type="submit" class="btn btn-success-glass w-100 py-3 mb-4">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+        </form>
+        
+        <div class="text-center">
+            <p class="text-white-75 mb-0">
+                Already have an account? 
+                <a href="{% url 'login' %}" class="text-white fw-bold text-decoration-none">Sign in here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

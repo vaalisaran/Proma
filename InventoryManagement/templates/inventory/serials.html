@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Serial Number Tracking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h1 class="page-title mb-0">
+        <i class="fas fa-hashtag me-3"></i>Serial Number Tracking
+    </h1>
+    <div class="d-flex gap-2">
+        <form method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary-glass">
+                <i class="fas fa-sync me-2"></i>Sync Serial Numbers
+            </button>
+        </form>
+        <a href="/" class="btn btn-glass">
+            <i class="fas fa-home me-2"></i>Dashboard
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+            <div class="alert alert-success alert-glass text-center">
+                <i class="fas fa-check-circle me-2"></i>{{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<!-- Search Bar -->
+<div class="glass-card mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text" style="background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.4); color: var(--text-primary);">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" class="form-control" name="search" placeholder="Search by serial number, product name, brand, or SKU..." value="{{ search_query }}">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary-glass">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+                {% if search_query %}
+                    <a href="{% url 'inventory-serials-page' %}" class="btn btn-glass">
+                        <i class="fas fa-times me-2"></i>Clear
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Products with Serial Numbers
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title mb-0">
+            <i class="fas fa-box me-2"></i>Products with Serial Numbers ({{ products_with_serials|length }})
+        </h2>
+    </div>
+    
+    {% if products_with_serials %}
+        <div class="glass-table">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-box me-2"></i>Product</th>
+                            <th><i class="fas fa-hashtag me-2"></i>Serial Number</th>
+                            <th><i class="fas fa-tag me-2"></i>Brand</th>
+                            <th><i class="fas fa-barcode me-2"></i>SKU</th>
+                            <th><i class="fas fa-dollar-sign me-2"></i>Price</th>
+                            <th class="d-none d-lg-table-cell"><i class="fas fa-folder me-2"></i>Category</th>
+                            <th class="d-none d-md-table-cell"><i class="fas fa-calendar me-2"></i>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products_with_serials %}
+                        <tr>
+                            <td><strong>{{ product.name }}</strong></td>
+                            <td><span class="badge bg-info">{{ product.serial_number }}</span></td>
+                            <td>{{ product.brand|default:"-" }}</td>
+                            <td><span class="badge bg-dark">{{ product.sku }}</span></td>
+                            <td><span class="badge bg-success">${{ product.price|floatformat:2 }}</span></td>
+                            <td class="d-none d-lg-table-cell">
+                                {% if product.category %}
+                                    <span class="badge bg-primary">{{ product.category.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">{{ product.created_at|date:'M d, Y' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-box-open fa-3x mb-3" style="color: #7f8c8d;"></i>
+            <p>No products with serial numbers found.</p>
+            {% if search_query %}
+                <p class="small">No results found for "{{ search_query }}". Try a different search term.</p>
+            {% else %}
+                <p class="small">Add serial numbers to products in the Products section.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div> -->
+
+<!-- Serial Number Records -->
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title mb-0">
+            <i class="fas fa-list me-2"></i>Serial Number Records ({{ page_obj.paginator.count }})
+        </h2>
+    </div>
+    {% if serials %}
+        <div class="glass-table">
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-2"></i>Serial Number</th>
+                            <th><i class="fas fa-box me-2"></i>Product</th>
+                            <th><i class="fas fa-tag me-2"></i>Brand</th>
+                            <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                            <th class="d-none d-md-table-cell"><i class="fas fa-calendar me-2"></i>Date Added</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for serial in serials %}
+                        <tr>
+                            <td><code>{{ serial.serial_number }}</code></td>
+                            <td>
+                              <a href="{% url 'product-detail' serial.product.id %}" class="text-decoration-none product-link">
+                                <strong class="text-primary">{{ serial.product.name }}</strong>
+                                <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                              </a>
+                            </td>
+                            <td>{{ serial.product.brand|default:"-" }}</td>
+                            <td>
+                                {% if serial.status == 'available' %}
+                                    <span class="badge bg-success">{{ serial.status }}</span>
+                                {% elif serial.status == 'sold' %}
+                                    <span class="badge bg-danger">{{ serial.status }}</span>
+                                {% elif serial.status == 'returned' %}
+                                    <span class="badge bg-warning">{{ serial.status }}</span>
+                                {% elif serial.status == 'damaged' %}
+                                    <span class="badge bg-dark">{{ serial.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ serial.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">{{ serial.created_at|date:'M d, Y H:i' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pagination Controls -->
+        <nav aria-label="Serials pagination" class="mt-4">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                        <li class="page-item"><a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-hashtag fa-3x mb-3" style="color: #7f8c8d;"></i>
+            <p>No serial number records found.</p>
+            {% if search_query %}
+                <p class="small">No results found for "{{ search_query }}". Try a different search term.</p>
+            {% else %}
+                <p class="small">Click "Sync Serial Numbers" to create records from products with serial numbers.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .glass-card {
+        padding: 1.5rem !important;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .glass-card {
+        padding: 1rem !important;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.3rem 0.2rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Add horizontal scroll bar for .table-responsive always visible */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #b3b3b3 #f5f5f5;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #b3b3b3;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+.product-link {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.5rem;
+}
+.product-link:hover {
+    background: rgba(102, 126, 234, 0.08);
+    color: #764ba2 !important;
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'inventory_base.html' %}
+{% block title %}Inventory Users Management{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+    <div>
+        <h1 class="page-title" style="margin-bottom: 8px;">Inventory Users</h1>
+        <p style="color:var(--text-muted); font-size:14px;">Manage isolated inventory user accounts and adjust roles.</p>
+    </div>
+    <div>
+        <a href="{% url 'inventory-user-add' %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create User</a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+    <form method="get" style="display:flex; gap:12px; align-items:center;">
+        <input type="text" name="q" class="form-control" placeholder="Search by username..." value="{{ search_query }}" style="max-width: 300px;">
+        <select name="role" class="form-control" style="max-width: 200px;">
+            <option value="">All Roles</option>
+            {% for value, label in role_choices %}
+            <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i> Filter</button>
+        {% if search_query or role_filter %}
+        <a href="{% url 'inventory-user-list' %}" class="btn btn-secondary">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card" style="padding:0;">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:34px; height:34px; border-radius:8px; background:{{ u.avatar_color|default:'#6366f1' }}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;">
+                                {{ u.initials|default:"??"|upper }}
+                            </div>
+                            <span style="font-weight:600; color:var(--text-primary);">{{ u.username }}</span>
+                        </div>
+                    </td>
+                    <td>{{ u.email|default:"—" }}</td>
+                    <td>
+                        <span class="badge {% if u.role == 'admin' %}badge-red{% elif u.role == 'manager' %}badge-blue{% else %}badge-green{% endif %}">
+                            {{ u.get_role_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if u.is_active %}badge-green{% else %}badge-red{% endif %}">
+                            {% if u.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td>{{ u.created_at|date:"M d, Y" }}</td>
+                    <td style="text-align:right;">
+                        <div style="display:flex; gap:6px; justify-content:flex-end;">
+                            <a href="{% url 'inventory-user-edit' u.id %}" class="btn btn-secondary btn-icon btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'inventory-user-delete' u.id %}" class="btn btn-danger btn-icon btn-sm" title="Delete"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state" style="padding:40px; text-align:center;">
+                            <i class="fas fa-users" style="font-size:36px; color:var(--text-muted); opacity:0.5; margin-bottom:12px;"></i>
+                            <h3 style="margin-bottom:8px;">No users found</h3>
+                            <p style="color:var(--text-muted); font-size:14px;">Try adjusting your search filters or add a new user.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include 'pagination.html' %}
+{% endblock %}

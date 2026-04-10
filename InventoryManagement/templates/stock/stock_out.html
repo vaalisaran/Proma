@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Out Management{% endblock %}
+
+{% block content %}
+<h1 class="page-title">
+    <i class="fas fa-box-arrow-up me-3"></i>Stock Out Management
+</h1>
+
+{% if messages %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-lg-8 col-md-10">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-glass text-center">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+
+<!-- Tab Navigation -->
+<div class="row justify-content-center mb-4">
+    <div class="col-lg-8 col-md-10">
+        <div class="glass-card">
+            <ul class="nav nav-tabs nav-fill" id="stockOutTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="single-tab" data-bs-toggle="tab" data-bs-target="#single" type="button" role="tab">
+                        <i class="fas fa-arrow-up me-2"></i>Single Stock Out
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" type="button" role="tab">
+                        <i class="fas fa-upload me-2"></i>Bulk Stock Out
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="stockOutTabsContent">
+    <!-- Single Stock Out Tab -->
+    <div class="tab-pane fade show active" id="single" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-6 col-md-12">
+                <div class="glass-form">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-minus-circle fa-3x mb-3" style="color: #fa709a;"></i>
+                        <h2 class="mb-0">Remove Stock</h2>
+                        <p>Record inventory items removed</p>
+                    </div>
+                    <form method="post" autocomplete="off">
+                        {% csrf_token %}
+                        <div class="mb-4 position-relative">
+                            <label for="product_search" class="form-label">Product</label>
+                            <input type="text" class="form-control" id="product_search" placeholder="Type to search products..." autocomplete="off">
+                            <input type="hidden" name="product" id="product_id">
+                            <div id="productList" class="list-group position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" min="1" placeholder="Enter quantity" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="location_from" class="form-label">Location From</label>
+                            <input type="text" class="form-control" id="location_from" name="location_from" placeholder="Enter source location" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="location_to" class="form-label">Location To</label>
+                            <input type="text" class="form-control" id="location_to" name="location_to" placeholder="Enter destination location" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="2" placeholder="Extra details (optional)"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-danger-glass w-100 py-3">
+                            <i class="fas fa-save me-2"></i>Remove Stock
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-6 col-md-12">
+                <div class="glass-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-history me-2"></i>Recent Stock Out Entries
+                    </h2>
+                    {% if stock_out_entries %}
+                        <div class="glass-table">
+                            <div class="table-responsive" style="overflow-x: auto;">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-box me-2"></i>Product</th>
+                                            <th><i class="fas fa-hashtag me-2"></i>Serial Number</th>
+                                            <th><i class="fas fa-layer-group me-2"></i>Quantity</th>
+                                            <th><i class="fas fa-map-marker-alt me-2"></i>Location From</th>
+                                            <th><i class="fas fa-map-marker-alt me-2"></i>Location To</th>
+                                            <th><i class="fas fa-align-left me-2"></i>Description</th>
+                                            <th class="d-none d-md-table-cell"><i class="fas fa-calendar me-2"></i>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for entry in stock_out_entries %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'product-detail' entry.product.id %}" class="text-decoration-none product-link">
+                                                    <strong class="text-primary">{{ entry.product.name }}</strong>
+                                                    <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                            </td>
+                                            <td><span class="badge bg-info">{{ entry.product.serial_number|default:"-" }}</span></td>
+                                            <td><span class="badge bg-danger">{{ entry.quantity }}</span></td>
+                                            <td><span class="badge bg-secondary">{{ entry.location_from|default:"-" }}</span></td>
+                                            <td><span class="badge bg-secondary">{{ entry.location_to|default:"-" }}</span></td>
+                                            <td><span class="text-muted small">{{ entry.description|default:"-" }}</span></td>
+                                            <td class="d-none d-md-table-cell">{{ entry.timestamp|date:'M d, Y H:i' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Pagination Controls -->
+                        <nav aria-label="Stock Out pagination" class="mt-4">
+                            <ul class="pagination justify-content-center flex-wrap">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo;</span>
+                                    </li>
+                                {% endif %}
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&raquo;</span>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x mb-3" style="color: #7f8c8d;"></i>
+                            <p>No stock out entries found.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Bulk Stock Out Tab -->
+    <div class="tab-pane fade" id="bulk" role="tabpanel">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-md-12">
+                <div class="glass-form">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-upload fa-3x mb-3" style="color: #fa709a;"></i>
+                        <h2 class="mb-0">Bulk Stock Out</h2>
+                        <p>Upload an Excel file to remove stock for multiple products at once</p>
+                    </div>
+                    <div class="glass-card mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5><i class="fas fa-download me-2"></i>Download Excel Template</h5>
+                                <p class="mb-0">Download the template to see the required column format for bulk stock out.</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="/static/sample_stockout.xlsx" class="btn btn-primary-glass">
+                                    <i class="fas fa-file-excel me-2"></i>Download Template
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <form method="post" enctype="multipart/form-data" id="bulkStockOutForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="bulk">
+                        <div class="mb-4">
+                            <label for="excel_file" class="form-label">Excel File</label>
+                            <input type="file" class="form-control" id="excel_file" name="excel_file" accept=".xls,.xlsx" required>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-danger-glass">
+                                <i class="fas fa-upload me-2"></i>Upload Stock Out
+                            </button>
+                        </div>
+                    </form>
+                    {% if bulk_results %}
+                    <div class="glass-card mt-4">
+                        {% with first_result=bulk_results.0 %}
+                        {% if first_result.status == 'failed' %}
+                        <div class="alert alert-danger alert-glass mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Some items failed to stock out. See the details below.
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                        <h5><i class="fas fa-list me-2"></i>Bulk Stock Out Results</h5>
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                        <th>Message</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in bulk_results %}
+                                    <tr>
+                                        <td>{{ row.product_name }}</td>
+                                        <td>{{ row.quantity }}</td>
+                                        <td>
+                                            {% if row.status == 'success' %}
+                                                <span class="badge bg-success">Success</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ row.message }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const products = [
+            {% for product in products %}
+                {id: {{ product.id }}, name: "{{ product.name|escapejs }}", serial: "{{ product.serial_number|default:''|escapejs }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        const input = document.getElementById('product_search');
+        const productList = document.getElementById('productList');
+        const productIdInput = document.getElementById('product_id');
+        
+        input.addEventListener('input', function() {
+            const val = this.value.toLowerCase();
+            productList.innerHTML = '';
+            if (val.length === 0) return;
+            
+            const matches = products.filter(function(p) { 
+                return p.name.toLowerCase().includes(val) || p.serial.toLowerCase().includes(val); 
+            });
+            
+            matches.forEach(function(p) {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action';
+                item.style.background = 'rgba(255, 255, 255, 0.3)';
+                item.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+                item.style.color = 'var(--text-primary)';
+                item.style.backdropFilter = 'blur(16px)';
+                item.style.webkitBackdropFilter = 'blur(16px)';
+                item.innerHTML = '<strong>' + p.name + '</strong>' + (p.serial ? '<br><small>SN: ' + p.serial + '</small>' : '');
+                item.onclick = function() {
+                    input.value = p.name;
+                    productIdInput.value = p.id;
+                    productList.innerHTML = '';
+                };
+                productList.appendChild(item);
+            });
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !productList.contains(e.target)) {
+                productList.innerHTML = '';
+            }
+        });
+    });
+</script>
+
+<style>
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .glass-form, .glass-card {
+        padding: 1.5rem !important;
+    }
+    
+    .fa-3x {
+        font-size: 2.5rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .glass-form, .glass-card {
+        padding: 1rem !important;
+    }
+    
+    .fa-3x {
+        font-size: 2rem;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem 0.3rem;
+    }
+}
+
+/* Add horizontal scroll bar for .table-responsive always visible */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #b3b3b3 #f5f5f5;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #b3b3b3;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+.product-link {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.5rem;
+}
+.product-link:hover {
+    background: rgba(102, 126, 234, 0.08);
+    color: #764ba2 !important;
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

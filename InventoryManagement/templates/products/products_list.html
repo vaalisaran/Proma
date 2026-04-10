@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Product List - Inventory Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h1 class="page-title mb-0">
+        <i class="fas fa-boxes me-3"></i>Product Inventory
+    </h1>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'add-product' %}" class="btn btn-primary-glass">
+            <i class="fas fa-plus me-2"></i>Add Product
+        </a>
+        <a href="{% url 'add-product' %}#bulk" class="btn btn-success-glass">
+            <i class="fas fa-upload me-2"></i>Bulk Upload
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+            <div class="alert alert-success alert-glass text-center">
+                <i class="fas fa-check-circle me-2"></i>{{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h2 class="section-title mb-0">
+            <i class="fas fa-list me-2"></i>All Products ({{ products|length }})
+        </h2>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'categories' %}" class="btn btn-glass">
+                <i class="fas fa-tags me-2"></i>Categories
+            </a>
+            <a href="/" class="btn btn-glass">
+                <i class="fas fa-home me-2"></i>Dashboard
+            </a>
+        </div>
+    </div>
+    
+    <!-- Search Form -->
+    <div class="mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text" style="background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.4); color: var(--text-primary);">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" placeholder="Search by name, brand, SKU, or serial number..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary-glass">
+                        <i class="fas fa-search me-2"></i>Search
+                    </button>
+                    {% if search_query %}
+                        <a href="{% url 'products' %}" class="btn btn-glass">
+                            <i class="fas fa-times me-2"></i>Clear
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    {% if products %}
+        <div class="glass-table">
+            <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-image me-2"></i>Image</th>
+                            <th><i class="fas fa-box me-2"></i>Name</th>
+                            <th><i class="fas fa-tag me-2"></i>Brand</th>
+                            <th class="d-none d-md-table-cell"><i class="fas fa-info-circle me-2"></i>Description</th>
+                            <th><i class="fas fa-barcode me-2"></i>SKU</th>
+                            <th><i class="fas fa-hashtag me-2"></i>Serial Number</th>
+                            <th><i class="fas fa-dollar-sign me-2"></i>Price</th>
+                            <th class="d-none d-lg-table-cell"><i class="fas fa-folder me-2"></i>Category</th>
+                            <th class="d-none d-lg-table-cell"><i class="fas fa-calendar me-2"></i>Created</th>
+                            <th>Rack Number</th>
+                            <th>Shelf Number</th>
+                            <th><i class="fas fa-edit me-2"></i>Edit</th>
+                            <th><i class="fas fa-trash me-2"></i>Delete</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-thumbnail" style="width: 56px; height: 56px; object-fit: cover; border-radius: 1rem; box-shadow: 0 4px 16px rgba(31,38,135,0.18); background: rgba(255,255,255,0.2);">
+                                {% else %}
+                                    <span class="text-secondary"><i class="fas fa-box-open fa-lg"></i></span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'product-detail' product.pk %}" class="text-decoration-none product-link">
+                                    <strong class="text-primary">{{ product.name|default:"" }}</strong>
+                                    <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.7rem;"></i>
+                                </a>
+                            </td>
+                            <td>{{ product.brand|default:"" }}</td>
+                            <td class="d-none d-md-table-cell">{{ product.description|truncatechars:50|default:"" }}</td>
+                            <td><span class="badge bg-dark">{{ product.sku|default:"" }}</span></td>
+                            <td><span class="badge bg-info">{{ product.serial_number|default:"" }}</span></td>
+                            <td>
+                                <span class="badge bg-success">
+                                    ${{ product.price|floatformat:2|default:"0.00" }}
+                                </span>
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                {% if product.category %}
+                                    <span class="badge bg-primary">
+                                        {{ product.category.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                {% if product.created_at %}
+                                    {{ product.created_at|date:'M d, Y' }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ product.rack_number|default:'' }}</td>
+                            <td>{{ product.shelf_number|default:'' }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'product-detail' product.pk %}" class="btn btn-primary-glass btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'edit-product' product.pk %}" class="btn btn-edit-glass btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                            <td>
+                                <form method="post" action="{% url 'delete-product' product.pk %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Delete" onclick="return confirm('Are you sure you want to delete this product?');">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pagination Controls -->
+        <nav aria-label="Product pagination" class="mt-4">
+            <ul class="pagination justify-content-center flex-wrap">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&laquo;</span>
+                    </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                    {% elif num == 1 or num == page_obj.paginator.num_pages %}
+                        <li class="page-item"><a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if search_query %}search={{ search_query }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">&raquo;</span>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-box-open fa-4x mb-4" style="color: #7f8c8d;"></i>
+            <h3 class="mb-3">No Products Found</h3>
+            <p class="mb-4">Start building your inventory by adding your first product.</p>
+            <a href="{% url 'add-product' %}" class="btn btn-primary-glass">
+                <i class="fas fa-plus me-2"></i>Add Your First Product
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Mobile responsive table adjustments */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.3rem 0.2rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+.product-link {
+    transition: all 0.3s ease;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.product-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.product-link:hover strong {
+    color: #667eea !important;
+}
+
+/* Add horizontal scroll bar for .table-responsive always visible */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #b3b3b3 #f5f5f5;
+}
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #b3b3b3;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,566 @@
+{% extends 'inventory_base.html' %}
+
+{% block title %}{{ product.name }} - Product Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h1 class="page-title mb-0">
+        {{ product.name }}
+    </h1>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'edit-product' product.pk %}" class="btn btn btn-secondary">
+            Edit Product
+        </a>
+        <a href="{% url 'products' %}" class="btn btn btn-secondary">
+            Back to Products
+        </a>
+    </div>
+</div>
+
+
+
+<!-- Product Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-4 col-md-6">
+        <div class="card">
+            <div class="text-center mb-3">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 200px;">
+                        
+                    </div>
+                {% endif %}
+            </div>
+            <h3 class="text-center mb-3">{{ product.name }}</h3>
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="stats-number text-primary">{{ stock_stats.current_quantity }}</div>
+                    <div class="stats-label">Current Stock</div>
+                </div>
+                <div class="col-6">
+                    <div class="stats-number text-success">${{ product.price|floatformat:2 }}</div>
+                    <div class="stats-label">Price</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8 col-md-6">
+        <div class="card">
+            <h2 class="section-title">
+                Product Information
+            </h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Brand:</strong> {{ product.brand|default:"Not specified" }}</p>
+                    <p><strong>SKU:</strong> <span class="badge bg-dark">{{ product.sku }}</span></p>
+                    <p><strong>Serial Number:</strong> <span class="badge bg-info">{{ product.serial_number|default:"Not specified" }}</span></p>
+                    <p><strong>Rack Number:</strong> {{ product.rack_number|default:"-" }}</p>
+                    <p><strong>Shelf Number:</strong> {{ product.shelf_number|default:"-" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Category:</strong> 
+                        {% if product.category %}
+                            <span class="badge bg-primary">{{ product.category.name }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No category</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Created:</strong> {{ product.created_at|date:'M d, Y H:i' }}</p>
+                    <p><strong>Status:</strong> 
+                        {% if stock_stats.current_quantity > 0 %}
+                            <span class="badge bg-success">In Stock</span>
+                        {% else %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if product.description %}
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <p class="text-muted">{{ product.description }}</p>
+                </div>
+            {% endif %}
+            {% if product.datasheet %}
+                <div class="mb-3">
+                    <label class="form-label">Datasheet:</label>
+                    <a href="{{ product.datasheet.url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                        {% if '.pdf' in product.datasheet.url %}
+                            
+                        {% elif '.xls' in product.datasheet.url or '.xlsx' in product.datasheet.url or '.csv' in product.datasheet.url %}
+                            
+                        {% elif '.doc' in product.datasheet.url or '.docx' in product.datasheet.url %}
+                            
+                        {% else %}
+                            
+                        {% endif %}
+                        View Datasheet
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Stock Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.total_stock_in }}</div>
+            <div class="stats-label">Total Stock In</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.total_stock_out }}</div>
+            <div class="stats-label">Total Stock Out</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.stock_in_count }}</div>
+            <div class="stats-label">Stock In Entries</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.stock_out_count }}</div>
+            <div class="stats-label">Stock Out Entries</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.stock_turnover }}</div>
+            <div class="stats-label">Stock Turnover</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="stats-card">
+            
+            <div class="stats-number">{{ stock_stats.shrinkage_rate }}%</div>
+            <div class="stats-label">Shrinkage Rate</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stock Adjustment -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <h2 class="section-title">
+                Quick Stock Adjustment
+            </h2>
+            <div class="row">
+                <div class="col-lg-6">
+                    <form method="post" id="stockAdjustmentForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="stock_adjustment">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="adjustment_type" class="form-label">Adjustment Type</label>
+                                <select class="form-select" id="adjustment_type" name="adjustment_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="in">Stock In</option>
+                                    <option value="out">Stock Out</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="adjustment_quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="adjustment_quantity" name="quantity" min="1" placeholder="Enter quantity" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="adjustment_reason" class="form-label">Reason (Optional)</label>
+                                <textarea class="form-control" id="adjustment_reason" name="reason" rows="2" placeholder="Enter reason for adjustment..."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn btn-success w-100">
+                                    Apply Adjustment
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-6">
+                    <div class="alert alert-info ">
+                        <h5>Quick Adjustment Guide</h5>
+                        <ul class="mb-0">
+                            <li><strong>Stock In:</strong> Add inventory (received items)</li>
+                            <li><strong>Stock Out:</strong> Remove inventory (sold/used items)</li>
+                            <li>Adjustments are logged in the stock history</li>
+                            <li>Alerts will be triggered if limits are reached</li>
+                        </ul>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Current Status</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Current Stock:</span>
+                            <strong class="text-primary">{{ stock_stats.current_quantity }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Rental Count:</span>
+                            <strong class="text-info">{{ rental_count }}</strong>
+                        </div>
+                        {% if quantity_limit %}
+                        <div class="d-flex justify-content-between">
+                            <span>Limit:</span>
+                            <strong class="text-warning">{{ quantity_limit.limit_quantity }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Status:</span>
+                            {% if stock_stats.current_quantity <= quantity_limit.limit_quantity %}
+                                <strong class="text-danger">Below Limit</strong>
+                            {% else %}
+                                <strong class="text-success">Above Limit</strong>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quantity Limit and Alerts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <h2 class="section-title">
+                Quantity Limit
+            </h2>
+            {% if quantity_limit %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p><strong>Limit:</strong> <span class="badge bg-warning">{{ quantity_limit.limit_quantity }}</span></p>
+                        <p><strong>Status:</strong> 
+                            {% if quantity_limit.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Set by:</strong> {{ quantity_limit.created_by.username|default:"System" }}</p>
+                    </div>
+                    <div class="text-end">
+                        {% if stock_stats.current_quantity <= quantity_limit.limit_quantity %}
+                            <div class="alert alert-danger ">
+                                
+                                Quantity below limit!
+                            </div>
+                        {% else %}
+                            <div class="alert alert-success ">
+                                
+                                Quantity above limit
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-3">
+                    
+                    <p>No quantity limit set</p>
+                    <a href="{% url 'inventory-limits-page' %}" class="btn btn btn-secondary btn-sm">
+                        Set Limit
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <h2 class="section-title">
+                Active Alerts ({{ active_alerts|length }})
+            </h2>
+            {% if active_alerts %}
+                <div class="list-group">
+                    {% for alert in active_alerts %}
+                        <div class="alert alert-danger ">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ alert.get_alert_type_display }}</strong>
+                                    <br>
+                                    <small>{{ alert.message }}</small>
+                                </div>
+                                <small class="text-muted">{{ alert.created_at|date:'M d, H:i' }}</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-3">
+                    
+                    <p>No active alerts</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Stock Entries -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <h2 class="section-title">
+                Recent Stock Entries
+            </h2>
+            {% if recent_stock_entries %}
+                <div class="table-wrap">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Created By</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in recent_stock_entries %}
+                                <tr>
+                                    <td>{{ entry.timestamp|date:'M d, Y H:i' }}</td>
+                                    <td>
+                                        {% if entry.entry_type == 'in' %}
+                                            <span class="badge bg-success">Stock In</span>
+                                        {% elif entry.entry_type == 'out' %}
+                                            <span class="badge bg-danger">Stock Out</span>
+                                        {% else %}
+                                            <span class="badge bg-info">Transfer</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ entry.quantity }}</span></td>
+                                    <td>{{ entry.created_by.username|default:"System" }}</td>
+                                    <td>
+                                        {% if entry.location_from or entry.location_to %}
+                                            {% if entry.location_from %}{{ entry.location_from }}{% endif %}
+                                            {% if entry.location_from and entry.location_to %} → {% endif %}
+                                            {% if entry.location_to %}{{ entry.location_to }}{% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    
+                    <p>No stock entries found for this product.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Alerts -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card">
+            <h2 class="section-title">
+                Recent Alerts History
+            </h2>
+            {% if recent_alerts %}
+                <div class="table-wrap">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Message</th>
+                                    <th>Quantity</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in recent_alerts %}
+                                <tr>
+                                    <td>{{ alert.created_at|date:'M d, Y H:i' }}</td>
+                                    <td>
+                                        {% if alert.alert_type == 'low_stock' %}
+                                            <span class="badge bg-warning">Low Stock</span>
+                                        {% elif alert.alert_type == 'out_of_stock' %}
+                                            <span class="badge bg-danger">Out of Stock</span>
+                                        {% elif alert.alert_type == 'limit_reached' %}
+                                            <span class="badge bg-danger">Limit Reached</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>{{ alert.message|truncatechars:60 }}</small>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ alert.current_quantity }}</span></td>
+                                    <td>
+                                        {% if alert.status == 'active' %}
+                                            <span class="badge bg-danger">Active</span>
+                                        {% elif alert.status == 'acknowledged' %}
+                                            <span class="badge bg-warning">Acknowledged</span>
+                                        {% elif alert.status == 'resolved' %}
+                                            <span class="badge bg-success">Resolved</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    
+                    <p>No alerts found for this product.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+. {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.stats-label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .stats-card {
+        padding: 1rem;
+    }
+    
+    .stats-number {
+        font-size: 1.2rem;
+    }
+    
+    .stats-label {
+        font-size: 0.7rem;
+    }
+}
+
+/* Stock adjustment form enhancements */
+#stockAdjustmentForm .form-control:focus,
+#stockAdjustmentForm .form-select:focus {
+    border-color: #43e97b;
+    box-shadow: 0 0 0 0.2rem rgba(67, 233, 123, 0.25);
+}
+
+.adjustment-preview {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('stockAdjustmentForm');
+    const adjustmentType = document.getElementById('adjustment_type');
+    const quantity = document.getElementById('adjustment_quantity');
+    const currentStock = {{ stock_stats.current_quantity }};
+    
+    // Real-time preview of adjustment
+    function updatePreview() {
+        const type = adjustmentType.value;
+        const qty = parseInt(quantity.value) || 0;
+        
+        if (type && qty > 0) {
+            let newStock = currentStock;
+            if (type === 'in') {
+                newStock += qty;
+            } else {
+                newStock -= qty;
+            }
+            
+            // Remove existing preview
+            const existingPreview = document.querySelector('.adjustment-preview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            // Create new preview
+            const preview = document.createElement('div');
+            preview.className = 'adjustment-preview';
+            preview.innerHTML = `
+                <strong>Preview:</strong> After adjustment, stock will be <strong class="text-primary">${newStock}</strong>
+                ${newStock < 0 ? '<br><span class="text-danger">⚠️ Warning: This will result in negative stock!</span>' : ''}
+            `;
+            
+            form.appendChild(preview);
+        }
+    }
+    
+    // Add event listeners
+    adjustmentType.addEventListener('change', updatePreview);
+    quantity.addEventListener('input', updatePreview);
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const type = adjustmentType.value;
+        const qty = parseInt(quantity.value) || 0;
+        
+        if (!type) {
+            e.preventDefault();
+            alert('Please select an adjustment type');
+            return;
+        }
+        
+        if (qty <= 0) {
+            e.preventDefault();
+            alert('Quantity must be greater than 0');
+            return;
+        }
+        
+        if (type === 'out' && qty > currentStock) {
+            if (!confirm(`Warning: You're trying to remove ${qty} units but only have ${currentStock} in stock. This will result in negative inventory. Continue?`)) {
+                e.preventDefault();
+                return;
+            }
+        }
+        
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = 'Processing...';
+        submitBtn.disabled = true;
+    });
+    
+    // Auto-focus on quantity field when type is selected
+    adjustmentType.addEventListener('change', function() {
+        if (this.value) {
+            quantity.focus();
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -22,10 +22,30 @@ def login_view(request):
                 return render(request, 'accounts/login.html', {'form': form})
             login(request, user)
             messages.success(request, f'Welcome back, {user.display_name}!')
-            return redirect(request.GET.get('next', 'tasks:dashboard'))
+            next_url = request.POST.get('next') or request.GET.get('next', 'tasks:dashboard')
+            return redirect(next_url)
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'accounts/login.html', {'form': form})
+def inventory_login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        try:
+            from inventory.models import InventoryUser
+            user = InventoryUser.objects.get(username=username)
+            if user.check_password(password) and user.is_active:
+                request.session['inv_user_id'] = user.id
+                messages.success(request, f'Welcome back, {user.username}!')
+                return redirect('/inventory/dashboard/')
+            else:
+                messages.error(request, 'Invalid inventory credentials or inactive account.')
+        except Exception:
+            messages.error(request, 'Invalid inventory credentials.')
+        # Ensure fallback redirects back with the error message
+        return render(request, 'accounts/login.html', {'form': LoginForm(request)})
+        
+    return redirect('accounts:login')
 
 
 @login_required
