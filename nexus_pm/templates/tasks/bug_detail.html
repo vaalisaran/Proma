@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}{{ bug.title }} — IIAP PM{% endblock %}
 {% block page_title %}Bug Detail{% endblock %}
-{% block topbar_actions %}
+{% if user == bug.reported_by %}
 <a href="{% url 'tasks:bug_edit' bug.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
-{% endblock %}
+{% endif %}
 {% block content %}
 <div style="display:grid;grid-template-columns:1fr 290px;gap:20px;align-items:start;">
 
@@ -11,7 +11,10 @@
     <div style="display:flex;flex-direction:column;gap:16px;">
 
         <!-- Header -->
-        <div class="card">
+        <div class="card" style="position:relative;">
+            <div style="position:absolute; top:0; right:0; padding:8px 12px; background:var(--bg-secondary); border-bottom-left-radius:var(--radius-sm); font-size:10px; font-weight:700; color:var(--text-muted); border-left:1px solid var(--border); border-bottom:1px solid var(--border);">
+                BUG ID: {{ bug.pk }}
+            </div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
                 <span class="badge {% if bug.severity == 'critical' %}badge-red{% elif bug.severity == 'high' %}badge-yellow{% elif bug.severity == 'medium' %}badge-blue{% else %}badge-gray{% endif %}">
                     <i class="fas fa-exclamation-circle"></i> {{ bug.get_severity_display }} Severity
@@ -80,14 +83,18 @@
                 <!-- Assigned To -->
                 <div>
                     <div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Assigned To</div>
-                    {% if bug.assigned_to %}
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <div class="avatar" style="background:{{ bug.assigned_to.avatar_color }};width:32px;height:32px;font-size:12px;border-radius:8px;flex-shrink:0;">{{ bug.assigned_to.initials }}</div>
-                        <div>
-                            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">{{ bug.assigned_to.display_name }}</div>
-                            <div style="font-size:11px;color:var(--text-muted);">{{ bug.assigned_to.get_role_display }}</div>
+                    {% if bug.assignees.all %}
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            {% for assignee in bug.assignees.all %}
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div class="avatar" style="background:{{ assignee.avatar_color }};width:32px;height:32px;font-size:12px;border-radius:8px;flex-shrink:0;">{{ assignee.initials }}</div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:600;color:var(--text-primary);">{{ assignee.display_name }}</div>
+                                    <div style="font-size:11px;color:var(--text-muted);">{{ assignee.get_role_display }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
-                    </div>
                     {% else %}
                     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border:1px dashed var(--border);border-radius:var(--radius-sm);">
                         <div style="width:32px;height:32px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -96,7 +103,7 @@
                         <span style="font-size:13px;color:var(--text-muted);">Unassigned</span>
                     </div>
                     {% endif %}
-                    {% if request.user.is_admin or request.user.is_project_manager %}
+                    {% if user == bug.reported_by %}
                     <a href="{% url 'tasks:bug_edit' bug.pk %}" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;margin-top:8px;">
                         <i class="fas fa-user-edit"></i> {% if bug.assignees.all %}Reassign{% else %}Assign{% endif %}
                     </a>
@@ -140,7 +147,9 @@
         <div class="card">
             <div class="card-title" style="margin-bottom:12px;"><i class="fas fa-bolt" style="color:var(--yellow);margin-right:8px;"></i>Actions</div>
             <div style="display:flex;flex-direction:column;gap:7px;">
+                {% if user == bug.reported_by %}
                 <a href="{% url 'tasks:bug_edit' bug.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Bug Report</a>
+                {% endif %}
                 {% if not bug.linked_task %}
                 <a href="{% url 'tasks:task_create' %}?project={{ bug.project.pk }}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-plus-circle"></i> Create Linked Task</a>
                 {% endif %}

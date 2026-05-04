@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory - Project Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+    <h1 class="page-title mb-0">
+        <i class="fas fa-boxes me-2"></i> Inventory Overview
+    </h1>
+</div>
+
+<div class="card">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <h2 class="section-title mb-0">
+            Product List ({{ products.paginator.count }})
+        </h2>
+    </div>
+
+    <!-- Search Form -->
+    <div class="mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-primary);">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search"
+                        placeholder="Search by name, brand, SKU, or serial number..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Search
+                    </button>
+                    {% if search_query %}
+                    <a href="{% url 'tasks:inventory_list' %}" class="btn btn-secondary">
+                        Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if products %}
+    <div class="table-wrap">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Product Name</th>
+                        <th>Brand</th>
+                        <th>SKU</th>
+                        <th>Serial Number</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-thumbnail"
+                                style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px;">
+                            {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light text-muted" 
+                                 style="width: 48px; height: 48px; border-radius: 8px;">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold text-primary">{{ product.name|default:"-" }}</div>
+                            <small class="text-muted">{{ product.description|truncatechars:40|default:"" }}</small>
+                        </td>
+                        <td>{{ product.brand|default:"-" }}</td>
+                        <td><span class="badge bg-dark">{{ product.sku|default:"-" }}</span></td>
+                        <td><span class="badge bg-info text-dark">{{ product.serial_number|default:"-" }}</span></td>
+                        <td>
+                            {% if product.category %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                {{ product.category.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-medium text-success">
+                                ₹{{ product.price|floatformat:2|default:"0.00" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.current_quantity > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ product.current_quantity|default:"0" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if product.rack_number or product.shelf_number %}
+                            <small class="d-block">Rack: {{ product.rack_number|default:"-" }}</small>
+                            <small class="d-block">Shelf: {{ product.shelf_number|default:"-" }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="mt-4">
+        {% include 'pagination.html' with page_obj=products %}
+    </div>
+
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="fas fa-search fa-3x text-muted"></i>
+        </div>
+        <h3 class="mb-2">No Products Found</h3>
+        <p class="text-muted">No products match your search criteria or the inventory is empty.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .table-wrap {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .table thead th {
+        background: rgba(var(--primary-rgb, 0, 0, 0), 0.05);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        border-bottom: none;
+        padding: 1rem;
+    }
+    
+    .table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+    
+    .text-primary {
+        color: #0d6efd !important;
+    }
+</style>
+{% endblock %}

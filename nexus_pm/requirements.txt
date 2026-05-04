@@ -1,2 +1,7 @@
 Django>=4.2,<5.0
 Pillow>=10.0
+openpyxl
+djangorestframework
+xhtml2pdf
+fpdf
+django-debug-toolbar

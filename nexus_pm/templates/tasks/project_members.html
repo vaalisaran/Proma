@@ -34,14 +34,14 @@
             <div class="card-title" style="margin-bottom:6px;"><i class="fas fa-users" style="color:var(--green); margin-right:8px;"></i>Current Members <span style="color:var(--text-muted); font-weight:400;">({{ current_member_ids|length }})</span></div>
             <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">These users can view and work on this project.</p>
 
-            {% if project.manager %}
+            {% if project.managers.first %}
             <div style="margin-bottom:12px;">
                 <div style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px;">Project Manager</div>
                 <div class="user-card-row is-member">
-                    <div class="avatar" style="background:{{ project.manager.avatar_color }}; width:36px; height:36px; font-size:13px; border-radius:8px; flex-shrink:0;">{{ project.manager.initials }}</div>
+                    <div class="avatar" style="background:{{ project.managers.first.avatar_color }}; width:36px; height:36px; font-size:13px; border-radius:8px; flex-shrink:0;">{{ project.managers.first.initials }}</div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-weight:600; color:var(--text-primary); font-size:13px;">{{ project.manager.display_name }}</div>
-                        <div style="font-size:11px; color:var(--text-muted);">@{{ project.manager.username }} · {{ project.manager.get_team_display }}</div>
+                        <div style="font-weight:600; color:var(--text-primary); font-size:13px;">{{ project.managers.first.display_name }}</div>
+                        <div style="font-size:11px; color:var(--text-muted);">@{{ project.managers.first.username }} · {{ project.managers.first.get_team_display }}</div>
                     </div>
                     <span class="badge badge-blue" style="font-size:10px;">Manager</span>
                 </div>

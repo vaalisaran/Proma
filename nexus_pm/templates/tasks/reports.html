@@ -119,10 +119,10 @@
                     <td><a href="{% url 'tasks:project_detail' project.pk %}" style="color:var(--text-primary); text-decoration:none; font-weight:600; font-size:13px;">{{ project.name }}</a></td>
                     <td><span class="badge {% if project.module == 'electronics' %}badge-blue{% elif project.module == 'software' %}badge-green{% elif project.module == 'mechanical' %}badge-yellow{% elif project.module == 'optics' %}badge-cyan{% else %}badge-purple{% endif %}" style="font-size:10px;">{{ project.get_module_display }}</span></td>
                     <td>
-                        {% if project.manager %}
+                        {% if project.managers.first %}
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <div class="avatar" style="background:{{ project.manager.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ project.manager.initials }}</div>
-                            <span style="font-size:12px; color:var(--text-secondary);">{{ project.manager.display_name }}</span>
+                            <div class="avatar" style="background:{{ project.managers.first.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ project.managers.first.initials }}</div>
+                            <span style="font-size:12px; color:var(--text-secondary);">{{ project.managers.first.display_name }}</span>
                         </div>
                         {% else %}—{% endif %}
                     </td>
@@ -169,7 +169,7 @@
                         </div>
                         {% else %}<span style="color:var(--text-muted); font-size:12px;">—</span>{% endif %}
                     </td>
-                    <td style="font-size:12px; color:var(--red); font-weight:600;"><i class="fas fa-clock"></i> {{ task.due_date }}</td>
+                    <td style="font-size:12px; color:var(--text-muted);">{{ task.created_at|date:"d M Y" }}</td>
                     <td><span class="badge {% if task.priority == 'critical' %}badge-red{% elif task.priority == 'high' %}badge-yellow{% else %}badge-blue{% endif %}" style="font-size:10px;">{{ task.get_priority_display }}</span></td>
                     <td><a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a></td>
                 </tr>

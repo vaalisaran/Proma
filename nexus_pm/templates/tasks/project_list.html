@@ -45,7 +45,7 @@
                 <i class="fas {% if project.module == 'electronics' %}fa-microchip{% elif project.module == 'software' %}fa-code{% elif project.module == 'mechanical' %}fa-cog{% elif project.module == 'optics' %}fa-eye{% else %}fa-chart-line{% endif %}"></i>
                 {{ project.get_module_display }}
             </span>
-            {% if not user.is_admin %}
+            {% if user.is_admin or user in project.managers.all %}
             <span class="badge {% if project.status == 'active' %}badge-green{% elif project.status == 'planning' %}badge-blue{% elif project.status == 'on_hold' %}badge-yellow{% elif project.status == 'completed' %}badge-gray{% else %}badge-red{% endif %}">
                 {{ project.get_status_display }}
             </span>
@@ -53,6 +53,7 @@
         </div>
 
         <a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none">
+            <div style="font-size:10px; color:var(--text-muted); font-weight:700; margin-bottom:2px;">ID: {{ project.project_id|default:project.pk }}</div>
             <h3 style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px">{{ project.name }}</h3>
         </a>
         <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">
@@ -71,9 +72,9 @@
 
         <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
             <div style="display:flex;align-items:center;gap:6px">
-                {% if project.manager %}
-                <div class="avatar" style="background:{{ project.manager.avatar_color }}">{{ project.manager.initials }}</div>
-                <span style="font-size:11px;color:var(--text-muted)">{{ project.manager.display_name }}</span>
+                {% if project.managers.first %}
+                <div class="avatar" style="background:{{ project.managers.first.avatar_color }}">{{ project.managers.first.initials }}</div>
+                <span style="font-size:11px;color:var(--text-muted)">{{ project.managers.first.display_name }}</span>
                 {% endif %}
             </div>
             
@@ -97,13 +98,13 @@
             {% if project.deletion_requested_by_admin %}
                 {% if user.is_admin %}
                 <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-times"></i> Cancel Project Deletion</button></form>
-                {% elif user == project.manager %}
+                {% elif user in project.managers.all %}
                 <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
                 {% endif %}
             {% elif project.deletion_requested_by_pm %}
                 {% if user.is_admin %}
                 <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="approve_deletion">{% csrf_token %}<button type="submit" class="btn btn-danger btn-sm" style="flex:1"><i class="fas fa-check"></i> Approve Project Deletion</button></form>
-                {% elif user == project.manager %}
+                {% elif user in project.managers.all %}
                 <form method="post" action="{% url 'tasks:project_delete' project.pk %}" style="margin:0;"><input type="hidden" name="action" value="cancel_deletion">{% csrf_token %}<button type="submit" class="btn btn-secondary btn-sm" style="flex:1"><i class="fas fa-times"></i> Cancel Delete Request</button></form>
                 {% endif %}
             {% else %}
@@ -121,12 +122,10 @@
         <i class="fas fa-folder-open"></i>
         <h3>No projects found</h3>
         <p>{% if search or module_filter or status_filter %}Try adjusting your filters.{% else %}Create your first project to get started.{% endif %}</p>
-    </div>
-    {% if user.is_project_manager %}
-    <div style="padding:20px;border-top:1px solid var(--border);text-align:left">
+        {% if user.is_project_manager and not search and not module_filter and not status_filter %}
         <a href="{% url 'tasks:project_create' %}" class="btn btn-primary"><i class="fas fa-plus"></i> New Project</a>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endif %}
 

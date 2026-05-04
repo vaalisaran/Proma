@@ -1,0 +1,152 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.3, pluggy-1.6.0
+django: version: 5.2.13, settings: core.settings (from ini)
+rootdir: /media/Data/Saran Projects/IIA Management
+configfile: pytest.ini
+plugins: cov-7.1.0, django-4.12.0
+collected 21 items
+
+audit/tests.py .                                                         [  4%]
+dashboard/tests.py .                                                     [  9%]
+inventory/tests.py ....                                                  [ 28%]
+products/tests.py ....                                                   [ 47%]
+stock/tests.py ..                                                        [ 57%]
+tasks/tests.py .........                                                 [100%]
+
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.10.12-final-0 _______________
+
+Name                                                                          Stmts   Miss  Cover
+-------------------------------------------------------------------------------------------------
+accounts/__init__.py                                                              0      0   100%
+accounts/admin.py                                                                72     34    53%
+accounts/apps.py                                                                  0      0   100%
+accounts/forms.py                                                                68     34    50%
+accounts/middleware.py                                                           51     27    47%
+accounts/migrations/0001_initial.py                                               8      0   100%
+accounts/migrations/__init__.py                                                   0      0   100%
+accounts/models.py                                                               43      5    88%
+accounts/urls.py                                                                  4      0   100%
+accounts/views.py                                                               233    190    18%
+audit/__init__.py                                                                 0      0   100%
+audit/admin.py                                                                    3      0   100%
+audit/apps.py                                                                     4      0   100%
+audit/migrations/0001_initial.py                                                  6      0   100%
+audit/migrations/__init__.py                                                      0      0   100%
+audit/models.py                                                                  13      2    85%
+audit/serializers.py                                                              6      6     0%
+audit/tests.py                                                                   23      0   100%
+audit/urls.py                                                                     3      0   100%
+audit/views.py                                                                  101     43    57%
+core/__init__.py                                                                  0      0   100%
+core/settings.py                                                                 28      0   100%
+core/urls.py                                                                      6      0   100%
+core/wsgi.py                                                                      4      4     0%
+dashboard/migrations/__init__.py                                                  0      0   100%
+dashboard/tests.py                                                               22      0   100%
+dashboard/urls.py                                                                 3      0   100%
+dashboard/views.py                                                               33     20    39%
+files/__init__.py                                                                 0      0   100%
+files/admin.py                                                                   32      8    75%
+files/apps.py                                                                     4      0   100%
+files/forms.py                                                                   90     44    51%
+files/migrations/0001_initial.py                                                  6      0   100%
+files/migrations/0002_initial.py                                                  7      0   100%
+files/migrations/0003_alter_filecategory_unique_together_and_more.py              5      0   100%
+files/migrations/__init__.py                                                      0      0   100%
+files/models.py                                                                 150     46    69%
+files/templatetags/__init__.py                                                    0      0   100%
+files/urls.py                                                                     4      0   100%
+files/views.py                                                                  310    278    10%
+finance/__init__.py                                                               0      0   100%
+finance/admin.py                                                                  0      0   100%
+finance/apps.py                                                                   4      0   100%
+finance/forms.py                                                                 17      4    76%
+finance/migrations/0001_initial.py                                                7      0   100%
+finance/migrations/__init__.py                                                    0      0   100%
+finance/models.py                                                                30      4    87%
+finance/tests.py                                                                  0      0   100%
+finance/urls.py                                                                   4      0   100%
+finance/views.py                                                                 51     36    29%
+inventory/__init__.py                                                             0      0   100%
+inventory/admin.py                                                               49      4    92%
+inventory/apps.py                                                                 6      0   100%
+inventory/context_processors.py                                                   6      0   100%
+inventory/management/__init__.py                                                  0      0   100%
+inventory/management/commands/__init__.py                                         0      0   100%
+inventory/management/commands/check_alerts.py                                    56     56     0%
+inventory/management/commands/sync_serials.py                                    22     22     0%
+inventory/migrations/0001_initial.py                                              6      0   100%
+inventory/migrations/0002_alter_serialnumber_options.py                           4      0   100%
+inventory/migrations/__init__.py                                                  0      0   100%
+inventory/models.py                                                             142     10    93%
+inventory/notifications.py                                                        6      4    33%
+inventory/serializers.py                                                         31      0   100%
+inventory/settings_views.py                                                      55     38    31%
+inventory/signals.py                                                             40     40     0%
+inventory/templatetags/__init__.py                                                0      0   100%
+inventory/templatetags/inventory_extras.py                                       11      5    55%
+inventory/tests.py                                                               42      0   100%
+inventory/urls.py                                                                 6      0   100%
+inventory/user_management_views.py                                               79     66    16%
+inventory/views.py                                                              444    354    20%
+manage.py                                                                        11     11     0%
+procurement/admin.py                                                              7      0   100%
+procurement/migrations/0001_initial.py                                            6      0   100%
+procurement/migrations/__init__.py                                                0      0   100%
+procurement/models.py                                                            22      1    95%
+procurement/urls.py                                                               3      0   100%
+procurement/views.py                                                            194    165    15%
+products/__init__.py                                                              0      0   100%
+products/admin.py                                                                11      0   100%
+products/apps.py                                                                  4      0   100%
+products/migrations/0001_initial.py                                               6      0   100%
+products/migrations/__init__.py                                                   0      0   100%
+products/models.py                                                               27      5    81%
+products/serializers.py                                                          10      0   100%
+products/tests.py                                                                41      0   100%
+products/urls.py                                                                  3      0   100%
+products/views.py                                                               376    316    16%
+reports/__init__.py                                                               0      0   100%
+reports/admin.py                                                                  0      0   100%
+reports/apps.py                                                                   4      0   100%
+reports/migrations/__init__.py                                                    0      0   100%
+reports/models.py                                                                 0      0   100%
+reports/templatetags/__init__.py                                                  0      0   100%
+reports/templatetags/report_extras.py                                             8      4    50%
+reports/tests.py                                                                  0      0   100%
+reports/urls.py                                                                   3      0   100%
+reports/views.py                                                                116    100    14%
+stock/__init__.py                                                                 0      0   100%
+stock/admin.py                                                                    3      0   100%
+stock/apps.py                                                                     4      0   100%
+stock/migrations/0001_initial.py                                                  6      0   100%
+stock/migrations/__init__.py                                                      0      0   100%
+stock/models.py                                                                  16      1    94%
+stock/serializers.py                                                              7      0   100%
+stock/tests.py                                                                   32      0   100%
+stock/urls.py                                                                     3      0   100%
+stock/views.py                                                                  230    191    17%
+tasks/__init__.py                                                                 0      0   100%
+tasks/admin.py                                                                  114     35    69%
+tasks/apps.py                                                                     4      0   100%
+tasks/context_processors.py                                                      22      3    86%
+tasks/decorators.py                                                              23      9    61%
+tasks/forms.py                                                                  138     76    45%
+tasks/management/__init__.py                                                      0      0   100%
+tasks/management/commands/__init__.py                                             0      0   100%
+tasks/management/commands/seed_data.py                                           84     84     0%
+tasks/migrations/0001_initial.py                                                  7      0   100%
+tasks/migrations/0002_project_project_id_requirement_req_id_task_task_id.py       4      0   100%
+tasks/migrations/0003_comment_attachment_moduleforumpost_attachment.py            4      0   100%
+tasks/migrations/__init__.py                                                      0      0   100%
+tasks/models.py                                                                 342     35    90%
+tasks/templatetags/__init__.py                                                    0      0   100%
+tasks/templatetags/task_tags.py                                                  23     13    43%
+tasks/tests.py                                                                   85      0   100%
+tasks/urls.py                                                                     4      0   100%
+tasks/views.py                                                                 1009    836    17%
+-------------------------------------------------------------------------------------------------
+TOTAL                                                                          5476   3269    40%
+Coverage HTML written to dir reports/coverage_html
+============================= 21 passed in 17.63s ==============================

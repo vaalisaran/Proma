@@ -1,0 +1,967 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+    Bandit Report
+</title>
+
+<style>
+
+html * {
+    font-family: "Arial", sans-serif;
+}
+
+pre {
+    font-family: "Monaco", monospace;
+}
+
+.bordered-box {
+    border: 1px solid black;
+    padding-top:.5em;
+    padding-bottom:.5em;
+    padding-left:1em;
+}
+
+.metrics-box {
+    font-size: 1.1em;
+    line-height: 130%;
+}
+
+.metrics-title {
+    font-size: 1.5em;
+    font-weight: 500;
+    margin-bottom: .25em;
+}
+
+.issue-description {
+    font-size: 1.3em;
+    font-weight: 500;
+}
+
+.candidate-issues {
+    margin-left: 2em;
+    border-left: solid 1px; LightGray;
+    padding-left: 5%;
+    margin-top: .2em;
+    margin-bottom: .2em;
+}
+
+.issue-block {
+    border: 1px solid LightGray;
+    padding-left: .5em;
+    padding-top: .5em;
+    padding-bottom: .5em;
+    margin-bottom: .5em;
+}
+
+.issue-sev-high {
+    background-color: Pink;
+}
+
+.issue-sev-medium {
+    background-color: NavajoWhite;
+}
+
+.issue-sev-low {
+    background-color: LightCyan;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="metrics">
+    <div class="metrics-box bordered-box">
+        <div class="metrics-title">
+            Metrics:<br>
+        </div>
+        Total lines of code: <span id="loc">11356</span><br>
+        Total lines skipped (#nosec): <span id="nosec">0</span>
+    </div>
+</div>
+
+
+
+
+<br>
+<div id="results">
+    
+<div id="issue-0">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./accounts/middleware.py" target="_blank">./accounts/middleware.py</a><br>
+    <b>Line number: </b>39<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+38	                inv_user = InventoryUser.objects.get(id=inv_user_id)
+39	            except Exception:
+40	                pass
+41	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-1">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./accounts/views.py" target="_blank">./accounts/views.py</a><br>
+    <b>Line number: </b>86<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+85	                name = inv_user.username
+86	        except Exception:
+87	            pass
+88	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-2">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./audit/tests.py" target="_blank">./audit/tests.py</a><br>
+    <b>Line number: </b>15<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+14	    def setUp(self):
+15	        self.user = User.objects.create_user(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+16	        self.inv_user = InventoryUser.objects.create(username=&quot;testinvuser&quot;, is_active=True, role=&quot;admin&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-3">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./audit/tests.py" target="_blank">./audit/tests.py</a><br>
+    <b>Line number: </b>19<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+18	        self.client = APIClient()
+19	        self.client.login(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+20	        session = self.client.session
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-4">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'django-insecure-IIAP-pm-change-this-in-production-!@#$%^&*()'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./core/settings.py" target="_blank">./core/settings.py</a><br>
+    <b>Line number: </b>9<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+8	
+9	SECRET_KEY = &quot;django-insecure-IIAP-pm-change-this-in-production-!@#$%^&amp;*()&quot;
+10	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-5">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./dashboard/tests.py" target="_blank">./dashboard/tests.py</a><br>
+    <b>Line number: </b>13<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+12	    def setUp(self):
+13	        self.user = User.objects.create_user(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+14	        self.inv_user = InventoryUser.objects.create(username=&quot;testinvuser&quot;, is_active=True, role=&quot;admin&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-6">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./dashboard/tests.py" target="_blank">./dashboard/tests.py</a><br>
+    <b>Line number: </b>17<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+16	        self.client = APIClient()
+17	        self.client.login(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+18	        session = self.client.session
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-7">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./files/views.py" target="_blank">./files/views.py</a><br>
+    <b>Line number: </b>440<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+439	            pf.file.delete(save=False)  # delete from disk
+440	        except Exception:
+441	            pass
+442	        pf.delete()
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-8">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./inventory/tests.py" target="_blank">./inventory/tests.py</a><br>
+    <b>Line number: </b>15<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+14	    def setUp(self):
+15	        self.user = User.objects.create_user(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+16	        self.inv_user = InventoryUser.objects.create(username=&quot;testinvuser&quot;, is_active=True, role=&quot;admin&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-9">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./inventory/tests.py" target="_blank">./inventory/tests.py</a><br>
+    <b>Line number: </b>19<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+18	        self.client = APIClient()
+19	        self.client.login(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+20	        session = self.client.session
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-10">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./products/tests.py" target="_blank">./products/tests.py</a><br>
+    <b>Line number: </b>15<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+14	    def setUp(self):
+15	        self.user = User.objects.create_user(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+16	        self.inv_user = InventoryUser.objects.create(username=&quot;testinvuser&quot;, is_active=True, role=&quot;admin&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-11">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./products/tests.py" target="_blank">./products/tests.py</a><br>
+    <b>Line number: </b>20<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+19	        self.client = APIClient()
+20	        self.client.login(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+21	        session = self.client.session
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-12">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./products/views.py" target="_blank">./products/views.py</a><br>
+    <b>Line number: </b>85<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+84	                    max_length = len(str(cell.value))
+85	            except Exception:
+86	                pass
+87	        adjusted_width = min(max_length + 2, 50)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-13">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./products/views.py" target="_blank">./products/views.py</a><br>
+    <b>Line number: </b>384<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+383	                        max_length = len(str(cell.value))
+384	                except Exception:
+385	                    pass
+386	            adjusted_width = min(max_length + 2, 50)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-14">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./stock/tests.py" target="_blank">./stock/tests.py</a><br>
+    <b>Line number: </b>16<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+15	    def setUp(self):
+16	        self.user = User.objects.create_user(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+17	        self.inv_user = InventoryUser.objects.create(username=&quot;testinvuser&quot;, is_active=True, role=&quot;admin&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-15">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpass'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./stock/tests.py" target="_blank">./stock/tests.py</a><br>
+    <b>Line number: </b>20<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+19	        self.client = APIClient()
+20	        self.client.login(username=&quot;testuser&quot;, password=&quot;testpass&quot;)
+21	        session = self.client.session
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-16">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'admin123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>25<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+24	                &quot;username&quot;: &quot;admin&quot;,
+25	                &quot;password&quot;: &quot;admin123&quot;,
+26	                &quot;first_name&quot;: &quot;Alex&quot;,
+27	                &quot;last_name&quot;: &quot;Chen&quot;,
+28	                &quot;email&quot;: &quot;admin@IIAPpm.io&quot;,
+29	                &quot;role&quot;: &quot;admin&quot;,
+30	                &quot;team&quot;: &quot;general&quot;,
+31	                &quot;designation&quot;: &quot;System Administrator&quot;,
+32	                &quot;avatar_color&quot;: &quot;#ef4444&quot;,
+33	                &quot;is_staff&quot;: True,
+34	                &quot;is_superuser&quot;: True,
+35	            },
+36	            {
+37	                &quot;username&quot;: &quot;pm_raj&quot;,
+38	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-17">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>38<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+37	                &quot;username&quot;: &quot;pm_raj&quot;,
+38	                &quot;password&quot;: &quot;pass123&quot;,
+39	                &quot;first_name&quot;: &quot;Rajesh&quot;,
+40	                &quot;last_name&quot;: &quot;Kumar&quot;,
+41	                &quot;email&quot;: &quot;raj@IIAPpm.io&quot;,
+42	                &quot;role&quot;: &quot;project_manager&quot;,
+43	                &quot;team&quot;: &quot;electronics&quot;,
+44	                &quot;designation&quot;: &quot;Electronics Project Manager&quot;,
+45	                &quot;avatar_color&quot;: &quot;#4f8ef7&quot;,
+46	            },
+47	            {
+48	                &quot;username&quot;: &quot;pm_sara&quot;,
+49	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-18">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>49<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+48	                &quot;username&quot;: &quot;pm_sara&quot;,
+49	                &quot;password&quot;: &quot;pass123&quot;,
+50	                &quot;first_name&quot;: &quot;Sara&quot;,
+51	                &quot;last_name&quot;: &quot;Nair&quot;,
+52	                &quot;email&quot;: &quot;sara@IIAPpm.io&quot;,
+53	                &quot;role&quot;: &quot;project_manager&quot;,
+54	                &quot;team&quot;: &quot;software&quot;,
+55	                &quot;designation&quot;: &quot;Software Project Manager&quot;,
+56	                &quot;avatar_color&quot;: &quot;#a855f7&quot;,
+57	            },
+58	            {
+59	                &quot;username&quot;: &quot;arjun_elec&quot;,
+60	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-19">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>60<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+59	                &quot;username&quot;: &quot;arjun_elec&quot;,
+60	                &quot;password&quot;: &quot;pass123&quot;,
+61	                &quot;first_name&quot;: &quot;Arjun&quot;,
+62	                &quot;last_name&quot;: &quot;Sharma&quot;,
+63	                &quot;email&quot;: &quot;arjun@IIAPpm.io&quot;,
+64	                &quot;role&quot;: &quot;member&quot;,
+65	                &quot;team&quot;: &quot;electronics&quot;,
+66	                &quot;designation&quot;: &quot;Electronics Engineer&quot;,
+67	                &quot;avatar_color&quot;: &quot;#06b6d4&quot;,
+68	            },
+69	            {
+70	                &quot;username&quot;: &quot;priya_sw&quot;,
+71	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-20">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>71<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+70	                &quot;username&quot;: &quot;priya_sw&quot;,
+71	                &quot;password&quot;: &quot;pass123&quot;,
+72	                &quot;first_name&quot;: &quot;Priya&quot;,
+73	                &quot;last_name&quot;: &quot;Menon&quot;,
+74	                &quot;email&quot;: &quot;priya@IIAPpm.io&quot;,
+75	                &quot;role&quot;: &quot;member&quot;,
+76	                &quot;team&quot;: &quot;software&quot;,
+77	                &quot;designation&quot;: &quot;Software Engineer&quot;,
+78	                &quot;avatar_color&quot;: &quot;#22c55e&quot;,
+79	            },
+80	            {
+81	                &quot;username&quot;: &quot;vikram_mech&quot;,
+82	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-21">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>82<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+81	                &quot;username&quot;: &quot;vikram_mech&quot;,
+82	                &quot;password&quot;: &quot;pass123&quot;,
+83	                &quot;first_name&quot;: &quot;Vikram&quot;,
+84	                &quot;last_name&quot;: &quot;Pillai&quot;,
+85	                &quot;email&quot;: &quot;vikram@IIAPpm.io&quot;,
+86	                &quot;role&quot;: &quot;member&quot;,
+87	                &quot;team&quot;: &quot;mechanical&quot;,
+88	                &quot;designation&quot;: &quot;Mechanical Engineer&quot;,
+89	                &quot;avatar_color&quot;: &quot;#f59e0b&quot;,
+90	            },
+91	            {
+92	                &quot;username&quot;: &quot;ananya_opt&quot;,
+93	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-22">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>93<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+92	                &quot;username&quot;: &quot;ananya_opt&quot;,
+93	                &quot;password&quot;: &quot;pass123&quot;,
+94	                &quot;first_name&quot;: &quot;Ananya&quot;,
+95	                &quot;last_name&quot;: &quot;Reddy&quot;,
+96	                &quot;email&quot;: &quot;ananya@IIAPpm.io&quot;,
+97	                &quot;role&quot;: &quot;member&quot;,
+98	                &quot;team&quot;: &quot;optics&quot;,
+99	                &quot;designation&quot;: &quot;Optics Engineer&quot;,
+100	                &quot;avatar_color&quot;: &quot;#ec4899&quot;,
+101	            },
+102	            {
+103	                &quot;username&quot;: &quot;suresh_sim&quot;,
+104	                &quot;password&quot;: &quot;pass123&quot;,
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-23">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_string: </b> Possible hardcoded password: 'pass123'<br>
+    <b>Test ID:</b> B105<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/management/commands/seed_data.py" target="_blank">./tasks/management/commands/seed_data.py</a><br>
+    <b>Line number: </b>104<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b105_hardcoded_password_string.html</a><br>
+
+<div class="code">
+<pre>
+103	                &quot;username&quot;: &quot;suresh_sim&quot;,
+104	                &quot;password&quot;: &quot;pass123&quot;,
+105	                &quot;first_name&quot;: &quot;Suresh&quot;,
+106	                &quot;last_name&quot;: &quot;Babu&quot;,
+107	                &quot;email&quot;: &quot;suresh@IIAPpm.io&quot;,
+108	                &quot;role&quot;: &quot;member&quot;,
+109	                &quot;team&quot;: &quot;simulation&quot;,
+110	                &quot;designation&quot;: &quot;Simulation Engineer&quot;,
+111	                &quot;avatar_color&quot;: &quot;#8b5cf6&quot;,
+112	            },
+113	        ]
+114	
+115	        created_users = {}
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-24">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>12<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+11	    def setUp(self):
+12	        self.user = User.objects.create_user(username=&quot;testuser&quot;, email=&quot;test@example.com&quot;, password=&quot;testpassword&quot;)
+13	
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-25">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>64<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+63	    def setUp(self):
+64	        self.admin_user = User.objects.create_superuser(username=&quot;admin&quot;, email=&quot;admin@example.com&quot;, password=&quot;testpassword&quot;, role=&quot;admin&quot;)
+65	        self.pm_user = User.objects.create_user(username=&quot;pmuser&quot;, email=&quot;pm@example.com&quot;, password=&quot;testpassword&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-26">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>65<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+64	        self.admin_user = User.objects.create_superuser(username=&quot;admin&quot;, email=&quot;admin@example.com&quot;, password=&quot;testpassword&quot;, role=&quot;admin&quot;)
+65	        self.pm_user = User.objects.create_user(username=&quot;pmuser&quot;, email=&quot;pm@example.com&quot;, password=&quot;testpassword&quot;)
+66	        self.member_user = User.objects.create_user(username=&quot;memberuser&quot;, email=&quot;member@example.com&quot;, password=&quot;testpassword&quot;)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-27">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>66<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+65	        self.pm_user = User.objects.create_user(username=&quot;pmuser&quot;, email=&quot;pm@example.com&quot;, password=&quot;testpassword&quot;)
+66	        self.member_user = User.objects.create_user(username=&quot;memberuser&quot;, email=&quot;member@example.com&quot;, password=&quot;testpassword&quot;)
+67	        
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-28">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>79<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+78	    def test_task_update_status_as_pm(self):
+79	        self.client.login(username=&quot;pmuser&quot;, password=&quot;testpassword&quot;)
+80	        url = reverse(&quot;tasks:task_update_status&quot;, args=[self.task.pk])
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-29">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>88<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+87	    def test_task_update_status_as_admin(self):
+88	        self.client.login(username=&quot;admin&quot;, password=&quot;testpassword&quot;)
+89	        url = reverse(&quot;tasks:task_update_status&quot;, args=[self.task.pk])
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-30">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>98<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+97	    def test_task_update_status_as_member_denied(self):
+98	        self.client.login(username=&quot;memberuser&quot;, password=&quot;testpassword&quot;)
+99	        url = reverse(&quot;tasks:task_update_status&quot;, args=[self.task.pk])
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-31">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>107<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+106	    def test_project_list_view(self):
+107	        self.client.login(username=&quot;memberuser&quot;, password=&quot;testpassword&quot;)
+108	        response = self.client.get(reverse(&quot;tasks:project_list&quot;))
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-32">
+<div class="issue-block issue-sev-low">
+    <b>hardcoded_password_funcarg: </b> Possible hardcoded password: 'testpassword'<br>
+    <b>Test ID:</b> B106<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>MEDIUM<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/259.html" target="_blank">CWE-259</a><br>
+    <b>File: </b><a href="./tasks/tests.py" target="_blank">./tasks/tests.py</a><br>
+    <b>Line number: </b>113<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b106_hardcoded_password_funcarg.html</a><br>
+
+<div class="code">
+<pre>
+112	    def test_task_detail_view(self):
+113	        self.client.login(username=&quot;memberuser&quot;, password=&quot;testpassword&quot;)
+114	        response = self.client.get(reverse(&quot;tasks:task_detail&quot;, args=[self.task.pk]))
+</pre>
+</div>
+
+
+</div>
+</div>
+
+<div id="issue-33">
+<div class="issue-block issue-sev-low">
+    <b>try_except_pass: </b> Try, Except, Pass detected.<br>
+    <b>Test ID:</b> B110<br>
+    <b>Severity: </b>LOW<br>
+    <b>Confidence: </b>HIGH<br>
+    <b>CWE: </b><a href="https://cwe.mitre.org/data/definitions/703.html" target="_blank">CWE-703</a><br>
+    <b>File: </b><a href="./tasks/views.py" target="_blank">./tasks/views.py</a><br>
+    <b>Line number: </b>1005<br>
+    <b>More info: </b><a href="https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html" target="_blank">https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html</a><br>
+
+<div class="code">
+<pre>
+1004	                )
+1005	        except Exception:
+1006	            pass
+1007	    return JsonResponse({&quot;success&quot;: False}, status=400)
+</pre>
+</div>
+
+
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

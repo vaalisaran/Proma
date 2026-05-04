@@ -2,7 +2,7 @@
 {% block title %}{{ module.name }} — {{ project.name }}{% endblock %}
 {% block page_title %}{{ module.name }}{% endblock %}
 {% block topbar_actions %}
-    {% if user == project.manager %}
+    {% if user in project.managers.all %}
     <a href="{% url 'tasks:module_edit' module.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
     <a href="{% url 'tasks:module_delete' module.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete</a>
     <a href="{% url 'tasks:module_members' module.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-users"></i> Manage Members</a>
@@ -34,7 +34,7 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <h3 style="margin:0;">Tasks ({{ tasks.count }})</h3>
-            {% if user == project.manager %}
+            {% if user in project.managers.all %}
             <a href="{% url 'tasks:task_create' %}?project={{ project.pk }}&module={{ module.pk }}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Task</a>
             {% endif %}
         </div>
@@ -53,7 +53,7 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <h3 style="margin:0;">Resources</h3>
-            {% if user == project.manager %}
+            {% if user in project.managers.all %}
             <a href="{% url 'tasks:kb_create' project.pk %}?module={{ module.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-sticky-note"></i> New Note</a>
             {% endif %}
         </div>
@@ -104,7 +104,22 @@
                     <span style="font-size:13px;font-weight:600;color:var(--text-primary);">{{ post.author.display_name }}</span>
                     <span style="font-size:11px;color:var(--text-muted);">{{ post.created_at|timesince }} ago</span>
                 </div>
-                <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;">{{ post.content|linebreaksbr }}</p>
+                <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:8px;">{{ post.content|linebreaksbr }}</p>
+                {% if post.attachment %}
+                    {% if post.attachment.url|lower|slice:"-4:" in ".jpg.png.gif.jpeg" or post.attachment.url|lower|slice:"-5:" == ".webp" %}
+                    <div style="margin-top:8px;">
+                        <a href="{{ post.attachment.url }}" target="_blank">
+                            <img src="{{ post.attachment.url }}" style="max-width:300px; max-height:200px; border-radius:6px; border:1px solid var(--border);" alt="Attachment">
+                        </a>
+                    </div>
+                    {% else %}
+                    <div style="margin-top:8px;">
+                        <a href="{{ post.attachment.url }}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px;">
+                            <i class="fas fa-paperclip"></i> View Attachment
+                        </a>
+                    </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -112,7 +127,7 @@
         {% endfor %}
     </div>
     
-    <form method="post" style="margin-top:14px;">
+    <form method="post" style="margin-top:14px;" enctype="multipart/form-data">
         {% csrf_token %}
         <div style="display:flex;gap:10px;align-items:flex-start;">
             <div class="avatar" style="background:{{ user.avatar_color|default:'#6366f1' }};width:32px;height:32px;font-size:12px;border-radius:8px;flex-shrink:0;margin-top:2px;">
@@ -120,6 +135,10 @@
             </div>
             <div style="flex:1;">
                 {{ forum_form.content }}
+                <div style="margin-top:8px;">
+                    <label for="{{ forum_form.attachment.id_for_label }}" style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Attach Image/File (Optional)</label>
+                    {{ forum_form.attachment }}
+                </div>
                 <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;"><i class="fas fa-paper-plane"></i> Post Message</button>
             </div>
         </div>

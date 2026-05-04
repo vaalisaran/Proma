@@ -2,134 +2,371 @@
 {% block title %}{{ title }} — IIAP PM{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ── Premium Task Form Design ── */
+    :root {
+        --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        --accent-gradient: linear-gradient(135deg, var(--accent), #6366f1);
+    }
+
+    .task-form-container {
+        max-width: 1000px;
+        margin: 20px auto 80px;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .premium-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .premium-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 15px 40px -15px rgba(0, 0, 0, 0.15);
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .section-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-glow);
+        color: var(--accent);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .section-title-text {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* Form Fields */
+    .input-wrapper { margin-bottom: 24px; }
+    .input-wrapper:last-child { margin-bottom: 0; }
+
+    .custom-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-label span { color: var(--red); }
+
+    .premium-input, .premium-select, .premium-textarea {
+        width: 100%;
+        background: var(--bg-primary);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .premium-input:focus, .premium-select:focus, .premium-textarea:focus {
+        background: var(--bg-card);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-glow);
+        outline: none;
+    }
+
+    .premium-textarea { min-height: 100px; resize: vertical; }
+
+    /* Buttons */
+    .btn-premium {
+        background: var(--accent-gradient);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: 'Space Grotesk', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px var(--accent-glow);
+        font-size: 16px;
+    }
+
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--accent-glow);
+        filter: brightness(1.1);
+    }
+
+    .btn-delete {
+        background: var(--red-dim);
+        color: var(--red);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: 'Space Grotesk', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-delete:hover {
+        background: var(--red);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Warning box */
+    .warning-box {
+        background: var(--yellow-dim);
+        border-left: 4px solid var(--yellow);
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--yellow);
+        margin-top: 12px;
+        display: none;
+    }
+
+    @media (max-width: 850px) {
+        .form-layout { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="max-width:760px;">
-    <div class="page-header">
-        <div class="page-header-left">
-            <h1>{{ title }}</h1>
-            {% if project %}<p>Project: <a href="{% url 'tasks:project_detail' project.pk %}" style="color:var(--accent); text-decoration:none;"><strong>{{ project.name }}</strong></a></p>{% endif %}
+<div class="task-form-container">
+    <!-- Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 style="font-size: 32px; font-weight: 800; letter-spacing: -1px; margin: 0; color: var(--text-primary);">
+                {{ title }}
+            </h1>
+            {% if project %}
+            <p style="color: var(--text-muted); margin-top: 8px;">
+                Working on <span style="color: var(--accent); font-weight: 600;">{{ project.name }}</span>
+            </p>
+            {% endif %}
         </div>
-        <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="javascript:history.back()" class="btn-cancel">
+            <i class="fas fa-times"></i> Cancel
+        </a>
     </div>
 
-    <form method="post" novalidate>
+    <form method="post" id="taskForm" novalidate>
         {% csrf_token %}
-        <div style="display:flex; flex-direction:column; gap:16px;">
+        <div class="form-layout">
+            
+            <!-- LEFT: Content -->
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-pen-nib"></i></div>
+                        <div class="section-title-text">Task Definition</div>
+                    </div>
 
-            <!-- Main Info -->
-            <div class="card">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
-                    <i class="fas fa-pen" style="color:var(--accent);margin-right:6px;"></i>Task Details
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Title <span style="color:var(--red)">*</span></label>
-                    {{ form.title }}
-                    {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    {{ form.description }}
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tags</label>
-                    {{ form.tags }}
-                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Separate tags with commas e.g. <code style="color:var(--accent);">hardware, urgent, v2</code></div>
-                </div>
-            </div>
+                    <div class="input-wrapper">
+                        <label class="custom-label">Task Title <span>*</span></label>
+                        <input type="text" name="title" id="id_title" class="premium-input" placeholder="What needs to be done?" value="{{ form.title.value|default:'' }}" required>
+                        {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
 
-            <!-- Assignment & Priority -->
-            <div class="card">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
-                    <i class="fas fa-sliders-h" style="color:var(--accent);margin-right:6px;"></i>Assignment & Priority
+                    <div class="input-wrapper">
+                        <label class="custom-label">Context / Description</label>
+                        <textarea name="description" id="id_description" class="premium-textarea" placeholder="Add some details...">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Tags</label>
+                        <input type="text" name="tags" id="id_tags" class="premium-input" placeholder="e.g. backend, ui, critical" value="{{ form.tags.value|default:'' }}">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">Comma-separated values.</div>
+                    </div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Project <span style="color:var(--red)">*</span></label>
-                        {{ form.project }}
+
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-project-diagram"></i></div>
+                        <div class="section-title-text">Project Context</div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Project <span>*</span></label>
+                        <select name="project" id="id_task_project" class="premium-select" required>
+                            <option value="">— Select Project —</option>
+                            {% for pk, label in form.fields.project.choices %}
+                                {% if pk %}
+                                <option value="{{ pk }}" {% if form.project.value|stringformat:"s" == pk|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                         {% if form.project.errors %}<div class="form-error">{{ form.project.errors.0 }}</div>{% endif %}
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Assignees</label>
-                        {{ form.assignees }}
-                        {% if form.assignees.errors %}<div class="form-error">{{ form.assignees.errors.0 }}</div>{% endif %}
-                        {% if project %}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;"><i class="fas fa-info-circle"></i> Only project members are shown.</div>
-                        {% endif %}
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Requirement Link</label>
+                        <select name="requirement" id="id_task_requirement" class="premium-select">
+                            <option value="">— Select Requirement —</option>
+                        </select>
+                        <div id="requirement-warning" class="warning-box">
+                            <i class="fas fa-exclamation-triangle"></i> This task is currently unlinked to any requirement.
+                        </div>
                     </div>
-                    <div class="form-group" id="module-container" style="display:block;">
-                        <label class="form-label">Module (Optional)</label>
-                        {{ form.module }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Select a project first to load its modules.</div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Task Type</label>
-                        {{ form.task_type }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority</label>
-                        {{ form.priority }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        {{ form.status }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Parent Task</label>
-                        {{ form.parent_task }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Set a parent to make this a subtask.</div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Target Module</label>
+                        <select name="module" id="id_task_module" class="premium-select">
+                            <option value="">— Select Module —</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <!-- Schedule -->
-            <div class="card">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
-                    <i class="fas fa-calendar" style="color:var(--accent);margin-right:6px;"></i>Schedule & Effort
+            <!-- RIGHT: Management -->
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-tasks"></i></div>
+                        <div class="section-title-text">Execution</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="input-wrapper">
+                            <label class="custom-label">Status</label>
+                            <select name="status" id="id_status" class="premium-select">
+                                {% for pk, label in form.fields.status.choices %}
+                                <option value="{{ pk }}" {% if form.status.value == pk %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="input-wrapper">
+                            <label class="custom-label">Priority</label>
+                            <select name="priority" id="id_priority" class="premium-select">
+                                {% for pk, label in form.fields.priority.choices %}
+                                <option value="{{ pk }}" {% if form.priority.value == pk %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Task Type</label>
+                        <select name="task_type" id="id_task_type" class="premium-select">
+                            {% for pk, label in form.fields.task_type.choices %}
+                            <option value="{{ pk }}" {% if form.task_type.value == pk %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Assignees</label>
+                        <select name="assignees" id="id_assignees" class="premium-select" multiple style="height: 120px;">
+                        </select>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Parent Task</label>
+                        <select name="parent_task" id="id_parent_task" class="premium-select">
+                            <option value="">— Independent Task —</option>
+                            {% for pk, label in form.fields.parent_task.choices %}
+                                {% if pk %}
+                                <option value="{{ pk }}" {% if form.parent_task.value|stringformat:"s" == pk|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Due Date</label>
-                        {{ form.due_date }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Estimated Hours</label>
-                        {{ form.estimated_hours }}
-                    </div>
+
+                <!-- Actions -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <button type="submit" class="btn-premium">
+                        <i class="fas fa-save"></i> {{ action }}
+                    </button>
+                    
+                    {% if task %}
+                    <a href="{% url 'tasks:task_delete' task.pk %}" class="btn-delete" onclick="return confirm('Archive this task permanently?')">
+                        <i class="fas fa-trash-alt"></i> Delete Task
+                    </a>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Submit -->
-            <div style="display:flex; gap:10px;">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
-                <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
-                {% if task %}
-                <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger" style="margin-left:auto;" onclick="return confirm('Delete this task?')"><i class="fas fa-trash"></i> Delete Task</a>
-                {% endif %}
-            </div>
         </div>
     </form>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
 const projectSel = document.getElementById('id_task_project');
 const moduleSel = document.getElementById('id_task_module');
+const requirementSel = document.getElementById('id_task_requirement');
+const reqWarning = document.getElementById('requirement-warning');
+const assigneesSel = document.getElementById('id_assignees');
 
-function loadProjectModules(projectId, keepModule) {
-    const moduleGroup = moduleSel ? moduleSel.closest('.form-group') : null;
-    
+function loadProjectData(projectId, keepModule, keepRequirement) {
     if (!projectId) {
-        if (moduleSel) {
-            moduleSel.innerHTML = '<option value="">— Select a project first —</option>';
-            moduleSel.disabled = true;
-        }
-        if (moduleGroup) moduleGroup.style.display = 'block';
+        if (moduleSel) { moduleSel.innerHTML = '<option value="">— Select Project First —</option>'; moduleSel.disabled = true; }
+        if (requirementSel) { requirementSel.innerHTML = '<option value="">— Select Project First —</option>'; requirementSel.disabled = true; }
         return;
     }
     
-    moduleSel.disabled = false;
+    if (moduleSel) moduleSel.disabled = false;
+    if (requirementSel) requirementSel.disabled = false;
     
-    fetch(`/tasks/api/project-modules/?project_id=${projectId}`)
+    // Load modules
+    fetch(`/api/project-modules/?project_id=${projectId}`)
         .then(r => r.json())
         .then(data => {
             const saved = keepModule || (moduleSel ? moduleSel.value : '');
@@ -137,30 +374,64 @@ function loadProjectModules(projectId, keepModule) {
                 moduleSel.innerHTML = '<option value="">— No module selected —</option>';
                 (data.modules || []).forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m.id;
-                    opt.textContent = m.name;
+                    opt.value = m.id; opt.textContent = m.name;
                     if (String(m.id) === String(saved)) opt.selected = true;
                     moduleSel.appendChild(opt);
                 });
-                
-                // Always show for everyone
-                const moduleGroup = moduleSel.closest('.form-group');
-                if (moduleGroup) {
-                    moduleGroup.style.display = 'block';
-                }
             }
-        })
-        .catch(() => {});
+        });
+
+    // Load requirements
+    fetch(`/api/project-requirements/?project_id=${projectId}`)
+        .then(r => r.json())
+        .then(data => {
+            const saved = keepRequirement || (requirementSel ? requirementSel.value : '');
+            if (requirementSel) {
+                requirementSel.innerHTML = '<option value="">— Select a requirement —</option>';
+                (data.requirements || []).forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id; opt.textContent = `[${r.req_id || r.id}] ${r.name}`;
+                    if (String(r.id) === String(saved)) opt.selected = true;
+                    requirementSel.appendChild(opt);
+                });
+                updateWarning();
+            }
+        });
+
+    // Load assignees
+    if (assigneesSel) {
+        fetch(`/api/project-members/?project_id=${projectId}`)
+            .then(r => r.json())
+            .then(data => {
+                const selectedIds = Array.from(assigneesSel.selectedOptions).map(opt => opt.value);
+                assigneesSel.innerHTML = '';
+                (data.members || []).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id; opt.textContent = m.name;
+                    if (selectedIds.includes(String(m.id))) opt.selected = true;
+                    assigneesSel.appendChild(opt);
+                });
+            });
+    }
+}
+
+function updateWarning() {
+    if (requirementSel && reqWarning) {
+        reqWarning.style.display = requirementSel.value ? 'none' : 'block';
+    }
 }
 
 if (projectSel) {
     projectSel.addEventListener('change', function() {
-        loadProjectModules(this.value, '');
+        loadProjectData(this.value, '', '');
     });
-    // On page load for edit mode, restore existing selections
     if (projectSel.value) {
-        loadProjectModules(projectSel.value, '{{ form.module.value|default:"" }}');
+        loadProjectData(projectSel.value, '{{ form.module.value|default:"" }}', '{{ form.requirement.value|default:"" }}');
     }
+}
+
+if (requirementSel) {
+    requirementSel.addEventListener('change', updateWarning);
 }
 </script>
 {% endblock %}

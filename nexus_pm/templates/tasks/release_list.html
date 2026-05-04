@@ -1,67 +1,281 @@
 {% extends 'base.html' %}
-{% block title %}Releases — {{ project.name }}{% endblock %}
+{% load static %}
+
+{% block title %}Releases · {{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .releases-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px 0;
+    }
+
+    .release-item {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 40px;
+        position: relative;
+    }
+
+    .release-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 30px;
+        bottom: -30px;
+        width: 2px;
+        background: var(--border);
+    }
+
+    .release-sidebar {
+        width: 150px;
+        flex-shrink: 0;
+        text-align: right;
+    }
+
+    .release-dot {
+        position: absolute;
+        left: 2px;
+        top: 8px;
+        width: 18px;
+        height: 18px;
+        background: var(--bg-card);
+        border: 2px solid var(--border);
+        border-radius: 50%;
+        z-index: 1;
+    }
+
+    .release-item.latest .release-dot {
+        background: var(--success);
+        border-color: var(--success);
+    }
+
+    .release-main {
+        flex-grow: 1;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: var(--transition);
+    }
+
+    .release-main:hover {
+        border-color: var(--border-light);
+        box-shadow: var(--shadow-md);
+    }
+
+    .release-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .release-title-area h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+    }
+
+    .release-title-area h2 a {
+        color: var(--text-primary);
+        text-decoration: none;
+    }
+
+    .release-title-area h2 a:hover {
+        color: var(--primary);
+    }
+
+    .tag-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .release-body {
+        padding: 24px;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+    }
+
+    .release-body h3 { margin-top: 0; font-size: 18px; color: var(--text-primary); }
+    
+    .assets-section {
+        padding: 20px 24px;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid var(--border);
+    }
+
+    .assets-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .asset-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .asset-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--bg-body);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 13px;
+        transition: var(--transition);
+    }
+
+    .asset-item:hover {
+        background: var(--border);
+        color: var(--primary);
+    }
+
+    .release-footer {
+        padding: 12px 24px;
+        background: var(--bg-body);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .badge-latest { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); }
+    .badge-draft { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+    .badge-pre { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+</style>
+{% endblock %}
+
 {% block page_title %}{{ project.name }} Releases{% endblock %}
+
 {% block topbar_actions %}
-    {% if user.is_admin or user == project.manager %}
-    <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Release</a>
+    {% if user.is_admin or user in project.managers.all %}
+    <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Draft a new release</a>
     {% endif %}
     <a href="{% url 'tasks:project_detail' project.pk %}" class="btn btn-secondary btn-sm">Back to Project</a>
 {% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <div class="page-header-left">
-        <h1>Releases</h1>
-        <p>{{ releases.count }} release{{ releases.count|pluralize }} found</p>
-    </div>
-</div>
+<div class="releases-container">
+    {% if releases %}
+        {% for release in releases %}
+        <div class="release-item {% if release == latest_release %}latest{% endif %}">
+            <div class="release-sidebar">
+                <div class="release-dot"></div>
+                <div style="font-size: 13px; font-weight: 500; color: var(--text-primary); margin-top: 6px;">
+                    {{ release.release_date|date:"M d, Y" }}
+                </div>
+            </div>
 
-{% if releases %}
-<div class="grid-3">
-    {% for release in releases %}
-    <div class="card" style="transition:var(--transition);cursor:pointer" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
-            <span class="badge {% if release.release_type == 'phase' %}badge-purple{% else %}badge-blue{% endif %}">
-                {{ release.get_release_type_display }}
-            </span>
-            <span class="badge {% if release.status == 'active' %}badge-green{% elif release.status == 'planning' %}badge-blue{% else %}badge-gray{% endif %}">
-                {{ release.get_status_display }}
-            </span>
+            <div class="release-main">
+                <div class="release-header">
+                    <div class="release-title-area">
+                        <h2>
+                            <a href="{% url 'tasks:release_detail' release.pk %}">{{ release.name }}</a>
+                            {% if release == latest_release %}
+                                <span class="badge badge-latest" style="font-size: 12px; vertical-align: middle; margin-left: 8px;">Latest</span>
+                            {% endif %}
+                            {% if release.is_draft %}
+                                <span class="badge badge-draft" style="font-size: 12px; vertical-align: middle; margin-left: 8px;">Draft</span>
+                            {% endif %}
+                            {% if release.is_prerelease %}
+                                <span class="badge badge-pre" style="font-size: 12px; vertical-align: middle; margin-left: 8px;">Pre-release</span>
+                            {% endif %}
+                        </h2>
+                        <div class="tag-info">
+                            <span>ID: {{ release.pk }}</span>
+                            <span>•</span>
+                            <span>Project: {{ project.project_id|default:project.pk }}</span>
+                            <span>•</span>
+                            <span><i class="fas fa-tag"></i> {{ release.tag_name|default:release.name }}</span>
+                            <span>•</span>
+                            <span><i class="fas fa-history"></i> {{ release.get_release_type_display }}</span>
+                        </div>
+                    </div>
+                    <div class="release-actions">
+                        {% if user.is_admin or user in project.managers.all %}
+                        <a href="{% url 'tasks:release_edit' release.pk %}" class="btn btn-secondary btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="release-body">
+                    <div class="markdown-content">
+                        {{ release.description|linebreaks }}
+                    </div>
+                </div>
+
+                {% if release.stock_entries.all or release.module_versions.all %}
+                <div class="assets-section">
+                    <div class="assets-title"><i class="fas fa-paperclip"></i> Assets</div>
+                    <div class="asset-list">
+                        {% for mv in release.module_versions.all %}
+                            {% if mv.file %}
+                            <a href="{{ mv.file.file.url }}" class="asset-item" download>
+                                <i class="fas fa-file-archive"></i>
+                                <span>{{ mv.module.name }} - {{ mv.version_string }} ({{ mv.file.original_name }})</span>
+                                <span style="margin-left: auto; font-size: 11px;">{{ mv.file.file_size|filesizeformat }}</span>
+                            </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {# Generic files attached to the release #}
+                        {% for file in release.files.all %}
+                            <a href="{{ file.file.url }}" class="asset-item" download>
+                                <i class="fas fa-file"></i>
+                                <span>{{ file.original_name }}</span>
+                                <span style="margin-left: auto; font-size: 11px;">{{ file.file_size|filesizeformat }}</span>
+                            </a>
+                        {% endfor %}
+
+                        <a href="{% url 'tasks:release_download' release.pk %}" class="asset-item" style="border-style: dashed;">
+                            <i class="fas fa-file-zipper"></i>
+                            <span>Source code (zip)</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="release-footer">
+                    <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+                        <img src="{{ release.author.avatar.url|default:'https://ui-avatars.com/api/?name='|add:release.author.username }}" 
+                             style="width: 20px; height: 20px; border-radius: 50%;">
+                        <span>Released by <strong>{{ release.author.display_name }}</strong></span>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <a href="{% url 'tasks:release_detail' release.pk %}" style="text-decoration:none">
-            <h3 style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:6px">{{ release.name }}</h3>
-        </a>
-        <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">
-            {{ release.description|truncatewords:15|default:"No description." }}
-        </p>
-
-        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px">
-            <span style="font-size:11px;color:var(--text-muted);"><i class="fas fa-calendar"></i> Target: {{ release.target_date|default:"TBD" }}</span>
+        {% endfor %}
+    {% else %}
+        <div class="card">
+            <div class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <h3>No releases found</h3>
+                <p>No releases have been created for this project yet.</p>
+                {% if user.is_admin or user in project.managers.all %}
+                <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-plus"></i> Draft a new release</a>
+                {% endif %}
+            </div>
         </div>
-
-        <div style="display:flex;gap:6px;margin-top:12px">
-            <a href="{% url 'tasks:release_detail' release.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-eye"></i> View</a>
-            
-            {% if user.is_admin or user == project.manager %}
-            <a href="{% url 'tasks:release_edit' release.pk %}" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center"><i class="fas fa-edit"></i> Edit</a>
-            <a href="{% url 'tasks:release_delete' release.pk %}" class="btn btn-danger btn-sm" title="Delete Release"><i class="fas fa-trash"></i></a>
-            {% endif %}
-            
-            <a href="{% url 'tasks:release_download' release.pk %}" class="btn btn-primary btn-sm" title="Download ZIP"><i class="fas fa-download"></i></a>
-        </div>
-    </div>
-    {% endfor %}
+    {% endif %}
 </div>
-{% else %}
-<div class="card">
-    <div class="empty-state">
-        <i class="fas fa-box-open"></i>
-        <h3>No releases found</h3>
-        <p>No releases have been created for this project yet.</p>
-        {% if user.is_admin or user == project.manager %}
-        <a href="{% url 'tasks:release_create' project.pk %}" class="btn btn-primary" style="margin-top:16px"><i class="fas fa-plus"></i> New Release</a>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
 {% endblock %}

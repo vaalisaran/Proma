@@ -4,13 +4,13 @@
 {% block topbar_actions %}
 {% if request.user == note.author or request.user.is_admin %}
 <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
-{% elif project and request.user == project.manager %}
+{% elif project and request.user in project.managers.all %}
 <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit Note</a>
 {% endif %}
 {% if request.user == note.author or request.user.is_admin %}
 <a href="{% url 'tasks:kb_access' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-lock"></i> Manage Access</a>
 <a href="{% url 'tasks:kb_delete' note.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Note</a>
-{% elif project and request.user == project.manager %}
+{% elif project and request.user in project.managers.all %}
 <a href="{% url 'tasks:kb_access' note.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-lock"></i> Manage Access</a>
 <a href="{% url 'tasks:kb_delete' note.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Note</a>
 {% endif %}

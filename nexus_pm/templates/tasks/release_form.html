@@ -1,19 +1,212 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }} — {{ project.name }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .release-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 24px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .checkbox-group {
+        display: flex;
+        gap: 24px;
+        margin: 20px 0;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .checkbox-item input {
+        width: 18px;
+        height: 18px;
+    }
+    .checkbox-item label {
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
 {% block topbar_actions %}
     <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% else %}{% url 'tasks:release_list' project.pk %}{% endif %}" class="btn btn-secondary btn-sm">Cancel</a>
 {% endblock %}
+
 {% block content %}
-<div class="card" style="max-width: 600px; margin: 0 auto;">
-    <h2 style="font-family:'Space Grotesk',sans-serif; margin-bottom: 20px;">{{ title }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
-            <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% else %}{% url 'tasks:release_list' project.pk %}{% endif %}" class="btn btn-secondary">Cancel</a>
-        </div>
-    </form>
+<div class="release-form-container">
+    <div class="form-section">
+        <h2 style="font-family:'Space Grotesk',sans-serif; margin-bottom: 24px;">{{ title }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Release title</label>
+                {{ form.name }}
+                {% if form.name.errors %}<div class="text-danger">{{ form.name.errors }}</div>{% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.tag_name.id_for_label }}">Tag name</label>
+                    {{ form.tag_name }}
+                    {% if form.tag_name.errors %}<div class="text-danger">{{ form.tag_name.errors }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.target_date.id_for_label }}">Target date</label>
+                    {{ form.target_date }}
+                    {% if form.target_date.errors %}<div class="text-danger">{{ form.target_date.errors }}</div>{% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.release_type.id_for_label }}">Release type</label>
+                    {{ form.release_type }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.status.id_for_label }}">Status</label>
+                    {{ form.status }}
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    {{ form.is_draft }}
+                    <label for="{{ form.is_draft.id_for_label }}">
+                        <strong>This is a draft</strong>
+                        <div style="font-size: 12px; color: var(--text-muted);">Save for later without notifying members</div>
+                    </label>
+                </div>
+                <div class="checkbox-item">
+                    {{ form.is_prerelease }}
+                    <label for="{{ form.is_prerelease.id_for_label }}">
+                        <strong>This is a pre-release</strong>
+                        <div style="font-size: 12px; color: var(--text-muted);">For beta or non-production releases</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">Describe this release</label>
+                {{ form.description }}
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                    <i class="fab fa-markdown"></i> Markdown is supported. Tip: Use <code>#</code> for headings, <code>*</code> for bullets.
+                </div>
+            </div>
+
+            {% if form.selected_files %}
+            <div class="form-group" style="margin-top: 30px;">
+                <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <span style="font-weight: 700; color: var(--text-primary);">Include Project Files</span>
+                    <span style="font-size: 12px; font-weight: 400; color: var(--text-muted);">Select assets from the project tree</span>
+                </label>
+                
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 0; max-height: 500px; overflow-y: auto;">
+                    <!-- Search inside files -->
+                    <div style="padding: 12px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+                        <input type="text" id="file-search" class="form-control form-control-sm" placeholder="Filter files..." style="background: var(--bg-secondary); border: 1px solid var(--border);">
+                    </div>
+
+                    <div id="file-tree-selection" style="padding: 10px;">
+                        {% for cat in root_categories|dictsort:"name" %}
+                            {% include 'tasks/release_file_tree_node.html' with category=cat depth=0 %}
+                        {% endfor %}
+                        
+                        <!-- Root Files -->
+                        {% for f in project.files.all|dictsort:"original_name" %}
+                            {% if not f.category and not f.task %}
+                                <label class="tree-selection-item" style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 6px; cursor: pointer; transition: background 0.2s; margin-bottom: 2px;">
+                                    <input type="checkbox" name="selected_files" value="{{ f.pk }}" {% if f in form.selected_files.initial %}checked{% endif %} style="margin: 0;">
+                                    <i class="fas {{ f.icon_class }}" style="color: {{ f.icon_color }}; width: 16px; text-align: center; font-size: 14px;"></i>
+                                    <span style="font-size: 13px; color: var(--text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ f.display_name }}</span>
+                                    <span style="font-size: 10px; color: var(--text-muted);">{{ f.file_size_display }}</span>
+                                </label>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if form.selected_files.errors %}
+                <div class="text-danger" style="margin-top: 8px;">{{ form.selected_files.errors }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div style="margin-top: 30px; display: flex; gap: 12px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-rocket"></i> {% if release.is_draft %}Save draft{% else %}Publish release{% endif %}</button>
+                <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% else %}{% url 'tasks:release_list' project.pk %}{% endif %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleReleaseFolder(header) {
+    const content = header.nextElementSibling;
+    const chevron = header.querySelector('.chevron-icon');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(90deg)';
+    } else {
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(0deg)';
+    }
+}
+
+document.getElementById('file-search').addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    const items = document.querySelectorAll('.tree-selection-item');
+    
+    items.forEach(item => {
+        const text = item.querySelector('span').textContent.toLowerCase();
+        if (text.includes(query)) {
+            item.style.display = 'flex';
+            // Also ensure parents are visible if hidden
+            let parent = item.closest('.folder-content');
+            while(parent) {
+                parent.style.display = 'block';
+                const header = parent.previousElementSibling;
+                if(header && header.classList.contains('folder-header')) {
+                    const chevron = header.querySelector('.chevron-icon');
+                    if(chevron) chevron.style.transform = 'rotate(90deg)';
+                }
+                parent = parent.parentElement.closest('.folder-content');
+            }
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+</script>
+<style>
+.tree-selection-item:hover { background: rgba(255,255,255,0.05) !important; }
+.folder-header:hover { background: rgba(255,255,255,0.05) !important; }
+</style>
 {% endblock %}

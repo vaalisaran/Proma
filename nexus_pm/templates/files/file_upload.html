@@ -1,346 +1,486 @@
 {% extends 'base.html' %}
-{% block title %}Upload Files — IIAP PM{% endblock %}
-{% block page_title %}Upload Files{% endblock %}
+{% block title %}Upload Resources — IIAP PM{% endblock %}
+{% block page_title %}Upload Resources{% endblock %}
 {% block extra_css %}
 <style>
+/* ── Modern Confirmed Upload Layout ── */
+.upload-stage {
+    max-width: 1300px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 30px;
+    align-items: start;
+}
+
+/* LEFT: Interaction Area */
+.canvas-area { display: flex; flex-direction: column; gap: 24px; }
+
+/* Drop Zone: Visual & interactive */
 .drop-zone {
-    border: 2px dashed var(--border-light);
-    border-radius: var(--radius);
-    padding: 52px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
+    border: 2px dashed var(--border);
+    border-radius: 24px;
+    padding: 60px 40px;
     background: var(--bg-secondary);
-    position: relative;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
 }
-.drop-zone.dragover {
+.drop-zone:hover, .drop-zone.active {
     border-color: var(--accent);
-    background: rgba(79,142,247,0.06);
+    background: rgba(var(--accent-rgb), 0.05);
+    transform: translateY(-2px);
 }
-.drop-zone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-}
-.drop-icon { font-size: 48px; color: var(--text-muted); margin-bottom: 14px; display: block; }
-.drop-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-.drop-sub { font-size: 13px; color: var(--text-muted); }
-.file-type-badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 16px; }
-.type-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; border: 1px solid var(--border); color: var(--text-muted); }
+.drop-icon { font-size: 48px; color: var(--accent); margin-bottom: 20px; opacity: 0.8; }
+.drop-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.drop-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 30px; }
 
-.file-queue { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+/* Staging Queue */
+.queue-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+}
+.queue-header {
+    padding: 20px 24px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.queue-header h3 { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin: 0; }
+
+.queue-items { max-height: 500px; overflow-y: auto; }
 .queue-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px; background: var(--bg-card);
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
-    animation: slideIn .2s ease;
+    display: grid;
+    grid-template-columns: 50px 1fr 100px 120px 40px;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.2s;
+    cursor: pointer;
 }
-.queue-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-.queue-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.queue-size { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
-.queue-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 4px; }
-.queue-remove:hover { color: var(--red); }
-.upload-progress { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; display: none; }
-.upload-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #7c3aed); border-radius: 2px; transition: width .3s; width: 0; }
+.queue-item:hover { background: rgba(var(--accent-rgb), 0.02); }
+.queue-item.selected { background: rgba(var(--accent-rgb), 0.08); border-left: 4px solid var(--accent); padding-left: 20px; }
+.queue-item.confirmed { opacity: 1; }
+.queue-item:not(.confirmed) { opacity: 0.7; }
 
-@keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.file-thumb {
+    width: 44px; height: 44px; border-radius: 12px; background: var(--bg-secondary);
+    display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1px solid var(--border);
+}
+.file-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+
+.file-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { font-size: 12px; color: var(--text-muted); }
+
+/* RIGHT: Preview & Actions Sidebar */
+.sidebar-area { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 24px; }
+
+.preview-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+.preview-display {
+    flex: 1; min-height: 200px; max-height: 350px; background: var(--bg-secondary);
+    border-radius: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border: 1px solid var(--border);
+}
+.preview-display img, .preview-display video { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.confirmation-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+}
+.status-unconfirmed { background: var(--bg-secondary); color: var(--text-muted); }
+.status-confirmed { background: rgba(34,197,94,0.15); color: var(--green); }
+
+/* Progress Overlay */
+.upload-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+    z-index: 9999; display: none; align-items: center; justify-content: center;
+}
+.progress-card {
+    background: var(--bg-card); padding: 40px; border-radius: 32px; width: 450px; text-align: center;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.5); border: 1px solid var(--border);
+}
+.progress-ring { width: 100px; height: 100px; margin: 0 auto 30px; position: relative; }
+.progress-ring svg { transform: rotate(-90deg); }
+.progress-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+.progress-ring .bg { stroke: var(--bg-secondary); }
+.progress-ring .bar { stroke: var(--accent); stroke-dasharray: 251.2; stroke-dashoffset: 251.2; transition: stroke-dashoffset 0.3s; }
+
+@media (max-width: 1000px) {
+    .upload-stage { grid-template-columns: 1fr; }
+    .sidebar-area { position: static; }
+}
 </style>
 {% endblock %}
+
 {% block content %}
-<div style="max-width:760px;">
-    <div class="page-header">
-        <div class="page-header-left">
-            <h1>Upload Files</h1>
-            <p>Any file type accepted — images, documents, code, archives, CAD files and more</p>
+<div class="upload-stage">
+    
+    <!-- MAIN INTERACTION AREA -->
+    <div class="canvas-area">
+        
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="dropZone" onclick="fileInput.click()">
+            <input type="file" id="fileInput" multiple style="display:none;">
+            <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none;">
+            <i class="fas fa-cloud-upload-alt drop-icon"></i>
+            <div class="drop-title">Drop your resources here</div>
+            <div class="drop-subtitle">Support for images, documents, and entire folders. Max 50MB per file.</div>
+            <div style="display:flex; justify-content:center; gap:16px;">
+                <button type="button" class="btn btn-primary btn-lg" onclick="event.stopPropagation(); fileInput.click()">
+                    <i class="fas fa-file-upload"></i> Select Files
+                </button>
+                <button type="button" class="btn btn-secondary btn-lg" onclick="event.stopPropagation(); folderInput.click()">
+                    <i class="fas fa-folder-plus"></i> Select Folder
+                </button>
+            </div>
         </div>
-        <a href="{% url 'files:file_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+
+        <!-- Staging Queue -->
+        <div class="queue-card">
+            <div class="queue-header">
+                <h3>Staging Queue <span id="stagedCount" style="color:var(--accent); margin-left:8px;"></span></h3>
+                <div id="stagedMeta" style="font-size:12px; color:var(--text-muted);">0 KB total</div>
+            </div>
+            <div id="stagedItems" class="queue-items">
+                <div id="emptyMsg" style="padding:80px 20px; text-align:center; color:var(--text-muted);">
+                    <i class="fas fa-files-medical" style="font-size:48px; opacity:0.2; margin-bottom:20px;"></i>
+                    <p>No files staged for review. Start by uploading or dragging files.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <form method="post" enctype="multipart/form-data" id="uploadForm">
-        {% csrf_token %}
-        <div style="display:flex;flex-direction:column;gap:16px;">
-
-            <!-- Drop Zone -->
-            <div class="card" style="padding:0;overflow:hidden;">
-                <div class="drop-zone" id="dropZone">
-                    <input type="file" name="files" id="fileInput" multiple>
-                    <i class="fas fa-cloud-upload-alt drop-icon"></i>
-                    <div class="drop-title">Drag & drop files here</div>
-                    <div class="drop-sub">or <span style="color:var(--accent);font-weight:600;">click to browse</span></div>
-                    <div class="file-type-badges">
-                        <span class="type-badge"><i class="fas fa-file-image" style="color:#06b6d4;"></i> Images</span>
-                        <span class="type-badge"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> PDF</span>
-                        <span class="type-badge"><i class="fas fa-file-word" style="color:#4f8ef7;"></i> Docs</span>
-                        <span class="type-badge"><i class="fas fa-file-code" style="color:#a855f7;"></i> Code</span>
-                        <span class="type-badge"><i class="fas fa-file-archive" style="color:#f59e0b;"></i> ZIP/RAR</span>
-                        <span class="type-badge"><i class="fas fa-file-excel" style="color:#22c55e;"></i> Excel</span>
-                        <span class="type-badge"><i class="fas fa-cube" style="color:#64748b;"></i> CAD</span>
-                        <span class="type-badge"><i class="fas fa-file-video" style="color:#ec4899;"></i> Video</span>
-                        <span class="type-badge" style="color:var(--accent);">+ Any format</span>
-                    </div>
-                </div>
-
-                <!-- File Queue -->
-                <div id="fileQueue" class="file-queue" style="padding:0 16px;margin-bottom:8px;"></div>
-                <div class="upload-progress" id="uploadProgress">
-                    <div class="upload-progress-fill" id="progressFill"></div>
-                </div>
+    <!-- SIDEBAR AREA -->
+    <div class="sidebar-area">
+        
+        <!-- Large Preview Box -->
+        <div class="preview-box" id="previewPanel" style="display:none;">
+            <div style="font-size:12px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:16px; letter-spacing:1px;">File Confirmation</div>
+            <div class="preview-display" id="previewDisplay"></div>
+            <div style="margin-bottom:24px;">
+                <div id="previewName" style="font-weight:700; font-size:16px; margin-bottom:4px; word-break:break-all;"></div>
+                <div id="previewMeta" style="font-size:13px; color:var(--text-muted);"></div>
             </div>
-
-            <!-- Metadata -->
-            <div class="card">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;">
-                    <i class="fas fa-tags" style="color:var(--accent);margin-right:6px;"></i>File Details
-                </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label class="form-label">Project</label>
-                        {{ form.project }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Link to Task</label>
-                        {{ form.task }}
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Select a project first, then pick a task.</div>
-                    </div>
-                    <div class="form-group" style="grid-column:span 2;">
-                        <label class="form-label">Description</label>
-                        {{ form.description }}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                            {{ form.is_public }}
-                            <span>Allow project members to watch/view</span>
-                        </label>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">If unchecked, only you and admins can see this file.</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="uploadResults" style="display:none;" class="card" style="margin-top:0;">
-                <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">
-                    <i class="fas fa-check-circle" style="color:var(--green);margin-right:6px;"></i>Uploaded Files
-                </div>
-                <div id="uploadResultsList" style="display:flex;flex-direction:column;gap:6px;"></div>
-            </div>
-
-            <div style="display:flex;gap:10px;">
-                <button type="button" class="btn btn-primary" id="submitBtn" disabled onclick="doUpload()">
-                    <i class="fas fa-cloud-upload-alt"></i> Upload <span id="fileCountLabel">Files</span>
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn btn-accent" style="flex:1;" onclick="confirmCurrent()">
+                    <i class="fas fa-check-circle"></i> Confirm File
                 </button>
-                <a href="{% url 'files:file_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="button" class="btn btn-ghost btn-icon" onclick="removeCurrent()"><i class="fas fa-trash-alt"></i></button>
             </div>
         </div>
-    </form>
+
+        <!-- Global Settings & Final Action -->
+        <div class="confirmation-card">
+            <div style="font-size:12px; font-weight:800; color:var(--accent); text-transform:uppercase; margin-bottom:20px; letter-spacing:1px;">Final Configuration</div>
+            
+            <form id="uploadForm" method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label style="font-size:12px; font-weight:700; margin-bottom:6px; display:block;">Target Project</label>
+                    {{ form.project }}
+                </div>
+                <div class="form-group">
+                    <label style="font-size:12px; font-weight:700; margin-bottom:6px; display:block;">Folder / Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="form-group">
+                    <label style="font-size:12px; font-weight:700; margin-bottom:6px; display:block;">Description (Global)</label>
+                    {{ form.description }}
+                </div>
+                
+                <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+                    <button type="button" id="uploadBtn" class="btn btn-primary btn-lg" style="width:100%; height:54px; font-weight:700;" disabled onclick="executeUpload()">
+                        <i class="fas fa-rocket"></i> Finish & Upload <span id="confirmedCount"></span>
+                    </button>
+                    <p style="text-align:center; font-size:11px; color:var(--text-muted); margin-top:12px;">
+                        Only <strong>confirmed</strong> files will be uploaded.
+                    </p>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
 </div>
+
+<!-- PROGRESS OVERLAY -->
+<div class="upload-overlay" id="uploadOverlay">
+    <div class="progress-card">
+        <div class="progress-ring">
+            <svg width="100" height="100">
+                <circle class="bg" cx="50" cy="50" r="40" />
+                <circle class="bar" id="progressRingBar" cx="50" cy="50" r="40" />
+            </svg>
+            <div id="progressPct" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px;">0%</div>
+        </div>
+        <h2 style="font-family:'Space Grotesk',sans-serif; margin-bottom:8px;">Uploading Assets</h2>
+        <p id="progressStatus" style="color:var(--text-muted); font-size:14px;">Preparing files for secure transmission...</p>
+    </div>
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
 <script>
-const dropZone   = document.getElementById('dropZone');
-const fileInput  = document.getElementById('fileInput');
-const fileQueue  = document.getElementById('fileQueue');
-const submitBtn  = document.getElementById('submitBtn');
-const countLabel = document.getElementById('fileCountLabel');
+let stash = [];
+let currentIdx = -1;
 
-const FILE_ICONS = {
-    image:        {icon:'fa-file-image',      color:'#06b6d4'},
-    pdf:          {icon:'fa-file-pdf',         color:'#ef4444'},
-    document:     {icon:'fa-file-word',        color:'#4f8ef7'},
-    spreadsheet:  {icon:'fa-file-excel',       color:'#22c55e'},
-    presentation: {icon:'fa-file-powerpoint',  color:'#f97316'},
-    code:         {icon:'fa-file-code',        color:'#a855f7'},
-    archive:      {icon:'fa-file-archive',     color:'#f59e0b'},
-    video:        {icon:'fa-file-video',       color:'#ec4899'},
-    audio:        {icon:'fa-file-audio',       color:'#8b5cf6'},
-    cad:          {icon:'fa-cube',             color:'#64748b'},
-    other:        {icon:'fa-file',             color:'#7a8aaa'},
+const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+const dropZone = document.getElementById('dropZone');
+const stagedItems = document.getElementById('stagedItems');
+const emptyMsg = document.getElementById('emptyMsg');
+const previewPanel = document.getElementById('previewPanel');
+const uploadBtn = document.getElementById('uploadBtn');
+const progressRingBar = document.getElementById('progressRingBar');
+const progressPct = document.getElementById('progressPct');
+
+const TYPE_MAP = {
+    image: { icon: 'fa-file-image', color: '#06b6d4' },
+    video: { icon: 'fa-file-video', color: '#ec4899' },
+    pdf: { icon: 'fa-file-pdf', color: '#ef4444' },
+    archive: { icon: 'fa-file-archive', color: '#f59e0b' },
+    other: { icon: 'fa-file', color: '#94a3b8' }
 };
 
-function getFileType(filename) {
-    const ext = ('.' + filename.split('.').pop()).toLowerCase();
-    const map = {
-        image:        ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.ico','.tiff'],
-        pdf:          ['.pdf'],
-        document:     ['.doc','.docx','.odt','.rtf','.txt','.md','.rst'],
-        spreadsheet:  ['.xls','.xlsx','.csv','.ods'],
-        presentation: ['.ppt','.pptx','.odp'],
-        code:         ['.py','.js','.ts','.html','.css','.java','.cpp','.c','.h',
-                       '.json','.xml','.yaml','.yml','.toml','.ini','.sh','.bat',
-                       '.sql','.php','.rb','.go','.rs','.swift','.kt'],
-        archive:      ['.zip','.tar','.gz','.bz2','.xz','.7z','.rar'],
-        video:        ['.mp4','.avi','.mov','.mkv','.wmv','.webm'],
-        audio:        ['.mp3','.wav','.ogg','.flac','.aac'],
-        cad:          ['.dwg','.dxf','.step','.stp','.iges','.stl','.obj'],
-    };
-    for (const [type, exts] of Object.entries(map)) {
-        if (exts.includes(ext)) return type;
-    }
+function getFileType(n) {
+    const e = n.split('.').pop().toLowerCase();
+    if (['png','jpg','jpeg','gif','webp','svg'].includes(e)) return 'image';
+    if (['mp4','webm','mov'].includes(e)) return 'video';
+    if (e === 'pdf') return 'pdf';
+    if (['zip','rar','tar','7z'].includes(e)) return 'archive';
     return 'other';
 }
 
-function formatSize(bytes) {
-    if (bytes < 1024)       return bytes + ' B';
-    if (bytes < 1048576)    return (bytes/1024).toFixed(1) + ' KB';
-    if (bytes < 1073741824) return (bytes/1048576).toFixed(1) + ' MB';
-    return (bytes/1073741824).toFixed(2) + ' GB';
+function prettySize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
 }
 
-function renderQueue(files) {
-    fileQueue.innerHTML = '';
-    if (!files || !files.length) {
-        submitBtn.disabled = true;
-        countLabel.textContent = 'Files';
-        return;
-    }
-    submitBtn.disabled = false;
-    countLabel.textContent = files.length + ' File' + (files.length > 1 ? 's' : '');
+function addFiles(files) {
     [...files].forEach(f => {
-        const ft   = getFileType(f.name);
-        const info = FILE_ICONS[ft] || FILE_ICONS.other;
-        const div  = document.createElement('div');
-        div.className = 'queue-item';
+        stash.push({ file: f, path: f.webkitRelativePath || f.name, confirmed: false });
+    });
+    render();
+    if (stash.length > 0) showPreview(stash.length - 1);
+}
+
+function render() {
+    const hasFiles = stash.length > 0;
+    emptyMsg.style.display = hasFiles ? 'none' : 'block';
+    
+    document.getElementById('stagedCount').textContent = hasFiles ? `(${stash.length})` : '';
+    const totalSize = stash.reduce((a,v) => a + v.file.size, 0);
+    document.getElementById('stagedMeta').textContent = prettySize(totalSize) + ' total';
+    
+    const confirmedCount = stash.filter(s => s.confirmed).length;
+    uploadBtn.disabled = confirmedCount === 0;
+    document.getElementById('confirmedCount').textContent = confirmedCount > 0 ? `(${confirmedCount})` : '';
+
+    stagedItems.querySelectorAll('.queue-item').forEach(el => el.remove());
+
+    stash.forEach((item, idx) => {
+        const type = getFileType(item.file.name);
+        const cfg = TYPE_MAP[type];
+        const div = document.createElement('div');
+        div.className = `queue-item ${idx === currentIdx ? 'selected' : ''} ${item.confirmed ? 'confirmed' : ''}`;
+        
+        let thumb = `<i class="fas ${cfg.icon}" style="color:${cfg.color}"></i>`;
+        if (type === 'image') {
+            thumb = `<img src="${URL.createObjectURL(item.file)}">`;
+        }
+
         div.innerHTML = `
-            <div class="queue-icon" style="background:${info.color}20;">
-                <i class="fas ${info.icon}" style="color:${info.color};"></i>
+            <div class="file-thumb">${thumb}</div>
+            <div class="file-info">
+                <div class="file-name" title="${item.file.name}">${item.file.name}</div>
+                <div class="file-meta">${prettySize(item.file.size)} &bull; ${type}</div>
             </div>
-            <div style="flex:1;min-width:0;">
-                <div class="queue-name">${escHtml(f.name)}</div>
-                <div style="font-size:11px;color:var(--text-muted);">${formatSize(f.size)} &middot; ${ft}</div>
-            </div>`;
-        fileQueue.appendChild(div);
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted);">${item.path.includes('/') ? item.path.split('/')[0] : ''}</div>
+            <div>
+                <span class="status-badge ${item.confirmed ? 'status-confirmed' : 'status-unconfirmed'}">
+                    ${item.confirmed ? '<i class="fas fa-check"></i> READY' : 'STAGED'}
+                </span>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm btn-icon" onclick="removeIdx(${idx}, event)"><i class="fas fa-times"></i></button>
+        `;
+        div.onclick = () => showPreview(idx);
+        stagedItems.appendChild(div);
     });
 }
 
-function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function showPreview(idx) {
+    currentIdx = idx;
+    const item = stash[idx];
+    if (!item) { previewPanel.style.display = 'none'; return; }
+    
+    previewPanel.style.display = 'flex';
+    render();
+
+    const f = item.file;
+    const type = getFileType(f.name);
+    const display = document.getElementById('previewDisplay');
+    document.getElementById('previewName').textContent = f.name;
+    document.getElementById('previewMeta').textContent = `${prettySize(f.size)} • ${type.toUpperCase()}`;
+
+    display.innerHTML = '<i class="fas fa-circle-notch fa-spin" style="font-size:32px; opacity:0.3;"></i>';
+    
+    if (type === 'image') {
+        const img = new Image();
+        img.src = URL.createObjectURL(f);
+        img.onload = () => { display.innerHTML = ''; display.appendChild(img); };
+    } else if (type === 'video') {
+        const vid = document.createElement('video');
+        vid.controls = true;
+        vid.src = URL.createObjectURL(f);
+        display.innerHTML = '';
+        display.appendChild(vid);
+    } else {
+        const cfg = TYPE_MAP[type];
+        display.innerHTML = `<i class="fas ${cfg.icon}" style="font-size:64px; color:${cfg.color}; opacity:0.3;"></i>`;
+    }
 }
 
-fileInput.addEventListener('change', function() { renderQueue(this.files); });
-
-// Drag & Drop
-dropZone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-dropZone.addEventListener('drop', e => {
-    e.preventDefault(); e.stopPropagation();
-    dropZone.classList.remove('dragover');
-    const dt = e.dataTransfer;
-    if (dt && dt.files && dt.files.length) {
-        try {
-            const transfer = new DataTransfer();
-            [...dt.files].forEach(f => transfer.items.add(f));
-            fileInput.files = transfer.files;
-        } catch(err) { console.warn('DataTransfer:', err); }
-        renderQueue(fileInput.files);
+function confirmCurrent() {
+    if (currentIdx > -1) {
+        stash[currentIdx].confirmed = true;
+        render();
+        // Auto select next unconfirmed
+        const next = stash.findIndex((s, i) => !s.confirmed && i > currentIdx);
+        if (next > -1) showPreview(next);
+        else {
+            const firstUn = stash.findIndex(s => !s.confirmed);
+            if (firstUn > -1) showPreview(firstUn);
+        }
     }
-});
+}
 
-fileInput.addEventListener('click', e => e.stopPropagation());
-dropZone.addEventListener('click', function(e) { if (e.target !== fileInput) fileInput.click(); });
+function removeIdx(idx, e) {
+    if (e) e.stopPropagation();
+    stash.splice(idx, 1);
+    if (currentIdx >= stash.length) currentIdx = stash.length - 1;
+    render();
+    if (stash.length > 0) showPreview(currentIdx);
+    else previewPanel.style.display = 'none';
+}
 
-// ── AJAX Upload ───────────────────────────────────────────────────────────────
-function doUpload() {
-    if (!fileInput.files || !fileInput.files.length) return;
+function removeCurrent() { removeIdx(currentIdx); }
 
-    const form     = document.getElementById('uploadForm');
-    const formData = new FormData(form);
+fileInput.onchange = () => { addFiles(fileInput.files); fileInput.value = ''; };
+folderInput.onchange = () => { addFiles(folderInput.files); folderInput.value = ''; };
 
-    // Make sure files are in the formData under key "files"
-    // Remove any existing "files" entries and re-add from fileInput
-    formData.delete('files');
-    [...fileInput.files].forEach(f => formData.append('files', f));
+dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('active'); };
+dropZone.ondragleave = () => dropZone.classList.remove('active');
+dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('active');
+    if (e.dataTransfer.items) {
+        [...e.dataTransfer.items].forEach(item => {
+            if (item.kind === 'file') {
+                const entry = item.webkitGetAsEntry();
+                if (entry) scan(entry);
+            }
+        });
+    } else {
+        addFiles(e.dataTransfer.files);
+    }
+};
 
-    const progress = document.getElementById('uploadProgress');
-    const fill     = document.getElementById('progressFill');
-    progress.style.display = 'block';
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+function scan(entry) {
+    if (entry.isFile) entry.file(f => addFiles([f]));
+    else if (entry.isDirectory) {
+        const reader = entry.createReader();
+        reader.readEntries(list => list.forEach(e => scan(e)));
+    }
+}
 
-    // Animate progress bar
-    let w = 0;
-    const iv = setInterval(() => { w = Math.min(w + 3, 85); fill.style.width = w + '%'; }, 100);
+function executeUpload() {
+    const toUpload = stash.filter(s => s.confirmed);
+    if (!toUpload.length) return;
 
-    fetch(form.action || window.location.href, {
+    const overlay = document.getElementById('uploadOverlay');
+    overlay.style.display = 'flex';
+    
+    const fd = new FormData(document.getElementById('uploadForm'));
+    fd.delete('files');
+    toUpload.forEach(item => {
+        fd.append('files', item.file);
+        fd.append('relative_paths', item.path);
+    });
+
+    let p = 0;
+    const itv = setInterval(() => {
+        p = Math.min(p + 1, 96);
+        updateProgress(p);
+    }, 150);
+
+    fetch(window.location.href, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        body: formData,
+        body: fd
     })
     .then(r => r.json())
-    .then(data => {
-        clearInterval(iv);
-        fill.style.width = '100%';
-        setTimeout(() => { progress.style.display = 'none'; fill.style.width = '0'; }, 800);
-
-        if (data.success) {
-            // Show uploaded files
-            const resultsBox  = document.getElementById('uploadResults');
-            const resultsList = document.getElementById('uploadResultsList');
-            resultsBox.style.display = 'block';
-            resultsList.innerHTML = '';
-
-            data.files.forEach(f => {
-                const info = FILE_ICONS[f.type] || FILE_ICONS.other;
-                const row  = document.createElement('div');
-                row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);';
-                row.innerHTML = `
-                    <div style="width:32px;height:32px;border-radius:7px;background:${info.color}20;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <i class="fas ${info.icon}" style="color:${info.color};font-size:14px;"></i>
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:13px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(f.name)}</div>
-                        <div style="font-size:11px;color:var(--text-muted);">${f.size} &middot; ${f.type}</div>
-                    </div>
-                    <a href="${f.url || '/files/' + f.id + '/'}" class="btn btn-secondary btn-sm btn-icon" title="View file">
-                        <i class="fas fa-eye"></i>
-                    </a>`;
-                resultsList.appendChild(row);
-            });
-
-            // Reset form state
-            fileQueue.innerHTML = '';
-            try { fileInput.value = ''; } catch(e) {}
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload Files';
-            countLabel.textContent = 'Files';
+    .then(res => {
+        clearInterval(itv);
+        updateProgress(100);
+        if (res.success) {
+            document.getElementById('progressStatus').textContent = "Upload Complete! Redirecting...";
+            setTimeout(() => { window.location.href = "{% url 'files:file_list' %}"; }, 1000);
         } else {
-            alert(data.error || 'Upload failed. Please try again.');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Upload ' + fileInput.files.length + ' File(s)';
+            alert('Upload failed: ' + res.error);
+            overlay.style.display = 'none';
         }
     })
-    .catch(err => {
-        clearInterval(iv);
-        console.error('Upload error:', err);
-        // Fallback to normal form submit
-        form.submit();
+    .catch(() => {
+        clearInterval(itv);
+        alert('Network error.');
+        overlay.style.display = 'none';
     });
 }
 
-// ── Dynamic task loading ──────────────────────────────────────────────────────
-const projectSel = document.getElementById('id_project');
-const taskSel    = document.getElementById('id_task');
+function updateProgress(p) {
+    const offset = 251.2 - (251.2 * p / 100);
+    progressRingBar.style.strokeDashoffset = offset;
+    progressPct.textContent = Math.round(p) + '%';
+}
 
-if (projectSel && taskSel) {
-    projectSel.addEventListener('change', function() {
-        const pid = this.value;
-        taskSel.innerHTML = '<option value="">— No task —</option>';
-        taskSel.disabled = !pid;
-        if (!pid) return;
-        fetch(`{% url 'tasks:tasks_for_project' %}?project_id=${pid}`, {
-            headers: {'X-Requested-With': 'XMLHttpRequest'}
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.tasks && data.tasks.length) {
-                data.tasks.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t.id;
-                    opt.textContent = t.title;
-                    taskSel.appendChild(opt);
-                });
-                taskSel.disabled = false;
-            }
-        })
-        .catch(() => { taskSel.disabled = false; });
+// Project Selection
+const proj = document.getElementById('id_project');
+const cat = document.getElementById('id_category');
+if (proj) {
+    proj.addEventListener('change', () => {
+        const val = proj.value;
+        if (!val) { cat.innerHTML = '<option value="">Select Project First</option>'; return; }
+        fetch(`/files/api/project-categories/?project_id=${val}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+            .then(r => r.json())
+            .then(d => {
+                cat.innerHTML = '<option value="">Root / Uncategorized</option>';
+                (d.categories || []).forEach(c => { cat.innerHTML += `<option value="${c.id}">${c.name}</option>`; });
+            });
     });
-
-    if (projectSel.value) projectSel.dispatchEvent(new Event('change'));
+    if (proj.value) proj.dispatchEvent(new Event('change'));
 }
 </script>
 {% endblock %}

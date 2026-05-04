@@ -182,7 +182,6 @@
             <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
                 <div style="flex:1">
                     <a href="{% url 'tasks:task_detail' task.pk %}" style="color:var(--text-primary);font-size:13px;text-decoration:none">{{ task.title }}</a>
-                    <div style="font-size:11px;color:var(--red)">Due {{ task.due_date }}</div>
                 </div>
             </div>
             {% endfor %}

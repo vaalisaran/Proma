@@ -1,0 +1,392 @@
+C901 `__call__` is too complex (17 > 15)
+  --> accounts/middleware.py:18:9
+   |
+16 |         self.get_response = get_response
+17 |
+18 |     def __call__(self, request):
+   |         ^^^^^^^^
+19 |         path = request.path
+   |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+  --> accounts/middleware.py:39:13
+   |
+38 |                   inv_user = InventoryUser.objects.get(id=inv_user_id)
+39 | /             except Exception:
+40 | |                 pass
+   | |____________________^
+41 |
+42 |           # 1. Provide Context for Inventory Paths
+   |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+  --> accounts/views.py:86:9
+   |
+84 |               if not name:
+85 |                   name = inv_user.username
+86 | /         except Exception:
+87 | |             pass
+   | |________________^
+88 |
+89 |       # CRITICAL: Manually and cleanly flush the ENTIRE session dictionary to guarantee 100% wiped cookies
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> audit/tests.py:15:67
+   |
+13 | class AuditAPITest(APITestCase):
+14 |     def setUp(self):
+15 |         self.user = User.objects.create_user(username="testuser", password="testpass")
+   |                                                                   ^^^^^^^^^^^^^^^^^^^
+16 |         self.inv_user = InventoryUser.objects.create(username="testinvuser", is_active=True, role="admin")
+17 |         self.inv_user.set_password("testpass")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> audit/tests.py:19:48
+   |
+17 |         self.inv_user.set_password("testpass")
+18 |         self.client = APIClient()
+19 |         self.client.login(username="testuser", password="testpass")
+   |                                                ^^^^^^^^^^^^^^^^^^^
+20 |         session = self.client.session
+21 |         session["inv_user_id"] = self.inv_user.id
+   |
+
+C901 `get` is too complex (21 > 15)
+  --> audit/views.py:24:9
+   |
+22 | @method_decorator(admin_required, name="dispatch")
+23 | class AuditLogPageView(View):
+24 |     def get(self, request):
+   |         ^^^
+25 |         if not request.user.is_authenticated:
+26 |             return redirect("accounts:login")
+   |
+
+S105 Possible hardcoded password assigned to: "SECRET_KEY"
+  --> core/settings.py:9:14
+   |
+ 7 | BASE_DIR = Path(__file__).resolve().parent.parent
+ 8 |
+ 9 | SECRET_KEY = "django-insecure-IIAP-pm-change-this-in-production-!@#$%^&*()"
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |
+11 | DEBUG = True
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> dashboard/tests.py:13:67
+   |
+11 | class DashboardAPITest(APITestCase):
+12 |     def setUp(self):
+13 |         self.user = User.objects.create_user(username="testuser", password="testpass")
+   |                                                                   ^^^^^^^^^^^^^^^^^^^
+14 |         self.inv_user = InventoryUser.objects.create(username="testinvuser", is_active=True, role="admin")
+15 |         self.inv_user.set_password("testpass")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> dashboard/tests.py:17:48
+   |
+15 |         self.inv_user.set_password("testpass")
+16 |         self.client = APIClient()
+17 |         self.client.login(username="testuser", password="testpass")
+   |                                                ^^^^^^^^^^^^^^^^^^^
+18 |         session = self.client.session
+19 |         session["inv_user_id"] = self.inv_user.id
+   |
+
+C901 `file_upload` is too complex (25 > 15)
+   --> files/views.py:130:5
+    |
+129 | @login_required
+130 | def file_upload(request):
+    |     ^^^^^^^^^^^
+131 |     # Resolve project/task from GET (pre-linked) OR POST (form selection)
+132 |     if request.method == "POST":
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> files/views.py:359:9
+    |
+357 |         return response
+358 |     except FileNotFoundError:
+359 |         raise Http404("File not found on server.")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> files/views.py:406:9
+    |
+404 |         return response
+405 |     except FileNotFoundError:
+406 |         raise Http404("File not found on server.")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+   --> files/views.py:440:9
+    |
+438 |           try:
+439 |               pf.file.delete(save=False)  # delete from disk
+440 | /         except Exception:
+441 | |             pass
+    | |________________^
+442 |           pf.delete()
+443 |           messages.success(request, f'"{name}" deleted permanently.')
+    |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> inventory/tests.py:15:67
+   |
+13 | class InventoryAPITest(APITestCase):
+14 |     def setUp(self):
+15 |         self.user = User.objects.create_user(username="testuser", password="testpass")
+   |                                                                   ^^^^^^^^^^^^^^^^^^^
+16 |         self.inv_user = InventoryUser.objects.create(username="testinvuser", is_active=True, role="admin")
+17 |         self.inv_user.set_password("testpass")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> inventory/tests.py:19:48
+   |
+17 |         self.inv_user.set_password("testpass")
+18 |         self.client = APIClient()
+19 |         self.client.login(username="testuser", password="testpass")
+   |                                                ^^^^^^^^^^^^^^^^^^^
+20 |         session = self.client.session
+21 |         session["inv_user_id"] = self.inv_user.id
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> products/tests.py:15:67
+   |
+13 | class ProductsAPITest(APITestCase):
+14 |     def setUp(self):
+15 |         self.user = User.objects.create_user(username="testuser", password="testpass")
+   |                                                                   ^^^^^^^^^^^^^^^^^^^
+16 |         self.inv_user = InventoryUser.objects.create(username="testinvuser", is_active=True, role="admin")
+17 |         self.inv_user.set_password("testpass")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> products/tests.py:20:48
+   |
+19 |         self.client = APIClient()
+20 |         self.client.login(username="testuser", password="testpass")
+   |                                                ^^^^^^^^^^^^^^^^^^^
+21 |         session = self.client.session
+22 |         session["inv_user_id"] = self.inv_user.id
+   |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+  --> products/views.py:85:13
+   |
+83 |                   if len(str(cell.value)) > max_length:
+84 |                       max_length = len(str(cell.value))
+85 | /             except Exception:
+86 | |                 pass
+   | |____________________^
+87 |           adjusted_width = min(max_length + 2, 50)
+88 |           ws.column_dimensions[column_letter].width = adjusted_width
+   |
+
+C901 `handle_bulk_upload` is too complex (22 > 15)
+   --> products/views.py:154:9
+    |
+152 |         return redirect("products")
+153 |
+154 |     def handle_bulk_upload(self, request):
+    |         ^^^^^^^^^^^^^^^^^^
+155 |         excel_file = request.FILES.get("excel_file")
+156 |         datasheet_zip = request.FILES.get("datasheet_zip")
+    |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+   --> products/views.py:384:17
+    |
+382 |                       if len(str(cell.value)) > max_length:
+383 |                           max_length = len(str(cell.value))
+384 | /                 except Exception:
+385 | |                     pass
+    | |________________________^
+386 |               adjusted_width = min(max_length + 2, 50)
+387 |               ws.column_dimensions[column_letter].width = adjusted_width
+    |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> stock/tests.py:16:67
+   |
+14 | class StockEntryAPITest(APITestCase):
+15 |     def setUp(self):
+16 |         self.user = User.objects.create_user(username="testuser", password="testpass")
+   |                                                                   ^^^^^^^^^^^^^^^^^^^
+17 |         self.inv_user = InventoryUser.objects.create(username="testinvuser", is_active=True, role="admin")
+18 |         self.inv_user.set_password("testpass")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> stock/tests.py:20:48
+   |
+18 |         self.inv_user.set_password("testpass")
+19 |         self.client = APIClient()
+20 |         self.client.login(username="testuser", password="testpass")
+   |                                                ^^^^^^^^^^^^^^^^^^^
+21 |         session = self.client.session
+22 |         session["inv_user_id"] = self.inv_user.id
+   |
+
+C901 `handle` is too complex (16 > 15)
+  --> tasks/management/commands/seed_data.py:18:9
+   |
+16 |     help = "Seed the database with demo data for IIAP PM"
+17 |
+18 |     def handle(self, *args, **kwargs):
+   |         ^^^^^^
+19 |         self.stdout.write(self.style.WARNING("Seeding database..."))
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+ --> tasks/tests.py:1:1
+  |
+1 | / from django.test import TestCase, Client
+2 | | from django.urls import reverse
+3 | | from django.contrib.auth import get_user_model
+4 | | from django.utils import timezone
+5 | | from .models import Project, Requirement, Task, KnowledgeBaseNote, ProjectModule
+6 | | from files.models import ProjectFile
+  | |____________________________________^
+7 |
+8 |   User = get_user_model()
+  |
+help: Organize imports
+
+F401 [*] `django.utils.timezone` imported but unused
+ --> tasks/tests.py:4:26
+  |
+2 | from django.urls import reverse
+3 | from django.contrib.auth import get_user_model
+4 | from django.utils import timezone
+  |                          ^^^^^^^^
+5 | from .models import Project, Requirement, Task, KnowledgeBaseNote, ProjectModule
+6 | from files.models import ProjectFile
+  |
+help: Remove unused import: `django.utils.timezone`
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:12:93
+   |
+10 | class TasksModelTestCase(TestCase):
+11 |     def setUp(self):
+12 |         self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpassword")
+   |                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^
+13 |
+14 |     def test_project_id_generation(self):
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:64:102
+   |
+62 | class TasksViewsTestCase(TestCase):
+63 |     def setUp(self):
+64 |         self.admin_user = User.objects.create_superuser(username="admin", email="admin@example.com", password="testpassword", role="ad…
+   |                                                                                                      ^^^^^^^^^^^^^^^^^^^^^^^
+65 |         self.pm_user = User.objects.create_user(username="pmuser", email="pm@example.com", password="testpassword")
+66 |         self.member_user = User.objects.create_user(username="memberuser", email="member@example.com", password="testpassword")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:65:92
+   |
+63 |     def setUp(self):
+64 |         self.admin_user = User.objects.create_superuser(username="admin", email="admin@example.com", password="testpassword", role="ad…
+65 |         self.pm_user = User.objects.create_user(username="pmuser", email="pm@example.com", password="testpassword")
+   |                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+66 |         self.member_user = User.objects.create_user(username="memberuser", email="member@example.com", password="testpassword")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:66:104
+   |
+64 | …     self.admin_user = User.objects.create_superuser(username="admin", email="admin@example.com", password="testpassword", role="admi…
+65 | …     self.pm_user = User.objects.create_user(username="pmuser", email="pm@example.com", password="testpassword")
+66 | …     self.member_user = User.objects.create_user(username="memberuser", email="member@example.com", password="testpassword")
+   |                                                                                                      ^^^^^^^^^^^^^^^^^^^^^^^
+67 | …     
+68 | …     self.project = Project.objects.create(name="Test Project", created_by=self.admin_user)
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:79:46
+   |
+78 |     def test_task_update_status_as_pm(self):
+79 |         self.client.login(username="pmuser", password="testpassword")
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^^
+80 |         url = reverse("tasks:task_update_status", args=[self.task.pk])
+81 |         response = self.client.post(url, data={"status": "in_progress"}, content_type="application/json")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+  --> tasks/tests.py:88:45
+   |
+87 |     def test_task_update_status_as_admin(self):
+88 |         self.client.login(username="admin", password="testpassword")
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^
+89 |         url = reverse("tasks:task_update_status", args=[self.task.pk])
+90 |         response = self.client.post(url, data={"status": "done"}, content_type="application/json")
+   |
+
+S106 Possible hardcoded password assigned to argument: "password"
+   --> tasks/tests.py:98:50
+    |
+ 97 |     def test_task_update_status_as_member_denied(self):
+ 98 |         self.client.login(username="memberuser", password="testpassword")
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^
+ 99 |         url = reverse("tasks:task_update_status", args=[self.task.pk])
+100 |         response = self.client.post(url, data={"status": "done"}, content_type="application/json")
+    |
+
+S106 Possible hardcoded password assigned to argument: "password"
+   --> tasks/tests.py:107:50
+    |
+106 |     def test_project_list_view(self):
+107 |         self.client.login(username="memberuser", password="testpassword")
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^
+108 |         response = self.client.get(reverse("tasks:project_list"))
+109 |         self.assertEqual(response.status_code, 200)
+    |
+
+S106 Possible hardcoded password assigned to argument: "password"
+   --> tasks/tests.py:113:50
+    |
+112 |     def test_task_detail_view(self):
+113 |         self.client.login(username="memberuser", password="testpassword")
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^
+114 |         response = self.client.get(reverse("tasks:task_detail", args=[self.task.pk]))
+115 |         self.assertEqual(response.status_code, 200)
+    |
+
+C901 `project_delete` is too complex (18 > 15)
+   --> tasks/views.py:524:5
+    |
+522 | @login_required
+523 | @manager_or_admin_required
+524 | def project_delete(request, pk):
+    |     ^^^^^^^^^^^^^^
+525 |     from datetime import timedelta
+    |
+
+S110 `try`-`except`-`pass` detected, consider logging the exception
+    --> tasks/views.py:1005:9
+     |
+1003 |                       {"success": True, "progress": task.project.progress}
+1004 |                   )
+1005 | /         except Exception:
+1006 | |             pass
+     | |________________^
+1007 |       return JsonResponse({"success": False}, status=400)
+     |
+
+Found 36 errors.
+[*] 2 fixable with the `--fix` option.

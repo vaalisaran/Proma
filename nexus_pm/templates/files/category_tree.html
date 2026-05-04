@@ -1,0 +1,32 @@
+<ul class="vscode-tree">
+    {% for cat in categories|dictsort:"name" %}
+    {% if cat.parent == parent_cat %}
+    <li class="tree-item folder-item">
+        <div class="tree-row" onclick="toggleFolder(this)">
+            <i class="fas fa-chevron-right chevron"></i>
+            <i class="fas fa-folder folder-icon"></i>
+            <span class="tree-label">{{ cat.name }}</span>
+            {% if user.is_admin or user in project.managers.all or user in project.members.all %}
+            <a href="{% url 'files:category_create' project.pk %}?parent_id={{ cat.pk }}" class="add-folder-btn" title="New Subfolder" onclick="event.stopPropagation();"><i class="fas fa-plus"></i></a>
+            {% endif %}
+        </div>
+        <div class="tree-children" style="display:none;">
+            {% if cat.children.exists %}
+                {% include 'files/category_tree.html' with categories=cat.children.all parent_cat=cat %}
+            {% endif %}
+            
+            {% for file in cat.files.all|dictsort:"original_name" %}
+            {% if not file.task %}
+            <div class="tree-row file-row" onclick="window.location='{% url 'files:file_detail' file.pk %}'">
+                <i class="fas fa-fw" style="width:14px;display:inline-block;"></i> <!-- spacer for chevron -->
+                <i class="fas {{ file.icon_class }} file-icon" style="color:{{ file.icon_color }};"></i>
+                <span class="tree-label">{{ file.display_name }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            
+        </div>
+    </li>
+    {% endif %}
+    {% endfor %}
+</ul>

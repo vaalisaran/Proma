@@ -7,15 +7,81 @@
 {% endblock %}
 {% block extra_css %}
 <style>
-.pf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
-.pf-card {
-    background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius);
-    padding:14px; transition:var(--transition); text-decoration:none; display:block; position:relative;
+/* VS Code Tree Styling */
+.vscode-tree {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
 }
-.pf-card:hover { border-color:var(--border-light); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.3); }
-.pf-icon { width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px; }
-.pf-name { font-size:12px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px; }
-.pf-meta { font-size:10px;color:var(--text-muted); }
+.vscode-tree .tree-children {
+    padding-left: 18px;
+    border-left: 1px dashed var(--border);
+    margin-left: 7px;
+}
+.vscode-tree .tree-item {
+    margin: 2px 0;
+}
+.vscode-tree .tree-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.vscode-tree .tree-row:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+.vscode-tree .chevron {
+    width: 14px;
+    font-size: 10px;
+    text-align: center;
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+}
+.vscode-tree .folder-item.open > .tree-row .chevron {
+    transform: rotate(90deg);
+}
+.vscode-tree .folder-icon {
+    color: var(--accent);
+    margin: 0 8px 0 4px;
+    font-size: 14px;
+}
+.vscode-tree .file-icon {
+    margin: 0 8px 0 4px;
+    font-size: 14px;
+}
+.vscode-tree .tree-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+.vscode-tree .add-folder-btn {
+    opacity: 0;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: opacity 0.2s, background 0.2s;
+}
+.vscode-tree .tree-row:hover .add-folder-btn {
+    opacity: 1;
+}
+.vscode-tree .add-folder-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+.vscode-tree .tree-empty-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 4px 8px 4px 28px;
+    font-style: italic;
+}
 .cat-pill {
     display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
     font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;
@@ -59,6 +125,9 @@
     {% for ft, label in type_choices %}
     <a href="?type={{ ft }}" class="cat-pill {% if type_filter == ft %}active{% endif %}">{{ label }}</a>
     {% endfor %}
+    {% if user.is_admin or user in project.managers.all or user in project.members.all %}
+    <a href="{% url 'files:category_create' project.pk %}" class="btn btn-secondary btn-sm" style="margin-left:auto;"><i class="fas fa-folder-plus"></i> New Folder</a>
+    {% endif %}
 </div>
 
 <form method="get" style="margin-bottom:16px;">
@@ -88,44 +157,45 @@
     </a>
 </div>
 
-<!-- File Grid -->
-<div class="pf-grid">
-    {% for f in files %}
-    <div class="pf-card">
-        <!-- Actions overlay -->
-        <div style="position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:var(--transition);" class="file-actions">
-            <a href="{% url 'files:file_download' f.pk %}" class="btn btn-secondary btn-icon btn-sm" title="Download" onclick="event.stopPropagation();"><i class="fas fa-download"></i></a>
-        </div>
-        <a href="{% url 'files:file_detail' f.pk %}" style="text-decoration:none;display:contents;">
-            <div class="pf-icon" style="background:{{ f.icon_color }}20;">
-                {% if f.is_image %}
-                <img src="{% url 'files:file_view' f.pk %}" alt=""
-                     style="width:46px;height:46px;object-fit:cover;border-radius:8px;"
-                     onerror="this.style.display='none';this.nextSibling.style.display='flex'">
-                <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }};display:none;"></i>
-                {% else %}
-                <i class="fas {{ f.icon_class }}" style="color:{{ f.icon_color }};"></i>
-                {% endif %}
+<!-- File Tree / Search Results -->
+<div class="card" style="padding:16px;">
+    {% if search %}
+    <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:1px;margin-bottom:12px;">Search Results</h3>
+    <ul class="vscode-tree" style="margin-top:10px;">
+        {% for file in files %}
+        <li class="tree-item">
+            <div class="tree-row file-row" onclick="window.location='{% url 'files:file_detail' file.pk %}'">
+                <i class="fas fa-fw" style="width:14px;display:inline-block;"></i>
+                <i class="fas {{ file.icon_class }} file-icon" style="color:{{ file.icon_color }};"></i>
+                <span class="tree-label">{{ file.display_name }}</span>
+                {% if file.category %}<span style="font-size:11px;color:var(--accent);margin-left:auto;margin-right:10px;">{{ file.category.name }}</span>{% endif %}
+                <span style="font-size:11px;color:var(--text-muted);{% if not file.category %}margin-left:auto;{% endif %}">{{ file.file_size_display }}</span>
             </div>
-            <div class="pf-name" title="{{ f.display_name }}">{{ f.display_name }}</div>
-            <div class="pf-meta">{{ f.file_size_display }}</div>
-            {% if f.task %}
-            <div class="pf-meta" style="margin-top:3px;color:var(--accent);">
-                <i class="fas fa-link" style="font-size:9px;"></i> {{ f.task.title|truncatewords:4 }}
+        </li>
+        {% empty %}
+        <div class="tree-empty-text">No files match your search.</div>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:1px;margin-bottom:12px;">File Explorer</h3>
+    {% include 'files/category_tree.html' with categories=root_categories %}
+    
+    <!-- Root files -->
+    <ul class="vscode-tree" style="margin-top:10px;">
+        {% for file in files|dictsort:"original_name" %}
+        {% if not file.category %}
+        <li class="tree-item">
+            <div class="tree-row file-row" onclick="window.location='{% url 'files:file_detail' file.pk %}'">
+                <i class="fas fa-fw" style="width:14px;display:inline-block;"></i>
+                <i class="fas {{ file.icon_class }} file-icon" style="color:{{ file.icon_color }};"></i>
+                <span class="tree-label">{{ file.display_name }}</span>
+                <span style="font-size:11px;color:var(--text-muted);margin-left:auto;">{{ file.file_size_display }}</span>
             </div>
-            {% endif %}
-            <div class="pf-meta" style="margin-top:3px;">
-                {% if f.uploaded_by %}
-                <div style="display:flex;align-items:center;gap:4px;margin-top:5px;">
-                    <div class="avatar" style="background:{{ f.uploaded_by.avatar_color }};width:16px;height:16px;font-size:7px;border-radius:4px;">{{ f.uploaded_by.initials }}</div>
-                    <span>{{ f.uploaded_by.display_name|truncatewords:1 }}</span>
-                    <span style="margin-left:auto;">{{ f.created_at|timesince|truncatewords:2 }} ago</span>
-                </div>
-                {% endif %}
-            </div>
-        </a>
-    </div>
-    {% endfor %}
+        </li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
 </div>
 
 {% else %}
@@ -143,13 +213,25 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-// Show file actions on hover
-document.querySelectorAll('.pf-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-        card.querySelector('.file-actions').style.opacity = '1';
-    });
-    card.addEventListener('mouseleave', () => {
-        card.querySelector('.file-actions').style.opacity = '0';
+function toggleFolder(el) {
+    const li = el.closest('.folder-item');
+    const children = li.querySelector('.tree-children');
+    if (children.style.display === 'none') {
+        children.style.display = 'block';
+        li.classList.add('open');
+        el.querySelector('.folder-icon').classList.replace('fa-folder', 'fa-folder-open');
+    } else {
+        children.style.display = 'none';
+        li.classList.remove('open');
+        el.querySelector('.folder-icon').classList.replace('fa-folder-open', 'fa-folder');
+    }
+}
+
+// Open first level folders by default
+document.addEventListener('DOMContentLoaded', () => {
+    const rootFolders = document.querySelectorAll('.vscode-tree > .folder-item');
+    rootFolders.forEach(li => {
+        li.querySelector('.tree-row').click();
     });
 });
 </script>

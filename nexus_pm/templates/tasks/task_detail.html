@@ -1,245 +1,395 @@
 {% extends 'base.html' %}
-{% block title %}{{ task.title }} — IIAP PM{% endblock %}
+{% block title %}{{ task.task_id|default:task.pk }}: {{ task.title }} — IIAP PM{% endblock %}
 {% block page_title %}Task Detail{% endblock %}
 
 {% block topbar_actions %}
-{% if user.is_admin or user == task.created_by %}
-<a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
-<a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i></a>
-{% endif %}
+<div style="display:flex; gap:8px;">
+    {% if user == task.created_by %}
+    <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+    <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i></a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.discussion-toggle {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 1000;
+    transition: var(--transition);
+}
+.discussion-toggle:hover { transform: scale(1.1); box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+.discussion-window {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 500px;
+    height: 800px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    display: none;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+.discussion-header {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.discussion-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.discussion-footer {
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div style="display:grid; grid-template-columns:1fr 290px; gap:20px; align-items:start;">
+<div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
 
-    <!-- ── MAIN ── -->
-    <div style="display:flex; flex-direction:column; gap:16px;">
+    <!-- ── MAIN CONTENT ── -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
 
-        <!-- Task Header -->
-        <div class="card">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <!-- Task Header Card -->
+        <div class="card" style="padding:24px; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:0; right:0; padding:12px 20px; background:var(--bg-secondary); border-bottom-left-radius:var(--radius-sm); font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:700; color:var(--text-muted); border-left:1px solid var(--border); border-bottom:1px solid var(--border);">
+                ID: {{ task.task_id|default:task.pk }}
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
                 <span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% elif task.task_type == 'improvement' %}badge-cyan{% elif task.task_type == 'research' %}badge-yellow{% else %}badge-gray{% endif %}">
-                    {% if task.task_type == 'bug' %}<i class="fas fa-bug"></i>{% elif task.task_type == 'feature' %}<i class="fas fa-star"></i>{% elif task.task_type == 'research' %}<i class="fas fa-flask"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+                    <i class="fas {% if task.task_type == 'bug' %}fa-bug{% elif task.task_type == 'feature' %}fa-star{% elif task.task_type == 'research' %}fa-flask{% else %}fa-check{% endif %}" style="margin-right:4px;"></i>
                     {{ task.get_task_type_display }}
                 </span>
                 <span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">
                     {{ task.get_status_display }}
                 </span>
                 <span class="badge {% if task.priority == 'critical' %}badge-red{% elif task.priority == 'high' %}badge-yellow{% elif task.priority == 'medium' %}badge-blue{% else %}badge-gray{% endif %}">
-                    {{ task.get_priority_display }} Priority
+                    <i class="fas fa-flag" style="margin-right:4px;"></i> {{ task.get_priority_display }} Priority
                 </span>
                 {% if task.is_overdue %}
-                <span class="badge badge-red"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
-                {% endif %}
-                {% if task.completed_at %}
-                <span class="badge badge-green"><i class="fas fa-check-circle"></i> Done {{ task.completed_at|date:"d M Y" }}</span>
+                <span class="badge badge-red" style="animation: pulse 2s infinite;"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
                 {% endif %}
             </div>
 
-            <h2 style="font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--text-primary); margin-bottom:12px; line-height:1.3;">{{ task.title }}</h2>
+            <h1 style="font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; color:var(--text-primary); margin-bottom:16px; line-height:1.2;">{{ task.title }}</h1>
 
-            {% if task.description %}
-            <div style="font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:14px; padding:14px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border);">
-                {{ task.description|linebreaksbr }}
-            </div>
-            {% endif %}
+            <div style="font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:20px; padding:20px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border); white-space: pre-wrap;">{{ task.description|default:"No description provided." }}</div>
 
             {% if task.tag_list %}
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 {% for tag in task.tag_list %}
-                <span style="background:var(--border); color:var(--text-muted); padding:3px 10px; border-radius:20px; font-size:11px;">#{{ tag }}</span>
+                <span style="background:var(--border); color:var(--text-muted); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500;">#{{ tag }}</span>
                 {% endfor %}
             </div>
             {% endif %}
         </div>
 
-        <!-- Subtasks -->
-        {% if subtasks %}
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-sitemap" style="color:var(--purple); margin-right:8px;"></i>Subtasks <span style="color:var(--text-muted); font-weight:400;">({{ subtasks.count }})</span></div>
-                {% if user.is_admin or user.is_project_manager %}
-                <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Add</a>
+        <!-- Requirement Info -->
+        <div class="card" style="padding:16px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-clipboard-list" style="color:var(--accent);"></i> Requirement
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-size:11px; color:var(--text-muted);">{{ task.requirement.req_id|default:"ID: N/A" }}</div>
+                        <div style="font-size:14px; font-weight:600; color:var(--text-primary); margin-top: 2px;">{{ task.requirement.name|default:"— No Requirement —" }}</div>
+                        {% if task.requirement.description %}
+                        <div style="font-size:12px; color:var(--text-secondary); margin-top: 8px; line-height: 1.4; max-height: 100px; overflow-y: auto; padding: 10px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border);">
+                            {{ task.requirement.description|truncatewords:50 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if task.requirement %}
+                    <div style="text-align: right;">
+                        <span class="badge badge-gray" style="font-size: 10px; text-transform: uppercase;">{{ task.requirement.status|default:"Pending" }}</span>
+                        <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">{{ task.requirement.priority|default:"Medium" }} Priority</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Subtasks Section -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="padding:16px 20px; background:var(--bg-secondary); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:14px; font-weight:700; color:var(--text-primary);"><i class="fas fa-sitemap" style="color:var(--purple); margin-right:8px;"></i>Subtasks <span style="color:var(--text-muted); font-weight:400; margin-left:4px;">({{ subtasks.count }})</span></div>
+                {% if user.is_admin or user in task.project.managers.all %}
+                <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}&parent={{ task.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-plus"></i> Add Subtask</a>
                 {% endif %}
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
+            <div style="padding:8px;">
                 {% for sub in subtasks %}
-                <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <div style="display:flex; align-items:center; gap:12px; padding:12px; border-radius:8px; transition:var(--transition); border:1px solid transparent;" onmouseover="this.style.background='var(--bg-secondary)'; this.style.borderColor='var(--border)'" onmouseout="this.style.background='transparent'; this.style.borderColor='transparent'">
                     <i class="fas {% if sub.status == 'done' %}fa-check-circle{% elif sub.status == 'in_progress' %}fa-spinner{% else %}fa-circle{% endif %}"
-                       style="color:{% if sub.status == 'done' %}var(--green){% elif sub.status == 'in_progress' %}var(--accent){% else %}var(--text-muted){% endif %}; flex-shrink:0;"></i>
-                    <a href="{% url 'tasks:task_detail' sub.pk %}" style="color:var(--text-primary); text-decoration:none; font-size:13px; flex:1;">{{ sub.title }}</a>
+                       style="color:{% if sub.status == 'done' %}var(--green){% elif sub.status == 'in_progress' %}var(--accent){% else %}var(--text-muted){% endif %}; font-size:16px;"></i>
+                    <div style="flex:1;">
+                        <a href="{% url 'tasks:task_detail' sub.pk %}" style="color:var(--text-primary); text-decoration:none; font-size:14px; font-weight:600;">{{ sub.title }}</a>
+                        <div style="font-size:11px; color:var(--text-muted);">ID: {{ sub.task_id|default:sub.pk }} • {{ sub.get_status_display }}</div>
+                    </div>
                     {% if sub.assignees.all %}
-                    <div style="display:flex;gap:2px;">
+                    <div style="display:flex; gap:-8px;">
                         {% for assignee in sub.assignees.all|slice:":3" %}
-                        <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
+                        <div class="avatar" title="{{ assignee.display_name }}" style="background:{{ assignee.avatar_color }}; width:24px; height:24px; font-size:10px; border:2px solid var(--bg-card); margin-left:-8px;">{{ assignee.initials }}</div>
                         {% endfor %}
                     </div>
                     {% endif %}
-                    <span class="badge {% if sub.status == 'done' %}badge-green{% elif sub.status == 'in_progress' %}badge-blue{% elif sub.status == 'blocked' %}badge-red{% else %}badge-gray{% endif %}" style="font-size:10px;">{{ sub.get_status_display }}</span>
                 </div>
+                {% empty %}
+                <div style="padding:32px; text-align:center; color:var(--text-muted); font-size:13px;">No subtasks found.</div>
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
 
-        <!-- Comments -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title"><i class="fas fa-comments" style="color:var(--cyan); margin-right:8px;"></i>Comments <span style="color:var(--text-muted); font-weight:400;">({{ comments.count }})</span></div>
+        <!-- Files Section -->
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div style="padding:16px 20px; background:var(--bg-secondary); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:14px; font-weight:700; color:var(--text-primary);"><i class="fas fa-paperclip" style="color:var(--cyan); margin-right:8px;"></i>Attached Files <span style="color:var(--text-muted); font-weight:400; margin-left:4px;">({{ task.files.count }})</span></div>
+                <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" class="btn btn-secondary btn-sm"><i class="fas fa-upload"></i> Upload</a>
             </div>
-
-            <!-- Comment list -->
-            <div style="display:flex; flex-direction:column; gap:0;">
-                {% for comment in comments %}
-                <div style="display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--border);">
-                    <a href="{% url 'accounts:user_detail' comment.author.pk %}" style="flex-shrink:0;">
-                        <div class="avatar" style="background:{{ comment.author.avatar_color }}; width:34px; height:34px; font-size:13px; border-radius:8px;">{{ comment.author.initials }}</div>
-                    </a>
-                    <div style="flex:1;">
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap;">
-                            <span style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ comment.author.display_name }}</span>
-                            <span class="badge {% if comment.author.role == 'admin' %}badge-red{% elif comment.author.role == 'project_manager' %}badge-blue{% else %}badge-gray{% endif %}" style="font-size:9px;">{{ comment.author.get_role_display }}</span>
-                            <span style="font-size:11px; color:var(--text-muted);">{{ comment.created_at|timesince }} ago</span>
-                        </div>
-                        <p style="font-size:13px; color:var(--text-secondary); line-height:1.6;">{{ comment.content|linebreaksbr }}</p>
+            <div style="padding:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                {% for file in latest_task_files %}
+                <div style="display:flex; gap:12px; padding:12px; background:var(--bg-secondary); border-radius:12px; border:1px solid var(--border); transition:var(--transition);" class="file-card">
+                    <div style="width:44px; height:44px; border-radius:10px; background:{{ file.icon_color }}20; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="fas {{ file.icon_class }}" style="color:{{ file.icon_color }}; font-size:20px;"></i>
                     </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <a href="{% url 'files:file_detail' file.pk %}" style="font-weight:600; color:var(--text-primary); text-decoration:none; font-size:14px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ file.display_name }}</a>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+                            {{ file.file_size_display }} • v{{ file.version }} • {{ file.created_at|date:"d M" }}
+                        </div>
+                    </div>
+                    <a href="{% url 'files:file_download' file.pk %}" class="btn btn-secondary btn-icon btn-sm" style="align-self:center;"><i class="fas fa-download"></i></a>
                 </div>
                 {% empty %}
-                <div style="text-align:center; padding:24px; color:var(--text-muted); font-size:13px;">
-                    <i class="fas fa-comment-slash" style="font-size:28px; opacity:.3; display:block; margin-bottom:8px;"></i>
-                    No comments yet. Start the conversation.
-                </div>
+                <div style="grid-column: span 2; padding:32px; text-align:center; color:var(--text-muted); font-size:13px;">No files attached to this task.</div>
                 {% endfor %}
             </div>
+        </div>
 
-            <!-- Add Comment -->
-            <form method="post" style="margin-top:16px;">
-                {% csrf_token %}
-                <div style="display:flex; gap:10px; align-items:flex-start;">
-                    <div class="avatar" style="background:{{ user.avatar_color }}; width:34px; height:34px; font-size:13px; border-radius:8px; flex-shrink:0; margin-top:2px;">{{ user.initials }}</div>
-                    <div style="flex:1;">
-                        {{ comment_form.content }}
-                        {% if comment_form.content.errors %}
-                        <div class="form-error">{{ comment_form.content.errors.0 }}</div>
+    </div>
+
+    <!-- Floating Discussion Window -->
+    <div id="discussionWindow" class="discussion-window">
+        <div class="discussion-header">
+            <div style="font-weight:700; color:var(--text-primary);"><i class="fas fa-comments" style="color:var(--accent); margin-right:8px;"></i>Task Discussion</div>
+            <button onclick="toggleDiscussion()" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="discussion-content">
+            <!-- Comment List -->
+            {% for comment in comments %}
+            <div style="display:flex; gap:12px; align-items:flex-start;">
+                <div class="avatar" style="background:{{ comment.author.avatar_color }}; width:32px; height:32px; font-size:12px; border-radius:8px; flex-shrink:0;">{{ comment.author.initials }}</div>
+                <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="font-size:12px; font-weight:700; color:var(--text-primary);">{{ comment.author.display_name }}</span>
+                        <span style="font-size:10px; color:var(--text-muted);">{{ comment.created_at|timesince }}</span>
+                    </div>
+                    <div style="font-size:13px; color:var(--text-secondary); line-height:1.5; background:var(--bg-secondary); padding:10px 14px; border-radius:12px; border:1px solid var(--border); border-top-left-radius:0; word-break:break-word;">
+                        {{ comment.content|linebreaksbr }}
+                        {% if comment.attachment %}
+                        <div style="margin-top:8px; border-top:1px solid var(--border); padding-top:8px;">
+                            <a href="{{ comment.attachment.url }}" target="_blank" class="btn btn-secondary btn-sm" style="font-size:11px; padding:6px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; max-width: 100%;">
+                                <i class="fas fa-paperclip" style="color: var(--accent);"></i>
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ comment.attachment.name|cut:"comments/" }}</span>
+                            </a>
+                        </div>
                         {% endif %}
-                        <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;"><i class="fas fa-paper-plane"></i> Post Comment</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                <i class="fas fa-comment-dots" style="font-size:32px; opacity:0.2; display:block; margin-bottom:12px;"></i>
+                No messages yet.
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="discussion-footer">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:12px; padding:8px;">
+                    {{ comment_form.content }}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">
+                        <div style="display:flex; gap:8px;">
+                            <label for="{{ comment_form.attachment.id_for_label }}" class="btn btn-secondary btn-icon btn-sm" style="cursor:pointer;" title="Attach File">
+                                <i class="fas fa-paperclip"></i>
+                                <div style="display:none;">{{ comment_form.attachment }}</div>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-paper-plane"></i> Send</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ── SIDEBAR ── -->
-    <div style="display:flex; flex-direction:column; gap:14px;">
+    <div class="discussion-toggle" id="discussionToggle" onclick="toggleDiscussion()">
+        <i class="fas fa-comments"></i>
+        {% if comments.count %}
+        <span style="position:absolute; top:-5px; right:-5px; background:var(--red); color:white; font-size:10px; padding:2px 6px; border-radius:10px; border:2px solid var(--bg-primary);">{{ comments.count }}</span>
+        {% endif %}
+    </div>
 
-        <!-- Quick Status -->
-        {% if user in task.assignees.all or user.is_admin %}
-        <div class="card">
-            <div class="card-title" style="margin-bottom:12px;"><i class="fas fa-exchange-alt" style="color:var(--accent); margin-right:6px;"></i>Update Status</div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
+    <!-- ── SIDEBAR ── -->
+    <div style="display:flex; flex-direction:column; gap:20px;">
+
+        <!-- Context Card -->
+        <div class="card" style="padding:20px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Context</div>
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Project (ID: {{ task.project.project_id|default:task.project.pk }})</div>
+                    <a href="{% url 'tasks:project_detail' task.project.pk %}" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text-primary); font-weight:600; font-size:14px; transition:var(--transition);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-primary)'">
+                        <i class="fas fa-folder" style="color:var(--accent);"></i> {{ task.project.name }}
+                    </a>
+                </div>
+                {% if task.parent_task %}
+                <div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Parent Task (ID: {{ task.parent_task.task_id|default:task.parent_task.pk }})</div>
+                    <a href="{% url 'tasks:task_detail' task.parent_task.pk %}" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text-primary); font-weight:600; font-size:14px;">
+                        <i class="fas fa-level-up-alt fa-rotate-90" style="color:var(--purple);"></i> {{ task.parent_task.title|truncatechars:20 }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Status Control (Managers Only) -->
+        {% if user in task.project.managers.all or user.is_admin %}
+        <div class="card" style="padding:20px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Control Status</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
                 {% for val, label in task.STATUS_CHOICES %}
-                <button type="button"
-                    onclick="updateStatus('{{ val }}')"
-                    class="btn {% if task.status == val %}btn-primary{% else %}btn-secondary{% endif %}"
-                    style="width:100%; justify-content:flex-start; text-align:left;">
-                    <i class="fas {% if val == 'done' %}fa-check-circle{% elif val == 'in_progress' %}fa-spinner{% elif val == 'blocked' %}fa-ban{% elif val == 'review' %}fa-eye{% else %}fa-circle{% endif %}"></i>
+                <button type="button" onclick="updateStatus('{{ val }}')" class="btn {% if task.status == val %}btn-primary{% else %}btn-secondary{% endif %}" style="width:100%; justify-content:flex-start; font-size:13px; padding:10px 12px; border-radius:10px;">
+                    <i class="fas {% if val == 'done' %}fa-check-circle{% elif val == 'in_progress' %}fa-spinner{% elif val == 'blocked' %}fa-ban{% elif val == 'review' %}fa-eye{% else %}fa-circle{% endif %}" style="margin-right:10px;"></i>
                     {{ label }}
-                    {% if task.status == val %}<i class="fas fa-check" style="margin-left:auto; font-size:11px;"></i>{% endif %}
+                    {% if task.status == val %}<i class="fas fa-check" style="margin-left:auto;"></i>{% endif %}
                 </button>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
 
-        <!-- Details -->
-        <div class="card">
-            <div class="card-title" style="margin-bottom:14px;">Details</div>
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-folder" style="width:14px;"></i> Project</span>
-                    <a href="{% url 'tasks:project_detail' task.project.pk %}" style="color:var(--accent); text-decoration:none; text-align:right; font-size:12px;">{{ task.project.name }}</a>
-                </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-user" style="width:14px;"></i> Assigned To</span>
-                    {% if task.assignees.all %}
-                    <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
-                        {% for assignee in task.assignees.all %}
-                        <a href="{% url 'accounts:user_detail' assignee.pk %}" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
-                            <div class="avatar" style="background:{{ assignee.avatar_color }}; width:22px; height:22px; font-size:9px;">{{ assignee.initials }}</div>
-                            <span style="font-size:12px; color:var(--text-primary);">{{ assignee.display_name }}</span>
-                        </a>
-                        {% endfor %}
+        <!-- Assignees Card -->
+        <div class="card" style="padding:20px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Assignees</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                {% for assignee in task.assignees.all %}
+                <a href="{% url 'accounts:user_detail' assignee.pk %}" style="display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--text-primary); transition:var(--transition);" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                    <div class="avatar" style="background:{{ assignee.avatar_color }}; width:32px; height:32px; font-size:12px; border-radius:8px;">{{ assignee.initials }}</div>
+                    <div style="display:flex; flex-direction:column;">
+                        <span style="font-size:13px; font-weight:600;">{{ assignee.display_name }}</span>
+                        <span style="font-size:10px; color:var(--text-muted);">{{ assignee.get_role_display }}</span>
                     </div>
-                    {% else %}
-                    <span style="color:var(--text-muted); font-size:12px;">Unassigned</span>
-                    {% endif %}
-                </div>
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-user-edit" style="width:14px;"></i> Created By</span>
-                    <span style="font-size:12px;">{{ task.created_by.display_name|default:"—" }}</span>
-                </div>
-                {% if task.due_date %}
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted); flex-shrink:0;"><i class="fas fa-calendar" style="width:14px;"></i> Due Date</span>
-                    <span style="font-size:12px; color:{% if task.is_overdue %}var(--red){% else %}var(--text-primary){% endif %}; font-weight:{% if task.is_overdue %}600{% else %}400{% endif %};">
-                        {% if task.is_overdue %}<i class="fas fa-exclamation-circle"></i> {% endif %}{{ task.due_date }}
-                    </span>
-                </div>
+                </a>
+                {% empty %}
+                <div style="font-size:13px; color:var(--text-muted); text-align:center; padding:10px; border:1px dashed var(--border); border-radius:10px;">Unassigned</div>
+                {% endfor %}
+                {% if user == task.created_by %}
+                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary btn-sm" style="margin-top:8px; width:100%;"><i class="fas fa-user-plus"></i> Edit Assignees</a>
                 {% endif %}
-                {% if task.estimated_hours %}
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted);"><i class="fas fa-clock" style="width:14px;"></i> Est. Hours</span>
-                    <span style="font-size:12px;">{{ task.estimated_hours }}h</span>
-                </div>
-                {% endif %}
-                {% if task.parent_task %}
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted);"><i class="fas fa-sitemap" style="width:14px;"></i> Parent</span>
-                    <a href="{% url 'tasks:task_detail' task.parent_task.pk %}" style="color:var(--accent); text-decoration:none; font-size:12px;">{{ task.parent_task.title|truncatewords:4 }}</a>
-                </div>
-                {% endif %}
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted);"><i class="fas fa-paperclip" style="width:14px;"></i> Attachments</span>
-                    <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" style="color:var(--accent);text-decoration:none;font-size:12px;">
-                        {{ task.files.count }} file{{ task.files.count|pluralize }}
-                        {% if task.files.count == 0 %}— Add{% endif %}
-                    </a>
-                </div>
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted);"><i class="fas fa-plus-circle" style="width:14px;"></i> Created</span>
-                    <span style="font-size:12px; color:var(--text-muted);">{{ task.created_at|date:"d M Y" }}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; gap:8px;">
-                    <span style="color:var(--text-muted);"><i class="fas fa-sync" style="width:14px;"></i> Updated</span>
-                    <span style="font-size:12px; color:var(--text-muted);">{{ task.updated_at|timesince }} ago</span>
-                </div>
             </div>
         </div>
 
-        <!-- Actions -->
-        <div class="card">
-            <div class="card-title" style="margin-bottom:12px;">Actions</div>
-            <div style="display:flex; flex-direction:column; gap:7px;">
-                {% if user.is_admin or user == task.created_by %}
-                <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Task</a>
-                {% endif %}
-                {% if user.is_admin or user.is_project_manager %}
-                <a href="{% url 'tasks:task_create' %}?project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-code-branch"></i> Add Subtask</a>
-                {% endif %}
-                <a href="{% url 'tasks:bug_create' %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-bug"></i> Report Bug</a>
-                <a href="{% url 'files:file_upload' %}?task={{ task.pk }}&project={{ task.project.pk }}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-paperclip"></i> Attach File</a>
-                <a href="{% url 'tasks:project_detail' task.project.pk %}" class="btn btn-secondary" style="width:100%; justify-content:flex-start;"><i class="fas fa-folder"></i> View Project</a>
-                {% if user.is_admin or user == task.created_by %}
-                <a href="{% url 'tasks:task_delete' task.pk %}" class="btn btn-danger" style="width:100%; justify-content:flex-start;" onclick="return confirm('Delete this task permanently?')"><i class="fas fa-trash"></i> Delete Task</a>
-                {% endif %}
+        <!-- Metadata Card -->
+        <div class="card" style="padding:20px;">
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:12px; color:var(--text-muted);">
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Created By</span>
+                    <span style="color:var(--text-primary); font-weight:500;">{{ task.created_by.display_name|default:"—" }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Created At</span>
+                    <span style="color:var(--text-primary); font-weight:500;">{{ task.created_at|date:"d M Y" }}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span>Last Update</span>
+                    <span style="color:var(--text-primary); font-weight:500;">{{ task.updated_at|timesince }} ago</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+textarea.form-control {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 14px;
+    min-height: 100px;
+    transition: var(--transition);
+}
+textarea.form-control:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(0, 114, 255, 0.1);
+}
+.file-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+function toggleDiscussion() {
+    const win = document.getElementById('discussionWindow');
+    const toggle = document.getElementById('discussionToggle');
+    if (win.style.display === 'flex') {
+        win.style.display = 'none';
+        toggle.style.background = 'var(--accent)';
+    } else {
+        win.style.display = 'flex';
+        toggle.style.background = 'var(--text-primary)';
+        // Scroll to bottom
+        const content = win.querySelector('.discussion-content');
+        content.scrollTop = content.scrollHeight;
+    }
+}
+
 async function updateStatus(status) {
     const resp = await fetch('{% url "tasks:task_update_status" task.pk %}', {
         method: 'POST',
@@ -253,7 +403,7 @@ async function updateStatus(status) {
     if (data.success) {
         location.reload();
     } else {
-        alert('Failed to update status. Please refresh.');
+        alert(data.message || 'Failed to update status.');
     }
 }
 </script>

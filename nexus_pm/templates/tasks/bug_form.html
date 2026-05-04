@@ -1,236 +1,458 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }} — IIAP PM{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
+
 {% block extra_css %}
 <style>
-.form-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 16px;
-}
-.form-section-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+    /* ── Premium Bug Form Design ── */
+    :root {
+        --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        --accent-gradient: linear-gradient(135deg, var(--accent), #6366f1);
+    }
+
+    .bug-form-container {
+        max-width: 1100px;
+        margin: 20px auto 80px;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-layout {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    /* Glassmorphism & Cards */
+    .premium-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .premium-card:hover {
+        border-color: var(--accent);
+        box-shadow: 0 15px 40px -15px rgba(0, 0, 0, 0.15);
+    }
+
+    .premium-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 4px;
+        background: var(--accent-gradient);
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .premium-card:hover::before { opacity: 1; }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .section-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent-glow);
+        color: var(--accent);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+
+    .section-title-text {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.5px;
+    }
+
+    /* Form Fields */
+    .input-wrapper { margin-bottom: 24px; }
+    .input-wrapper:last-child { margin-bottom: 0; }
+
+    .custom-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .custom-label span { color: var(--red); }
+
+    .premium-input, .premium-select, .premium-textarea {
+        width: 100%;
+        background: var(--bg-primary);
+        border: 2px solid transparent;
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .premium-input:focus, .premium-select:focus, .premium-textarea:focus {
+        background: var(--bg-card);
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-glow);
+        outline: none;
+    }
+
+    .premium-textarea { min-height: 120px; resize: vertical; }
+
+    /* Buttons */
+    .btn-premium {
+        background: var(--accent-gradient);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: 'Space Grotesk', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px var(--accent-glow);
+        width: 100%;
+        font-size: 16px;
+    }
+
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--accent-glow);
+        filter: brightness(1.1);
+    }
+
+    .btn-premium:active { transform: translateY(0); }
+
+    .btn-cancel {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-cancel:hover {
+        background: var(--bg-card-hover);
+        color: var(--text-primary);
+        border-color: var(--text-muted);
+    }
+
+    /* Severity indicators */
+    .severity-selector {
+        display: flex;
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    .severity-option {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .severity-option.active.low { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+    .severity-option.active.medium { background: var(--yellow-dim); color: var(--yellow); border-color: var(--yellow); }
+    .severity-option.active.high { background: var(--purple-dim); color: var(--purple); border-color: var(--purple); }
+    .severity-option.active.critical { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+    /* Metadata Badge */
+    .meta-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--bg-primary);
+        border-radius: 100px;
+        font-size: 12px;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+    }
+
+    @media (max-width: 992px) {
+        .form-layout { grid-template-columns: 1fr; }
+    }
 </style>
 {% endblock %}
+
 {% block content %}
-<div style="max-width:780px">
-    <div class="page-header">
-        <div class="page-header-left">
-            <h1>{{ title }}</h1>
-            <p>{% if bug %}Editing bug #{{ bug.pk }}{% else %}Fill in the details below to report a bug{% endif %}</p>
+<div class="bug-form-container">
+    <!-- Breadcrumbs / Header -->
+    <div style="margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <div class="meta-badge" style="margin-bottom: 12px; width: fit-content;">
+                <i class="fas fa-bug"></i> Bug Tracking System
+            </div>
+            <h1 style="font-size: 32px; font-weight: 800; letter-spacing: -1px; margin: 0; color: var(--text-primary);">
+                {% if bug %}Refine Bug #{{ bug.pk }}{% else %}Report a Glitch{% endif %}
+            </h1>
+            <p style="color: var(--text-muted); margin-top: 8px;">
+                {% if bug %}Help us squash this bug by updating its details.{% else %}Provide a concise report to ensure a swift resolution.{% endif %}
+            </p>
         </div>
-        <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+        <a href="javascript:history.back()" class="btn-cancel">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
     </div>
 
     <form method="post" id="bugForm">
         {% csrf_token %}
-        <div class="grid-2" style="gap:16px;align-items:start;">
-
-            <!-- LEFT COLUMN -->
-            <div style="display:flex;flex-direction:column;gap:16px;">
-
-                <!-- Basic Info -->
-                <div class="form-section">
-                    <div class="form-section-title"><i class="fas fa-bug" style="color:var(--red)"></i> Bug Details</div>
-                    <div class="form-group">
-                        <label class="form-label">Title <span style="color:var(--red)">*</span></label>
-                        {{ form.title }}
+        <div class="form-layout">
+            
+            <!-- LEFT COLUMN: Main Details -->
+            <div style="display: flex; flex-direction: column; gap: 32px;">
+                
+                <!-- Core Information -->
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-align-left"></i></div>
+                        <div class="section-title-text">Issue Overview</div>
+                    </div>
+                    
+                    <div class="input-wrapper">
+                        <label class="custom-label">Subject <span>*</span></label>
+                        <input type="text" name="title" id="id_title" class="premium-input" placeholder="e.g. Dashboard not loading on Firefox" value="{{ form.title.value|default:'' }}" required>
                         {% if form.title.errors %}<div class="form-error">{{ form.title.errors.0 }}</div>{% endif %}
                     </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Severity <span style="color:var(--red)">*</span></label>
-                            {{ form.severity }}
-                            {% if form.severity.errors %}<div class="form-error">{{ form.severity.errors.0 }}</div>{% endif %}
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            {{ form.status }}
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Description <span style="color:var(--red)">*</span></label>
-                        {{ form.description }}
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Detailed Description <span>*</span></label>
+                        <textarea name="description" id="id_description" class="premium-textarea" placeholder="Explain what's happening..." required>{{ form.description.value|default:'' }}</textarea>
                         {% if form.description.errors %}<div class="form-error">{{ form.description.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
 
-                <!-- Reproduce -->
-                <div class="form-section">
-                    <div class="form-section-title"><i class="fas fa-list-ol" style="color:var(--yellow)"></i> Reproduction Info</div>
-                    <div class="form-group">
-                        <label class="form-label">Steps to Reproduce</label>
-                        {{ form.steps_to_reproduce }}
+                <!-- Technical Details -->
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-vial"></i></div>
+                        <div class="section-title-text">Technical Evidence</div>
                     </div>
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label class="form-label">Expected Behavior</label>
-                            {{ form.expected_behavior }}
+                    
+                    <div class="input-wrapper">
+                        <label class="custom-label">Steps to Reproduce</label>
+                        <textarea name="steps_to_reproduce" id="id_steps_to_reproduce" class="premium-textarea" placeholder="1. Go to...&#10;2. Click on...&#10;3. See error...">{{ form.steps_to_reproduce.value|default:'' }}</textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="input-wrapper">
+                            <label class="custom-label">Expected Result</label>
+                            <textarea name="expected_behavior" id="id_expected_behavior" class="premium-textarea" style="min-height: 80px;" placeholder="What should happen?">{{ form.expected_behavior.value|default:'' }}</textarea>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Actual Behavior</label>
-                            {{ form.actual_behavior }}
+                        <div class="input-wrapper">
+                            <label class="custom-label">Actual Result</label>
+                            <textarea name="actual_behavior" id="id_actual_behavior" class="premium-textarea" style="min-height: 80px;" placeholder="What actually happened?">{{ form.actual_behavior.value|default:'' }}</textarea>
                         </div>
                     </div>
                 </div>
+
             </div>
 
-            <!-- RIGHT COLUMN -->
-            <div style="display:flex;flex-direction:column;gap:16px;">
+            <!-- RIGHT COLUMN: Classification & Action -->
+            <div style="display: flex; flex-direction: column; gap: 32px; position: sticky; top: 80px;">
+                
+                <!-- Settings -->
+                <div class="premium-card">
+                    <div class="section-header">
+                        <div class="section-icon"><i class="fas fa-tags"></i></div>
+                        <div class="section-title-text">Classification</div>
+                    </div>
 
-                <!-- Assignment -->
-                <div class="form-section">
-                    <div class="form-section-title"><i class="fas fa-link" style="color:var(--accent)"></i> Assignment &amp; Linking</div>
-
-                    <div class="form-group">
-                        <label class="form-label">Project <span style="color:var(--red)">*</span></label>
-                        {{ form.project }}
+                    <div class="input-wrapper">
+                        <label class="custom-label">Target Project <span>*</span></label>
+                        <select name="project" id="id_bug_project" class="premium-select" required>
+                            <option value="">— Select Project —</option>
+                            {% for pk, label in form.fields.project.choices %}
+                                {% if pk %}
+                                <option value="{{ pk }}" {% if form.project.value|stringformat:"s" == pk|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
                         {% if form.project.errors %}<div class="form-error">{{ form.project.errors.0 }}</div>{% endif %}
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Assign To</label>
-                        <select name="assignees" id="id_assignees" class="form-control" multiple>
-                            {% for u in form.assignees.field.queryset %}
-                            <option value="{{ u.pk }}" {% if u.pk|stringformat:"s" in form.assignees.value|default:"" %}selected{% endif %}>{{ u.display_name }}</option>
+                    <div class="input-wrapper">
+                        <label class="custom-label">Severity Level</label>
+                        <select name="severity" id="id_severity" class="premium-select">
+                            {% for pk, label in form.fields.severity.choices %}
+                            <option value="{{ pk }}" {% if form.severity.value == pk %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                            <i class="fas fa-info-circle"></i> Select a project first to see its members. Hold Ctrl/Cmd to select multiple.
-                        </div>
-                        {% if form.assignees.errors %}<div class="form-error">{{ form.assignees.errors.0 }}</div>{% endif %}
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Link to Task</label>
-                        <select name="linked_task" id="id_linked_task" class="form-control">
-                            <option value="">— None —</option>
-                            {% for t in form.linked_task.field.queryset %}
-                            <option value="{{ t.pk }}" {% if form.linked_task.value == t.pk|stringformat:"s" %}selected{% endif %}>{{ t.title }}</option>
+                    <div class="input-wrapper">
+                        <label class="custom-label">Status</label>
+                        <select name="status" id="id_status" class="premium-select">
+                            {% for pk, label in form.fields.status.choices %}
+                            <option value="{{ pk }}" {% if form.status.value == pk %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
-                            <i class="fas fa-info-circle"></i> Only tasks from the selected project are shown.
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Assigned Experts</label>
+                        <select name="assignees" id="id_assignees" class="premium-select" multiple style="height: 120px;">
+                            <!-- Populated via JS -->
+                        </select>
+                        <div style="font-size:11px; color:var(--text-muted); margin-top:8px;">
+                            <i class="fas fa-info-circle"></i> Experts from the selected project.
                         </div>
-                        {% if form.linked_task.errors %}<div class="form-error">{{ form.linked_task.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="custom-label">Linked Task</label>
+                        <select name="linked_task" id="id_linked_task" class="premium-select">
+                            <option value="">— No Task —</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+
+                    <div style="margin-top: 32px;">
+                        <button type="submit" class="btn-premium">
+                            <i class="fas fa-paper-plane"></i> {{ action }}
+                        </button>
                     </div>
                 </div>
 
-                <!-- Summary card for edit mode -->
                 {% if bug %}
-                <div class="form-section">
-                    <div class="form-section-title"><i class="fas fa-info-circle" style="color:var(--cyan)"></i> Bug Info</div>
-                    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
-                        <div style="display:flex;justify-content:space-between;">
-                            <span style="color:var(--text-muted)">Reported By</span>
-                            <span>{{ bug.reported_by.display_name }}</span>
+                <!-- History -->
+                <div class="premium-card" style="background: var(--bg-primary); border-style: dashed;">
+                    <div class="section-header">
+                        <div class="section-icon" style="background: var(--border); color: var(--text-muted);"><i class="fas fa-history"></i></div>
+                        <div class="section-title-text" style="font-size: 14px;">Audit Log</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 13px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Reported By</span>
+                            <span style="font-weight: 600;">{{ bug.reported_by.display_name }}</span>
                         </div>
-                        <div style="display:flex;justify-content:space-between;">
-                            <span style="color:var(--text-muted)">Reported On</span>
-                            <span>{{ bug.created_at|date:"d M Y H:i" }}</span>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Initial Report</span>
+                            <span>{{ bug.created_at|date:"M d, Y" }}</span>
                         </div>
-                        <div style="display:flex;justify-content:space-between;">
-                            <span style="color:var(--text-muted)">Last Updated</span>
-                            <span>{{ bug.updated_at|date:"d M Y H:i" }}</span>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-muted);">Last Modified</span>
+                            <span>{{ bug.updated_at|date:"M d, Y" }}</span>
                         </div>
                     </div>
                 </div>
                 {% endif %}
 
-                <!-- Actions -->
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> {{ action }}
-                    </button>
-                    <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
-                </div>
             </div>
         </div>
     </form>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-const projectSel  = document.getElementById('id_bug_project');
-const assignedSel = document.getElementById('id_assignees');
-const linkedSel   = document.getElementById('id_linked_task');
+    const projectSel  = document.getElementById('id_bug_project');
+    const assignedSel = document.getElementById('id_assignees');
+    const linkedSel   = document.getElementById('id_linked_task');
 
-// Store current selections so we can restore them after AJAX reload
-const currentAssignees = assignedSel ? Array.from(assignedSel.selectedOptions).map(o => o.value) : [];
-const currentTask     = linkedSel   ? linkedSel.value   : '';
-
-function loadProjectData(projectId, keepAssignees, keepTask) {
-    if (!projectId) {
-        assignedSel.innerHTML = '';
-        resetSelect(linkedSel,   '— None —');
-        return;
-    }
-
-    // Load assignable members
-    fetch(`/tasks/api/project-members/?project_id=${projectId}`)
-        .then(r => r.json())
-        .then(data => {
-            let saved = keepAssignees || [];
-            if (!Array.isArray(saved)) {
-                try {
-                    saved = JSON.parse(saved);
-                } catch(e) {
-                    saved = [saved];
-                }
-            }
+    function loadProjectData(projectId, keepAssignees, keepTask) {
+        if (!projectId) {
             assignedSel.innerHTML = '';
-            (data.members || []).forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = m.name;
-                if (saved.includes(String(m.id))) opt.selected = true;
-                assignedSel.appendChild(opt);
+            linkedSel.innerHTML = '<option value="">— No Task —</option>';
+            return;
+        }
+
+        // Load members
+        fetch(`/api/project-members/?project_id=${projectId}`)
+            .then(r => r.json())
+            .then(data => {
+                let saved = keepAssignees || [];
+                if (!Array.isArray(saved)) {
+                    try { saved = JSON.parse(saved); } catch(e) { saved = [saved]; }
+                }
+                assignedSel.innerHTML = '';
+                (data.members || []).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    if (saved.includes(String(m.id))) opt.selected = true;
+                    assignedSel.appendChild(opt);
+                });
             });
-        })
-        .catch(() => {});
 
-    // Load tasks for project
-    fetch(`/tasks/api/tasks-for-project/?project_id=${projectId}`)
-        .then(r => r.json())
-        .then(data => {
-            const saved = keepTask || linkedSel.value;
-            resetSelect(linkedSel, '— None —');
-            (data.tasks || []).forEach(t => {
-                const opt = document.createElement('option');
-                opt.value = t.id;
-                opt.textContent = t.title;
-                if (String(t.id) === String(saved)) opt.selected = true;
-                linkedSel.appendChild(opt);
+        // Load tasks
+        fetch(`/api/tasks-for-project/?project_id=${projectId}`)
+            .then(r => r.json())
+            .then(data => {
+                const saved = keepTask || linkedSel.value;
+                linkedSel.innerHTML = '<option value="">— No Task —</option>';
+                (data.tasks || []).forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.title;
+                    if (String(t.id) === String(saved)) opt.selected = true;
+                    linkedSel.appendChild(opt);
+                });
             });
-        })
-        .catch(() => {});
-}
-
-function resetSelect(sel, emptyLabel) {
-    sel.innerHTML = `<option value="">${emptyLabel}</option>`;
-}
-
-if (projectSel) {
-    projectSel.addEventListener('change', function() {
-        loadProjectData(this.value, [], '');
-    });
-
-    // On page load for edit mode, restore existing selections
-    if (projectSel.value) {
-        loadProjectData(projectSel.value, currentAssignees, '{{ form.linked_task.value }}');
     }
-}
+
+    if (projectSel) {
+        projectSel.addEventListener('change', function() {
+            loadProjectData(this.value, [], '');
+        });
+        if (projectSel.value) {
+            const initialAssignees = Array.from(assignedSel.selectedOptions).map(o => o.value);
+            const initialTask = "{{ form.linked_task.value|default:'' }}";
+            loadProjectData(projectSel.value, initialAssignees, initialTask);
+        }
+    }
+
+    // Interactive severity coloring
+    const severitySel = document.getElementById('id_severity');
+    function updateSeverityStyle() {
+        const val = severitySel.value;
+        severitySel.style.color = 'white';
+        if (val === 'low') severitySel.style.background = 'var(--green)';
+        else if (val === 'medium') severitySel.style.background = 'var(--yellow)';
+        else if (val === 'high') severitySel.style.background = 'var(--purple)';
+        else if (val === 'critical') severitySel.style.background = 'var(--red)';
+        else { severitySel.style.background = 'var(--bg-primary)'; severitySel.style.color = 'var(--text-primary)'; }
+    }
+    if (severitySel) {
+        severitySel.addEventListener('change', updateSeverityStyle);
+        updateSeverityStyle();
+    }
 </script>
 {% endblock %}

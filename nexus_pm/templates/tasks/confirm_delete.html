@@ -27,7 +27,7 @@
                         <form method="post">{% csrf_token %}<input type="hidden" name="action" value="request_deletion"><button type="submit" class="btn btn-danger"><i class="fas fa-paper-plane"></i> Request to Delete</button></form>
                     {% endif %}
                 
-                {% elif user.is_project_manager and obj.manager == user %}
+                {% elif user.is_project_manager and request.user in obj.managers.all %}
                     {% if obj.deletion_requested_by_pm %}
                         <form method="post">{% csrf_token %}<input type="hidden" name="action" value="cancel_deletion"><button type="submit" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel Delete Request</button></form>
                     {% elif obj.deletion_requested_by_admin %}

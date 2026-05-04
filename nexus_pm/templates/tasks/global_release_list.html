@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% block title %}All Project Releases — IIAP PM{% endblock %}
+{% block page_title %}Project Releases{% endblock %}
+
+{% block extra_css %}
+<style>
+    .releases-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 30px;
+        align-items: start;
+        margin-top: 20px;
+    }
+
+    /* Sidebar Styles */
+    .releases-sidebar {
+        position: sticky;
+        top: 100px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        max-height: calc(100vh - 140px);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-box {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 10px 15px 10px 40px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .search-box input:focus {
+        border-color: var(--accent);
+    }
+    .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    .project-nav {
+        overflow-y: auto;
+        flex: 1;
+        margin: 0 -10px;
+        padding: 0 10px;
+    }
+    .project-nav-item {
+        display: block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .project-nav-item:hover {
+        background: rgba(var(--accent-rgb), 0.05);
+        color: var(--accent);
+    }
+    .project-nav-item.active {
+        background: var(--accent);
+        color: white;
+    }
+
+    /* Content Styles */
+    .project-release-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 40px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        scroll-margin-top: 100px;
+    }
+    .project-release-header {
+        background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.1), rgba(var(--accent-rgb), 0.02));
+        padding: 24px 30px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .project-release-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .release-timeline {
+        padding: 30px;
+        position: relative;
+    }
+    .release-timeline::before {
+        content: '';
+        position: absolute;
+        left: 44px;
+        top: 30px;
+        bottom: 30px;
+        width: 2px;
+        background: var(--border);
+    }
+    .release-item {
+        position: relative;
+        padding-left: 60px;
+        margin-bottom: 30px;
+    }
+    .release-item:last-child {
+        margin-bottom: 0;
+    }
+    .release-dot {
+        position: absolute;
+        left: 36px;
+        top: 4px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--bg-card);
+        border: 3px solid var(--accent);
+        z-index: 1;
+    }
+    .release-content {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .release-content:hover {
+        transform: translateX(5px);
+        border-color: var(--accent);
+        background: rgba(var(--accent-rgb), 0.03);
+    }
+    .release-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .release-tag {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent);
+        text-decoration: none;
+    }
+    .release-date {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+    .asset-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        margin-right: 8px;
+        margin-top: 8px;
+    }
+    .asset-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    @media (max-width: 992px) {
+        .releases-layout {
+            grid-template-columns: 1fr;
+        }
+        .releases-sidebar {
+            position: relative;
+            top: 0;
+            max-height: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1 style="font-family:'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: -0.02em;">Project Releases</h1>
+        <p style="color: var(--text-muted); font-size: 16px;">Centralized overview of all release milestones grouped by project.</p>
+    </div>
+</div>
+
+<div class="releases-layout">
+    <!-- Left Sidebar: Project Navigation -->
+    <div class="releases-sidebar">
+        <div class="search-box">
+            <form method="get" action="">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" placeholder="Search projects or tags..." value="{{ search_query }}">
+            </form>
+        </div>
+        
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Jump to Project</div>
+        <div class="project-nav">
+            {% if project_releases %}
+                {% for group in project_releases %}
+                <a href="#project-{{ group.project.pk }}" class="project-nav-item" title="{{ group.project.name }}">
+                    {{ group.project.name }}
+                </a>
+                {% endfor %}
+            {% else %}
+                <div style="font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px 0;">No projects found</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Content: Releases List -->
+    <div class="releases-main">
+        {% if project_releases %}
+            {% for group in project_releases %}
+            <div class="project-release-card" id="project-{{ group.project.pk }}">
+                <div class="project-release-header">
+                    <h2>
+                        <i class="fas fa-project-diagram" style="color: var(--accent);"></i>
+                        {{ group.project.name }}
+                        <span style="font-size: 14px; color: var(--text-muted); font-weight: 400; margin-left: 10px;">ID: #{{ group.project.pk }}</span>
+                    </h2>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="{% url 'tasks:release_list' group.project.pk %}" class="btn btn-secondary btn-sm">Full List</a>
+                        <a href="{% url 'tasks:project_detail' group.project.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                </div>
+                
+                <div class="release-timeline">
+                    {% for release in group.releases %}
+                    <div class="release-item">
+                        <div class="release-dot"></div>
+                        <div class="release-content">
+                            <div class="release-meta">
+                                <a href="{% url 'tasks:release_detail' release.pk %}" class="release-tag">
+                                    <i class="fas fa-tag"></i> {{ release.name }}
+                                    {% if release.tag_name %}
+                                    <span style="font-size: 13px; opacity: 0.7; font-weight: 400;">({{ release.tag_name }})</span>
+                                    {% endif %}
+                                </a>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span class="release-date">{{ release.release_date|date:"M d, Y" }}</span>
+                                    {% if release.is_draft %}
+                                        <span class="badge badge-yellow">Draft</span>
+                                    {% elif release.is_prerelease %}
+                                        <span class="badge badge-cyan">Pre-release</span>
+                                    {% else %}
+                                        <span class="badge badge-green">Latest</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
+                                {{ release.description|truncatewords:40 }}
+                            </div>
+
+                            {% if release.direct_files.exists %}
+                            <div style="display: flex; flex-wrap: wrap;">
+                                {% for file in release.direct_files.all|slice:":4" %}
+                                <a href="{% url 'files:file_download' file.pk %}" class="asset-pill">
+                                    <i class="fas {{ file.icon_class }}"></i> {{ file.display_name }}
+                                </a>
+                                {% endfor %}
+                                {% if release.direct_files.count > 4 %}
+                                <span class="asset-pill" style="border-style: dashed; opacity: 0.6;">+ {{ release.direct_files.count|add:"-4" }} more</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card" style="padding: 80px 40px; text-align: center;">
+                <div style="font-size: 64px; color: var(--border); margin-bottom: 24px;">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h2 style="font-size: 24px; color: var(--text-primary); margin-bottom: 12px;">No Matching Releases</h2>
+                <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto 30px;">We couldn't find any projects or releases matching "{{ search_query }}".</p>
+                <a href="?" class="btn btn-primary">Clear Search</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Smooth scroll for project navigation
+    document.querySelectorAll('.project-nav-item').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+                
+                // Update active state
+                document.querySelectorAll('.project-nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+
+    // Update active project on scroll
+    window.addEventListener('scroll', () => {
+        let current = '';
+        const sections = document.querySelectorAll('.project-release-card');
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 120) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        document.querySelectorAll('.project-nav-item').forEach(nav => {
+            nav.classList.remove('active');
+            if (nav.getAttribute('href') === `#${current}`) {
+                nav.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

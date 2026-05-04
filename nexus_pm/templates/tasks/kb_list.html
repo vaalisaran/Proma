@@ -4,12 +4,19 @@
 {% block topbar_actions %}
 <a href="{% url 'tasks:kb_create' project.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Note</a>
 {% endblock %}
+{% block topbar_extra %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div class="page-header-left">
         <h1><a href="{% url 'tasks:project_detail' project.pk %}" style="text-decoration:none; color:var(--text-secondary)"><i class="fas fa-chevron-left"></i> {{ project.name }}</a> / Knowledge Base</h1>
-        <p>{{ notes.count }} note{{ notes.count|pluralize }}</p>
+        <p>{{ notes.count }} note{{ notes.count|pluralize }}{% if q %} matching "{{ q }}"{% endif %}</p>
+    </div>
+    <div class="page-header-right">
+        <form method="get" class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" name="q" value="{{ q }}" placeholder="Search notes..." class="search-input" style="width:200px;">
+        </form>
     </div>
 </div>
 
@@ -48,14 +55,14 @@
                     <td>
                         <div style="display:flex;gap:4px">
                             <a href="{% url 'tasks:kb_detail' note.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-eye"></i></a>
-                            {% if request.user == note.author or request.user == project.manager or request.user.is_admin %}
+                            {% if request.user == note.author or request.user in project.managers.all or request.user.is_admin %}
                             <a href="{% url 'tasks:kb_edit' note.pk %}" class="btn btn-secondary btn-icon btn-sm"><i class="fas fa-edit"></i></a>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5"><div class="empty-state"><i class="fas fa-book"></i><h3>No notes yet</h3><p><a href="{% url 'tasks:kb_create' project.pk %}" class="btn btn-primary btn-sm" style="margin-top:10px"><i class="fas fa-plus"></i> Create the first note</a></p></div></td></tr>
+                <tr><td colspan="5"><div class="empty-state"><i class="fas fa-book"></i><h3>No notes yet</h3><p>Create the first note to get started.</p><a href="{% url 'tasks:kb_create' project.pk %}" class="btn btn-primary"><i class="fas fa-plus"></i> Create Note</a></div></td></tr>
                 {% endfor %}
             </tbody>
         </table>

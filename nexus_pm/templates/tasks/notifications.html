@@ -12,7 +12,7 @@
     </div>
 </div>
 
-<form method="get" style="display:flex; gap:10px; margin-bottom:20px; align-items:center; flex-wrap:wrap; max-width:700px;">
+<form method="get" style="display:flex; gap:10px; margin-bottom:20px; align-items:center; flex-wrap:wrap;">
     <select name="status" class="filter-select" onchange="this.form.submit()">
         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Notifications</option>
         <option value="unread" {% if status_filter == 'unread' %}selected{% endif %}>Unread Only</option>
@@ -29,9 +29,9 @@
     {% endif %}
 </form>
 
-<div style="max-width:700px">
+<div style="width: 100%;">
     {% if notifications %}
-    <div class="card" style="padding:0">
+    <div class="card" style="padding:0; width: 100%;">
         {% for n in notifications %}
         <div style="display:flex;align-items:flex-start;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border);{% if not n.is_read %}background:rgba(79,142,247,0.04){% endif %}">
             <div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
@@ -68,7 +68,7 @@
 </div>
 
 {% if notifications %}
-<div style="max-width:700px; margin-top:20px;">
+<div style="margin-top:20px;">
     {% include 'pagination.html' %}
 </div>
 {% endif %}

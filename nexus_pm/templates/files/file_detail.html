@@ -6,8 +6,10 @@
 {% if file.is_previewable %}
 <a href="{% url 'files:file_view' file.pk %}" target="_blank" class="btn btn-secondary btn-sm"><i class="fas fa-external-link-alt"></i> Open</a>
 {% endif %}
-{% if request.user == file.uploaded_by or request.user.is_admin %}
+{% if can_edit %}
 <a href="{% url 'files:file_edit' file.pk %}" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+{% endif %}
+{% if can_delete %}
 <a href="{% url 'files:file_delete' file.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this file permanently?')"><i class="fas fa-trash"></i></a>
 {% endif %}
 {% endblock %}
@@ -18,15 +20,20 @@
     background: #0d1117; border-radius: var(--radius-sm); padding: 20px;
     font-family: 'Fira Code', 'Courier New', monospace; font-size: 13px;
     line-height: 1.6; color: #e6edf3; overflow-x: auto;
-    max-height: 500px; overflow-y: auto; white-space: pre;
+    max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+}
+@media (max-width: 900px) {
+    .file-detail-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 </style>
 {% endblock %}
 {% block content %}
-<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+<div class="file-detail-grid" style="display:grid;grid-template-columns:minmax(0, 1fr) 280px;gap:20px;align-items:start;">
 
     <!-- MAIN: Preview + Comments -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:16px;min-width:0;">
 
         <!-- File Header -->
         <div class="card">
@@ -66,7 +73,18 @@
         {% elif file.is_pdf %}
         <div class="card" style="padding:12px;">
             <div class="card-title" style="margin-bottom:12px;"><i class="fas fa-file-pdf" style="color:var(--red);margin-right:8px;"></i>PDF Preview</div>
-            <iframe src="{% url 'files:file_view' file.pk %}" class="preview-frame" style="height:600px;"></iframe>
+            <object data="{% url 'files:file_view' file.pk %}" type="application/pdf"
+                    style="width:100%;height:700px;border-radius:var(--radius-sm);border:none;display:block;">
+                <iframe src="{% url 'files:file_view' file.pk %}#toolbar=1"
+                        style="width:100%;height:700px;border:none;border-radius:var(--radius-sm);">
+                    <div style="text-align:center;padding:40px;">
+                        <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px;">Your browser cannot display PDFs inline.</p>
+                        <a href="{% url 'files:file_download' file.pk %}" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                    </div>
+                </iframe>
+            </object>
         </div>
 
         {% elif file.is_text_viewable and text_content %}
@@ -188,11 +206,13 @@
                 <a href="{% url 'files:file_view' file.pk %}" target="_blank" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-external-link-alt"></i> Open in Browser</a>
                 {% endif %}
                 <a href="{% url 'files:file_upload' %}{% if file.project %}?project={{ file.project.pk }}&parent_id={{ file.pk }}{% else %}?parent_id={{ file.pk }}{% endif %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-code-branch"></i> Upload New Version</a>
-                {% if request.user == file.uploaded_by or request.user.is_admin %}
+                {% if can_edit %}
                 <a href="{% url 'files:file_edit' file.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-edit"></i> Edit Details</a>
+                {% endif %}
+                {% if can_delete %}
                 <a href="{% url 'files:file_delete' file.pk %}" class="btn btn-danger" style="width:100%;justify-content:flex-start;" onclick="return confirm('Delete this file?')"><i class="fas fa-trash"></i> Delete</a>
                 {% endif %}
-                {% if request.user.is_admin or user == file.project.manager %}
+                {% if request.user.is_admin or user == file.project.managers.all %}
                 <a href="{% url 'files:file_access' file.pk %}" class="btn btn-secondary" style="width:100%;justify-content:flex-start;"><i class="fas fa-lock"></i> Manage Access</a>
                 {% endif %}
             </div>
