@@ -4,4 +4,3 @@ openpyxl
 djangorestframework
 xhtml2pdf
 fpdf
-django-debug-toolbar

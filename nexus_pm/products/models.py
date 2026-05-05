@@ -41,6 +41,17 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to="product_images/", blank=True, null=True)
     datasheet = models.FileField(upload_to="product_datasheets/", blank=True, null=True)
+    BRANCH_CHOICES = [
+        ("koramangala", "IIA, Koramangala"),
+        ("hosakote", "IIA, Hosakote (CREST)"),
+        ("hanle", "IIA, Hanle (IAO)"),
+        ("kavalur", "IIA, Kavalur (VBO)"),
+        ("kodaikanal", "IIA, Kodaikanal (KSO)"),
+        ("gauribidanur", "IIA, Gauribidanur"),
+    ]
+    branch = models.CharField(
+        max_length=50, choices=BRANCH_CHOICES, default="koramangala"
+    )
     rack_number = models.CharField(max_length=50, blank=True, null=True)
     shelf_number = models.CharField(max_length=50, blank=True, null=True)
 

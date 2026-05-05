@@ -80,6 +80,21 @@
             --transition: all 0.2s ease;
         }
 
+        /* ── PROJECT THEME OVERRIDES ── */
+        {% if project %}
+            {% with p=project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% elif task and task.project %}
+            {% with p=task.project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% elif bug and bug.project %}
+            {% with p=bug.project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% elif release and release.project %}
+            {% with p=release.project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% elif note and note.project %}
+            {% with p=note.project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% elif requirement and requirement.project %}
+            {% with p=requirement.project %}{% include "tasks/theme_style.html" %}{% endwith %}
+        {% endif %}
+
         /* ── DARK THEME ── */
         [data-theme="dark"] {
             --bg-primary:     #0f1117;
@@ -204,6 +219,12 @@
             color: var(--text-muted);
             text-transform: uppercase;
             padding: 12px 20px 6px;
+            transition: var(--transition);
+        }
+
+        a.nav-section-label:hover {
+            color: var(--accent);
+            background: var(--bg-card-hover);
         }
 
         .nav-item {
@@ -1101,6 +1122,94 @@
                 padding: 16px;
             }
         }
+
+        /* ── PROJECT TREE ── */
+        .project-tree {
+            padding: 0 5px;
+            margin-top: 5px;
+            list-style: none;
+        }
+
+        .tree-item {
+            margin-bottom: 2px;
+        }
+
+        .tree-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 15px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .tree-header:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .tree-header i.toggle-icon {
+            font-size: 8px;
+            width: 10px;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .tree-header.open i.toggle-icon {
+            transform: rotate(90deg);
+        }
+
+        .tree-header i.folder-icon {
+            font-size: 14px;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        .tree-content {
+            display: none;
+            padding-left: 20px;
+            margin-top: 2px;
+            border-left: 1px solid var(--border);
+            margin-left: 19px;
+        }
+
+        .tree-content.open {
+            display: block;
+        }
+
+        .tree-sub-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px;
+            color: var(--text-muted);
+            font-size: 12.5px;
+            text-decoration: none;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .tree-sub-item:hover {
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+        }
+
+        .tree-sub-item i {
+            width: 14px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .tree-sub-item.active {
+            color: var(--accent);
+            background: var(--accent-glow);
+            font-weight: 600;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -1201,6 +1310,32 @@
                 setTimeout(() => a.remove(), 380);
             });
         }, 4500);
+
+        function toggleProjectTree(projectId) {
+            const header = document.getElementById(`tree-header-${projectId}`);
+            const content = document.getElementById(`tree-content-${projectId}`);
+            if (header && content) {
+                header.classList.toggle('open');
+                content.classList.toggle('open');
+                
+                // Store state in localStorage
+                const isOpen = content.classList.contains('open');
+                localStorage.setItem(`project-tree-${projectId}`, isOpen);
+            }
+        }
+
+        // Initialize tree states from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tree-content').forEach(content => {
+                const projectId = content.id.replace('tree-content-', '');
+                const isOpen = localStorage.getItem(`project-tree-${projectId}`) === 'true';
+                if (isOpen) {
+                    content.classList.add('open');
+                    const header = document.getElementById(`tree-header-${projectId}`);
+                    if (header) header.classList.add('open');
+                }
+            });
+        });
     </script>
     {% block extra_js %}{% endblock %}
     {% block core_extra_js %}{% endblock %}

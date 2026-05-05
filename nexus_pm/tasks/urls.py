@@ -38,6 +38,7 @@ urlpatterns = [
     path(
         "projects/<int:pk>/releases/new/", views.release_create, name="release_create"
     ),
+    path("releases/new/", views.release_create, {"pk": 0}, name="release_create_no_project"),
     path("releases/<int:pk>/", views.release_detail, name="release_detail"),
     path("releases/<int:pk>/edit/", views.release_edit, name="release_edit"),
     path("releases/<int:pk>/delete/", views.release_delete, name="release_delete"),

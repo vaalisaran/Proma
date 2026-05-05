@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}{{ title }} — {{ project.name }}{% endblock %}
+{% block title %}{{ title }}{% if project %} — {{ project.name }}{% endif %} — IIAP PM{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
 
 {% block extra_css %}
@@ -55,7 +55,7 @@
 {% endblock %}
 
 {% block topbar_actions %}
-    <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% else %}{% url 'tasks:release_list' project.pk %}{% endif %}" class="btn btn-secondary btn-sm">Cancel</a>
+    <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% elif project %}{% url 'tasks:release_list' project.pk %}{% else %}{% url 'tasks:global_release_list' %}{% endif %}" class="btn btn-secondary btn-sm">Cancel</a>
 {% endblock %}
 
 {% block content %}
@@ -159,7 +159,7 @@
 
             <div style="margin-top: 30px; display: flex; gap: 12px;">
                 <button type="submit" class="btn btn-primary"><i class="fas fa-rocket"></i> {% if release.is_draft %}Save draft{% else %}Publish release{% endif %}</button>
-                <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% else %}{% url 'tasks:release_list' project.pk %}{% endif %}" class="btn btn-secondary">Cancel</a>
+                <a href="{% if release %}{% url 'tasks:release_detail' release.pk %}{% elif project %}{% url 'tasks:release_list' project.pk %}{% else %}{% url 'tasks:global_release_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
             </div>
         </form>
     </div>

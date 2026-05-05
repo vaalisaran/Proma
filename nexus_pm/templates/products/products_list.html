@@ -78,6 +78,7 @@
                         <th>Quantity</th>
                         <th class="d-none d-lg-table-cell">Category</th>
                         <th class="d-none d-lg-table-cell">Created</th>
+                        <th>Branch</th>
                         <th>Rack Number</th>
                         <th>Shelf Number</th>
                         <th>Edit</th>
@@ -131,6 +132,7 @@
                             -
                             {% endif %}
                         </td>
+                        <td><span class="badge bg-secondary">{{ product.get_branch_display|default:'-' }}</span></td>
                         <td>{{ product.rack_number|default:'-' }}</td>
                         <td>{{ product.shelf_number|default:'-' }}</td>
                         <td>

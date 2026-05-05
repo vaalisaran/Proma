@@ -29,6 +29,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Brand:</strong> {{ product.brand|default:"-" }}</p>
+                    <p><strong>Branch:</strong> <span class="badge bg-secondary">{{ product.get_branch_display|default:"-" }}</span></p>
                     <p><strong>SKU:</strong> {{ product.sku|default:"-" }}</p>
                     <p><strong>Serial Number:</strong> {{ product.serial_number|default:"-" }}</p>
                     <p><strong>Rack:</strong> {{ product.rack_number|default:"-" }}</p>

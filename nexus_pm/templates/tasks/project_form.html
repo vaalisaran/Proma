@@ -59,7 +59,7 @@
         <a href="{% url 'tasks:project_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
 
-    <form method="post" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         <div class="{% if form.members %}grid-2{% else %}single-column{% endif %}" style="gap: 20px; align-items: start;">
 
@@ -72,6 +72,11 @@
                         <i class="fas fa-info-circle" style="color:var(--accent);margin-right:6px;"></i>Project Information
                     </div>
                     <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        {{ form.project_id }}
+                        {% if form.project_id.errors %}<div class="form-error">{{ form.project_id.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Project Name <span style="color:var(--red)">*</span></label>
                         {{ form.name }}
                         {% if form.name.errors %}<div class="form-error">{{ form.name.errors.0 }}</div>{% endif %}
@@ -79,6 +84,31 @@
                     <div class="form-group">
                         <label class="form-label">Description</label>
                         {{ form.description }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Project Background Color</label>
+                        {{ form.background_color }}
+                        {% if form.background_color.errors %}<div class="form-error">{{ form.background_color.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Project Button Color</label>
+                        {{ form.button_color }}
+                        {% if form.button_color.errors %}<div class="form-error">{{ form.button_color.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="resetThemeColors()">
+                            <i class="fas fa-undo"></i> Reset to Default Colors
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Project Image</label>
+                        {{ form.image }}
+                        {% if project.image %}
+                        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
+                            Current: <a href="{{ project.image.url }}" target="_blank" style="color:var(--accent)">{{ project.image.name }}</a>
+                        </div>
+                        {% endif %}
+                        {% if form.image.errors %}<div class="form-error">{{ form.image.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="grid-2">
                         <div class="form-group">
@@ -175,6 +205,12 @@
 
 {% block extra_js %}
 <script>
+    function resetThemeColors() {
+        const bgInput = document.getElementById('id_background_color');
+        const btnInput = document.getElementById('id_button_color');
+        if (bgInput) bgInput.value = '#ffffff';
+        if (btnInput) btnInput.value = '#4f8ef7';
+    }
 function toggleChecked(checkbox) {
     const label = checkbox.closest('.member-checkbox-item');
     label.classList.toggle('checked', checkbox.checked);

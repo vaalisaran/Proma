@@ -14,41 +14,51 @@
 
 <!-- STAT CARDS -->
 <div class="grid-4" style="margin-bottom:24px">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.total_projects }}</div>
-            <div class="stat-label">Total Projects</div>
+    <a href="{% url 'tasks:project_list' %}" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_projects }}</div>
+                <div class="stat-label">Total Projects</div>
+            </div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-rocket"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.active_projects }}</div>
-            <div class="stat-label">Active Projects</div>
+    </a>
+    <a href="{% url 'tasks:project_list' %}?status=in_progress" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-rocket"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.active_projects }}</div>
+                <div class="stat-label">Active Projects</div>
+            </div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-tasks"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.my_open_tasks }}</div>
-            <div class="stat-label">My Open Tasks</div>
+    </a>
+    <a href="{% url 'tasks:task_list' %}?mine=1" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-tasks"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.my_open_tasks }}</div>
+                <div class="stat-label">My Open Tasks</div>
+            </div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.overdue_count }}</div>
-            <div class="stat-label">Overdue Tasks</div>
+    </a>
+    <a href="{% url 'tasks:task_list' %}?mine=1&overdue=1" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.overdue_count }}</div>
+                <div class="stat-label">Overdue Tasks</div>
+            </div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(239,68,68,0.10);color:#f97316"><i class="fas fa-bug"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.my_open_bugs }}</div>
-            <div class="stat-label">My Open Bugs</div>
+    </a>
+    <a href="{% url 'tasks:bug_list' %}?assigned_to_me=1" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.10);color:#f97316"><i class="fas fa-bug"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.my_open_bugs }}</div>
+                <div class="stat-label">My Open Bugs</div>
+            </div>
         </div>
-    </div>
+    </a>
 </div>
 
 <div class="grid-2" style="gap:20px">

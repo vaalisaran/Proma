@@ -11,20 +11,24 @@
 </div>
 
 <div class="grid-4" style="margin-bottom:24px">
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.total_projects }}</div>
-            <div class="stat-label">Projects ({{ stats.active_projects }} Active)</div>
+    <a href="{% url 'tasks:project_list' %}" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(79,142,247,0.12);color:#4f8ef7"><i class="fas fa-folder-open"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_projects }}</div>
+                <div class="stat-label">Projects ({{ stats.active_projects }} Active)</div>
+            </div>
         </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-users"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.total_users }}</div>
-            <div class="stat-label">Registered Users</div>
+    </a>
+    <a href="{% url 'accounts:user_list' %}" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.12);color:#22c55e"><i class="fas fa-users"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_users }}</div>
+                <div class="stat-label">Registered Users</div>
+            </div>
         </div>
-    </div>
+    </a>
     <div class="stat-card">
         <div class="stat-icon" style="background:rgba(168,85,247,0.12);color:#a855f7"><i class="fas fa-database"></i></div>
         <div class="stat-body">
@@ -32,13 +36,15 @@
             <div class="stat-label">Database Size</div>
         </div>
     </div>
-    <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-trash-alt"></i></div>
-        <div class="stat-body">
-            <div class="stat-value">{{ stats.deletion_reqs }}</div>
-            <div class="stat-label">Pending Deletions</div>
+    <a href="{% url 'tasks:project_list' %}?deletion_requested=1" style="text-decoration:none">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class="fas fa-trash-alt"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.deletion_reqs }}</div>
+                <div class="stat-label">Pending Deletions</div>
+            </div>
         </div>
-    </div>
+    </a>
 </div>
 
 <div class="card">

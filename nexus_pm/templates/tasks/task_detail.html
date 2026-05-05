@@ -94,6 +94,11 @@
                 <span class="badge {% if task.priority == 'critical' %}badge-red{% elif task.priority == 'high' %}badge-yellow{% elif task.priority == 'medium' %}badge-blue{% else %}badge-gray{% endif %}">
                     <i class="fas fa-flag" style="margin-right:4px;"></i> {{ task.get_priority_display }} Priority
                 </span>
+                {% if task.deadline %}
+                <span class="badge badge-purple">
+                    <i class="fas fa-hourglass-end" style="margin-right:4px;"></i> Deadline: {{ task.deadline|date:"M d, Y" }}
+                </span>
+                {% endif %}
                 {% if task.is_overdue %}
                 <span class="badge badge-red" style="animation: pulse 2s infinite;"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
                 {% endif %}

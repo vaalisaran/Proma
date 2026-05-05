@@ -49,7 +49,40 @@
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Task</th><th>Project</th><th>Type</th><th>Priority</th><th>Status</th><th>Assigned To</th><th>Actions</th></tr>
+                <tr>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'title' %}-title{% else %}title{% endif %}" style="color:inherit;text-decoration:none">
+                            Task {% if current_sort == 'title' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-title' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'project__name' %}-project__name{% else %}project__name{% endif %}" style="color:inherit;text-decoration:none">
+                            Project {% if current_sort == 'project__name' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-project__name' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'task_type' %}-task_type{% else %}task_type{% endif %}" style="color:inherit;text-decoration:none">
+                            Type {% if current_sort == 'task_type' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-task_type' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'priority' %}-priority{% else %}priority{% endif %}" style="color:inherit;text-decoration:none">
+                            Priority {% if current_sort == 'priority' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-priority' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'status' %}-status{% else %}status{% endif %}" style="color:inherit;text-decoration:none">
+                            Status {% if current_sort == 'status' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-status' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?{% if my_tasks %}mine=1&{% endif %}q={{ search }}&project={{ project_filter }}&status={{ status_filter }}&priority={{ priority_filter }}&sort={% if current_sort == 'deadline' %}-deadline{% else %}deadline{% endif %}" style="color:inherit;text-decoration:none">
+                            Deadline {% if current_sort == 'deadline' %}<i class="fas fa-sort-up"></i>{% elif current_sort == '-deadline' %}<i class="fas fa-sort-down"></i>{% else %}<i class="fas fa-sort"></i>{% endif %}
+                        </a>
+                    </th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                </tr>
             </thead>
             {% if my_tasks %}
                 {% regroup tasks by project as project_list %}
@@ -76,6 +109,13 @@
                         <td><span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:10px">{{ task.get_task_type_display }}</span></td>
                         <td><span class="{% if task.priority == 'critical' %}priority-critical{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}" style="font-size:12px;font-weight:600">● {{ task.get_priority_display }}</span></td>
                         <td><span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">{{ task.get_status_display }}</span></td>
+                        <td>
+                            {% if task.deadline %}
+                            <span style="font-size:11px; color:{% if task.deadline < today %}var(--red){% else %}var(--text-muted){% endif %}; font-weight:600;">
+                                <i class="fas fa-calendar-times"></i> {{ task.deadline|date:"M d" }}
+                            </span>
+                            {% else %}<span style="color:var(--text-muted);font-size:11px">—</span>{% endif %}
+                        </td>
                         <td>
                             {% if task.assignees.all %}
                             <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
@@ -123,8 +163,15 @@
                     <td><span class="badge {% if task.task_type == 'bug' %}badge-red{% elif task.task_type == 'feature' %}badge-purple{% else %}badge-gray{% endif %}" style="font-size:10px">{{ task.get_task_type_display }}</span></td>
                     <td><span class="{% if task.priority == 'critical' %}priority-critical{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}" style="font-size:12px;font-weight:600">● {{ task.get_priority_display }}</span></td>
                     <td><span class="badge {% if task.status == 'done' %}badge-green{% elif task.status == 'in_progress' %}badge-blue{% elif task.status == 'blocked' %}badge-red{% elif task.status == 'review' %}badge-yellow{% else %}badge-gray{% endif %}">{{ task.get_status_display }}</span></td>
-                        <td>
-                            {% if task.assignees.all %}
+                    <td>
+                        {% if task.deadline %}
+                        <span style="font-size:11px; color:{% if task.deadline < today %}var(--red){% else %}var(--text-muted){% endif %}; font-weight:600;">
+                            <i class="fas fa-calendar-times"></i> {{ task.deadline|date:"M d" }}
+                        </span>
+                        {% else %}<span style="color:var(--text-muted);font-size:11px">—</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if task.assignees.all %}
                             <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
                                 {% for assignee in task.assignees.all %}
                                 <a href="{% url 'accounts:user_detail' assignee.pk %}">

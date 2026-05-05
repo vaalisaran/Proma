@@ -71,6 +71,7 @@ TEMPLATES = [
                 "tasks.context_processors.notifications_count",
                 "tasks.context_processors.notes_count",
                 "tasks.context_processors.system_settings",
+                "tasks.context_processors.sidebar_projects",
             ],
         },
     },

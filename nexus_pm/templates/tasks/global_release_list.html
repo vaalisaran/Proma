@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}All Project Releases — IIAP PM{% endblock %}
 {% block page_title %}Project Releases{% endblock %}
+{% block topbar_actions %}
+    {% if user.is_project_manager %}
+    <a href="{% url 'tasks:release_create' 0 %}" class="btn btn-primary btn-sm" id="create-release-btn"><i class="fas fa-plus"></i> Create New Release</a>
+    {% endif %}
+{% endblock %}
 
 {% block extra_css %}
 <style>

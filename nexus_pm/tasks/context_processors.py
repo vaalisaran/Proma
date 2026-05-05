@@ -41,3 +41,16 @@ def notes_count(request):
             )
         return {"notes_count": count}
     return {}
+
+
+def sidebar_projects(request):
+    from .models import Project
+    if request.user.is_authenticated:
+        if request.user.is_admin:
+            projects = Project.objects.all().only('id', 'name', 'project_id')
+        else:
+            projects = Project.objects.filter(
+                Q(managers=request.user) | Q(members=request.user)
+            ).distinct().only('id', 'name', 'project_id')
+        return {"sidebar_projects": projects}
+    return {}

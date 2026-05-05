@@ -539,7 +539,13 @@ class RentalManagementView(View):
                 )["total"]
                 or 0
             )
-            available = stock_in - stock_out
+            adjustments = (
+                InventoryAdjustment.objects.filter(product=product).aggregate(
+                    total=models.Sum("quantity")
+                )["total"]
+                or 0
+            )
+            available = (stock_in + adjustments) - stock_out
             product.stock_in = stock_in
             product.stock_out = stock_out
             product.available = available
@@ -587,7 +593,13 @@ class RentalManagementView(View):
                 )["total"]
                 or 0
             )
-            available_quantity = stock_in - stock_out
+            adjustments = (
+                InventoryAdjustment.objects.filter(product=product).aggregate(
+                    total=models.Sum("quantity")
+                )["total"]
+                or 0
+            )
+            available_quantity = (stock_in + adjustments) - stock_out
             if quantity > available_quantity:
                 messages.error(
                     request,
@@ -685,7 +697,13 @@ def inventory_shortage_view(request):
             )["total"]
             or 0
         )
-        current_quantity = stock_in - stock_out
+        adjustments = (
+            InventoryAdjustment.objects.filter(product=product).aggregate(
+                total=Sum("quantity")
+            )["total"]
+            or 0
+        )
+        current_quantity = (stock_in + adjustments) - stock_out
         # Determine limit (priority: specific > standard)
         try:
             limit_obj = QuantityLimit.objects.get(product=product, is_active=True)
@@ -747,7 +765,13 @@ def inventory_shortage_export_csv(request):
             )["total"]
             or 0
         )
-        current_quantity = stock_in - stock_out
+        adjustments = (
+            InventoryAdjustment.objects.filter(product=product).aggregate(
+                total=Sum("quantity")
+            )["total"]
+            or 0
+        )
+        current_quantity = (stock_in + adjustments) - stock_out
         try:
             limit_obj = QuantityLimit.objects.get(product=product, is_active=True)
             limit = limit_obj.limit_quantity

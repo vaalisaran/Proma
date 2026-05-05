@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+import random
+import string
 
 
 class Project(models.Model):
@@ -35,6 +37,8 @@ class Project(models.Model):
     priority = models.CharField(
         max_length=10, choices=PRIORITY_CHOICES, default="medium"
     )
+    background_color = models.CharField(max_length=7, default="#ffffff")
+    button_color = models.CharField(max_length=7, default="#4f8ef7")
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     created_by = models.ForeignKey(
@@ -53,6 +57,7 @@ class Project(models.Model):
     deletion_requested_by_admin = models.BooleanField(default=False)
     deletion_requested_by_pm = models.BooleanField(default=False)
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
+    image = models.ImageField(upload_to="project_images/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -93,7 +98,10 @@ class Project(models.Model):
             words = self.name.replace("-", " ").split()
             initials = "".join([w[0].upper() for w in words if w and w[0].isalpha()])
             if not initials:
-                initials = "PRJ"
+                initials = "".join(random.choices(string.ascii_uppercase, k=4))
+            
+            while len(initials) < 4:
+                initials += random.choice(string.ascii_uppercase)
             initials = initials[:4]
             
             year = timezone.now().year
@@ -102,7 +110,7 @@ class Project(models.Model):
                 count = Project.objects.filter(created_at__year=self.created_at.year).count()
             
             while True:
-                pid = f"PRJ-{initials}-{year}-{count:04d}"
+                pid = f"{initials}-{year}-{count:04d}"
                 if not Project.objects.filter(project_id=pid).exists():
                     self.project_id = pid
                     break
@@ -166,11 +174,13 @@ class Requirement(models.Model):
         return f"[{self.req_id}] {self.name}" if self.req_id else self.name
 
     def save(self, *args, **kwargs):
-        if not self.req_id and self.project and self.project.project_id:
-            base_id = self.project.project_id.replace("PRJ-", "")
+        if not self.req_id and self.project:
+            # Use the 4-char project prefix
+            project_prefix = self.project.project_id.split('-')[0] if self.project.project_id else "PROJ"
+            year = timezone.now().year
             count = Requirement.objects.filter(project=self.project).count() + 1
             while True:
-                rid = f"REQ-{base_id}-{count:04d}"
+                rid = f"{project_prefix}-REQ-{year}-{count:06d}"
                 if not Requirement.objects.filter(req_id=rid).exists():
                     self.req_id = rid
                     break
@@ -249,6 +259,7 @@ class Task(models.Model):
         related_name="subtasks",
     )
     due_date = models.DateField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank=True)
     estimated_hours = models.DecimalField(
         max_digits=6, decimal_places=2, null=True, blank=True
     )
@@ -288,26 +299,34 @@ class Task(models.Model):
             self.completed_at = None
             
         if not self.task_id:
-            if self.project and self.project.project_id:
-                base_id = self.project.project_id.replace("PRJ-", "")
+            type_map = {
+                "task": "TAS",
+                "bug": "BUG",
+                "feature": "FEA",
+                "improvement": "IMP",
+                "research": "RES",
+            }
+            type_prefix = type_map.get(self.task_type, "TAS")
+            
+            project_prefix = "GEN"
+            if self.project:
+                project_prefix = self.project.project_id.split('-')[0] if self.project.project_id else "PROJ"
+            
+            year = timezone.now().year
+            module_num = f"{self.module.pk:04d}" if self.module else "0000"
+            
+            # Count tasks for this project in this year
+            if self.project:
                 count = Task.objects.filter(project=self.project).count() + 1
-                while True:
-                    tid = f"TAS-{base_id}-{count:04d}"
-                    if not Task.objects.filter(task_id=tid).exists():
-                        self.task_id = tid
-                        break
-                    count += 1
             else:
-                year = timezone.now().year
-                count = Task.objects.filter(project__isnull=True, created_at__year=year).count() + 1
-                if self.pk:
-                    count = Task.objects.filter(project__isnull=True, created_at__year=self.created_at.year).count()
-                while True:
-                    tid = f"TAS-GEN-{year}-{count:04d}"
-                    if not Task.objects.filter(task_id=tid).exists():
-                        self.task_id = tid
-                        break
-                    count += 1
+                count = Task.objects.filter(project__isnull=True).count() + 1
+
+            while True:
+                tid = f"{type_prefix}-{project_prefix}-{year}-{module_num}-{count:06d}"
+                if not Task.objects.filter(task_id=tid).exists():
+                    self.task_id = tid
+                    break
+                count += 1
 
         super().save(*args, **kwargs)
         # Update project progress
@@ -439,6 +458,8 @@ class CalendarEvent(models.Model):
     attendees = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="calendar_events"
     )
+    meeting_link = models.URLField(max_length=500, blank=True, null=True)
+    meeting_password = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=7, default="#6366f1")
     created_at = models.DateTimeField(auto_now_add=True)
 

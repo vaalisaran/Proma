@@ -120,9 +120,11 @@ def get_visible_notes_qs(user):
 @login_required
 def dashboard(request):
     user = request.user
+    # Get common data
+    today = timezone.now().date()
+
     if user.is_admin:
         import os
-
         from django.conf import settings
 
         db_size = 0
@@ -131,9 +133,12 @@ def dashboard(request):
             db_size = os.path.getsize(db_path) / (1024 * 1024)
 
         projects = Project.objects.all()
+        # Active projects for admin: everything not completed or cancelled
+        active_projects_count = projects.exclude(status__in=["completed", "cancelled"]).count()
+        
         stats = {
             "total_projects": projects.count(),
-            "active_projects": projects.filter(status="active").count(),
+            "active_projects": active_projects_count,
             "total_users": User.objects.count(),
             "db_size_mb": f"{db_size:.2f}",
             "deletion_reqs": projects.filter(
@@ -148,48 +153,53 @@ def dashboard(request):
             {"stats": stats, "projects": projects.order_by("-updated_at")[:6]},
         )
 
-    elif user.is_project_manager:
+    # For PM and regular users
+    if user.is_project_manager:
         projects = Project.objects.filter(Q(managers=user) | Q(members=user)).distinct()
-        tasks = get_visible_tasks_qs(
-            user, Task.objects.filter(Q(project__in=projects) | Q(assignees=user))
-        )
     else:
-        projects = Project.objects.filter(members=user)
-        tasks = get_visible_tasks_qs(
-            user, Task.objects.filter(Q(project__in=projects) | Q(assignees=user))
-        )
+        projects = Project.objects.filter(members=user).distinct()
+    
+    # Get all visible tasks for the user as base
+    all_visible_tasks = get_visible_tasks_qs(user, Task.objects.all())
+    
+    # My Open Tasks: Assigned to me, visible, and not done
+    my_open_tasks_qs = all_visible_tasks.filter(assignees=user).exclude(status="done")
+    
+    # Overdue Tasks: My open tasks that are past due date
+    today = timezone.now().date()
+    overdue_tasks_list = [t for t in my_open_tasks_qs if t.due_date and t.due_date < today]
+    due_today_list = [t for t in my_open_tasks_qs if t.due_date == today]
 
-    my_tasks = Task.objects.filter(assignees=user).exclude(status="done")
-    overdue_tasks = [t for t in my_tasks if t.is_overdue]
-    due_today = [t for t in my_tasks if t.due_date == timezone.now().date()]
+    # My Open Bugs: Assigned to me and not resolved/closed/wont_fix
+    my_open_bugs_count = BugReport.objects.filter(assignees=user).exclude(
+        status__in=["resolved", "closed", "wont_fix"]
+    ).count()
+
+    # My bugs list for display (Assigned to me OR Reported by me)
+    my_bugs_display = BugReport.objects.filter(Q(assignees=user) | Q(reported_by=user)).exclude(
+        status__in=["resolved", "closed", "wont_fix"]
+    ).distinct()[:5]
+
     notifications = Notification.objects.filter(recipient=user, is_read=False)[:5]
-
-    # Bugs assigned to or reported by the user
-    my_bugs = (
-        BugReport.objects.filter(Q(assignees=user) | Q(reported_by=user))
-        .exclude(status__in=["resolved", "closed"])
-        .distinct()[:5]
-    )
 
     stats = {
         "total_projects": projects.count(),
-        "active_projects": projects.filter(status="active").count(),
-        "total_tasks": tasks.count(),
-        "my_open_tasks": my_tasks.count(),
-        "overdue_count": len(overdue_tasks),
-        "completed_tasks": tasks.filter(status="done").count(),
-        "my_open_bugs": BugReport.objects.filter(assignees=user)
-        .exclude(status__in=["resolved", "closed"])
-        .count(),
+        "active_projects": projects.exclude(status__in=["completed", "cancelled"]).count(),
+        "total_tasks": all_visible_tasks.count(),
+        "my_open_tasks": my_open_tasks_qs.count(),
+        "overdue_count": len(overdue_tasks_list),
+        "completed_tasks": all_visible_tasks.filter(status="done").count(),
+        "my_open_bugs": my_open_bugs_count,
     }
+
     context = {
         "stats": stats,
-        "recent_tasks": tasks.order_by("-updated_at")[:8],
-        "overdue_tasks": overdue_tasks[:5],
-        "due_today": due_today,
+        "recent_tasks": all_visible_tasks.order_by("-updated_at")[:8],
+        "overdue_tasks": overdue_tasks_list[:5],
+        "due_today": due_today_list,
         "notifications": notifications,
         "projects": projects.order_by("-updated_at")[:6],
-        "my_bugs": my_bugs,
+        "my_bugs": my_bugs_display,
     }
     return render(request, "tasks/dashboard.html", context)
 
@@ -203,15 +213,21 @@ def project_list(request):
     module_filter = request.GET.get("module", "")
     status_filter = request.GET.get("status", "")
     search = request.GET.get("q", "")
+    deletion_requested = request.GET.get("deletion_requested", "")
 
     if user.is_admin:
         projects = Project.objects.all()
     else:
         projects = Project.objects.filter(Q(managers=user) | Q(members=user)).distinct()
 
+    if deletion_requested:
+        projects = projects.filter(Q(deletion_requested_by_admin=True) | Q(deletion_requested_by_pm=True))
+
     if module_filter:
         projects = projects.filter(module=module_filter)
-    if status_filter:
+    if status_filter == "in_progress":
+        projects = projects.exclude(status__in=["completed", "cancelled"])
+    elif status_filter:
         projects = projects.filter(status=status_filter)
     if search:
         projects = projects.filter(
@@ -242,7 +258,7 @@ def project_list(request):
 @login_required
 @manager_or_admin_required
 def project_create(request):
-    form = ProjectForm(request.POST or None, user=request.user)
+    form = ProjectForm(request.POST or None, request.FILES or None, user=request.user)
     if request.method == "POST" and form.is_valid():
         project = form.save(commit=False)
         project.created_by = request.user
@@ -444,7 +460,9 @@ def project_edit(request, pk):
         )
         return redirect("tasks:project_detail", pk=project.pk)
     old_members = set(project.members.values_list("pk", flat=True))
-    form = ProjectForm(request.POST or None, instance=project, user=request.user)
+    form = ProjectForm(
+        request.POST or None, request.FILES or None, instance=project, user=request.user
+    )
     if request.method == "POST" and form.is_valid():
         project = form.save()
 
@@ -662,6 +680,13 @@ def task_list(request):
     search = request.GET.get("q", "")
     my_only = request.GET.get("mine", "")
     project_filter = request.GET.get("project", "")
+    overdue_filter = request.GET.get("overdue", "")
+    sort = request.GET.get("sort", "-updated_at")
+    
+    # Validation for sort field to avoid errors
+    allowed_sort_fields = ["title", "project__name", "task_type", "priority", "status", "due_date", "updated_at", "-updated_at", "-title", "-project__name", "-task_type", "-priority", "-status", "-due_date"]
+    if sort not in allowed_sort_fields:
+        sort = "-updated_at"
 
     if user.is_admin:
         messages.error(request, "Admins do not have access to tasks.")
@@ -682,6 +707,9 @@ def task_list(request):
         tasks = tasks.filter(priority=priority_filter)
     if project_filter:
         tasks = tasks.filter(project_id=project_filter)
+    if overdue_filter:
+        from django.utils import timezone
+        tasks = tasks.filter(due_date__lt=timezone.now().date()).exclude(status="done")
     if search:
         tasks = tasks.filter(
             Q(title__icontains=search) | Q(description__icontains=search)
@@ -698,12 +726,11 @@ def task_list(request):
     task_qs = (
         tasks.select_related("project")
         .prefetch_related("assignees")
-        .order_by("-updated_at")
+        .order_by(sort)
     )
 
-    # We might want to sort by project if my_tasks is active for better regroup logic,
-    # but the instructions ask for standardized 10 item pagination, so we preserve default order.
-    if my_only:
+    # If my_only and no explicit sort, keep the project grouping order
+    if my_only and sort == "-updated_at":
         task_qs = (
             tasks.select_related("project")
             .prefetch_related("assignees")
@@ -713,6 +740,11 @@ def task_list(request):
     paginator = Paginator(task_qs, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
+
+    # Get current project for theme application
+    current_project = None
+    if project_filter:
+        current_project = Project.objects.filter(id=project_filter).first()
 
     return render(
         request,
@@ -729,6 +761,9 @@ def task_list(request):
             "search": search,
             "my_only": my_only,
             "my_tasks": my_only,  # alias used by template
+            "current_sort": sort,
+            "overdue_filter": overdue_filter,
+            "project": current_project,
         },
     )
 
@@ -1107,6 +1142,11 @@ def bug_list(request):
             Q(managers=request.user) | Q(members=request.user)
         ).distinct()
 
+    # Get current project for theme application
+    current_project = None
+    if project_filter:
+        current_project = Project.objects.filter(id=project_filter).first()
+
     return render(
         request,
         "tasks/bug_list.html",
@@ -1121,6 +1161,7 @@ def bug_list(request):
             "status_filter": status_filter,
             "project_filter": project_filter,
             "assigned_only": assigned_only,
+            "project": current_project,
         },
     )
 
@@ -1247,23 +1288,41 @@ def calendar_view(request):
             "start": e.start_datetime.isoformat(),
             "end": e.end_datetime.isoformat(),
             "color": e.color,
+            "meeting_link": e.meeting_link,
+            "meeting_password": e.meeting_password,
         }
         for e in events
     ]
 
-    # Tasks with due dates for the user
-    my_tasks = Task.objects.filter(assignees=request.user, due_date__isnull=False)
+    # Tasks with due dates or deadlines for the user
+    my_tasks = Task.objects.filter(
+        Q(assignees=request.user) | Q(created_by=request.user),
+        Q(due_date__isnull=False) | Q(deadline__isnull=False)
+    ).distinct()
+    
     for t in my_tasks:
-        events_data.append(
-            {
-                "id": f"task-{t.pk}",
-                "title": f"Task due: {t.title}",
-                "start": t.due_date.isoformat(),
-                "allDay": True,
-                "color": "#ef4444" if t.is_overdue else "#3b82f6",
-                "url": f"/tasks/{t.pk}/",
-            }
-        )
+        if t.due_date:
+            events_data.append(
+                {
+                    "id": f"task-due-{t.pk}",
+                    "title": f"Task Due: {t.title}",
+                    "start": t.due_date.isoformat(),
+                    "allDay": True,
+                    "color": "#ef4444" if t.is_overdue else "#3b82f6",
+                    "url": f"/tasks/{t.pk}/",
+                }
+            )
+        if t.deadline:
+            events_data.append(
+                {
+                    "id": f"task-deadline-{t.pk}",
+                    "title": f"Task Deadline: {t.title}",
+                    "start": t.deadline.isoformat(),
+                    "allDay": True,
+                    "color": "#9333ea",  # Purple for deadlines
+                    "url": f"/tasks/{t.pk}/",
+                }
+            )
 
     # Mix events and tasks in upcoming list
     upcoming_tasks = my_tasks.order_by("due_date")[:5]
@@ -1288,6 +1347,27 @@ def event_create(request):
         event.created_by = request.user
         event.save()
         form.save_m2m()
+        
+        # Notify project members
+        if event.project:
+            members = set(event.project.members.all()) | set(event.project.managers.all())
+            for member in members:
+                if member != request.user:
+                    msg = f"A new event '{event.title}' has been scheduled for project {event.project.name}."
+                    if event.meeting_link:
+                        msg += f" Meeting Link: {event.meeting_link}"
+                        if event.meeting_password:
+                            msg += f" (Password: {event.meeting_password})"
+                    
+                    Notification.objects.create(
+                        recipient=member,
+                        sender=request.user,
+                        notification_type="project_update",
+                        title=f"New Project Event: {event.title}",
+                        message=msg,
+                        project=event.project
+                    )
+        
         messages.success(request, f'Event "{event.title}" created.')
         return redirect("tasks:calendar")
     return render(
@@ -1503,13 +1583,19 @@ def kb_overview(request):
     # Authors who have written notes
     authors = User.objects.filter(knowledgebasenote__isnull=False).distinct()
     
+    # Get current project for theme application
+    current_project = None
+    if project_filter:
+        current_project = Project.objects.filter(id=project_filter).first()
+
     return render(request, "tasks/kb_overview.html", {
         "notes": notes, 
         "q": q,
         "projects": accessible_projects,
         "authors": authors,
         "project_filter": project_filter,
-        "author_filter": author_filter
+        "author_filter": author_filter,
+        "project": current_project,
     })
 
 
@@ -2103,11 +2189,20 @@ def release_list(request, pk):
 
 @login_required
 @manager_or_admin_required
-def release_create(request, pk):
-    project = get_object_or_404(Project, pk=pk)
-    form = ReleaseForm(request.POST or None, project=project)
+@login_required
+@manager_or_admin_required
+def release_create(request, pk=0):
+    project = None
+    if pk and pk != 0:
+        project = get_object_or_404(Project, pk=pk)
+    
+    form = ReleaseForm(request.POST or None, project=project, user=request.user)
+    
     if request.method == "POST" and form.is_valid():
         release = form.save(commit=False)
+        if not project:
+            project = form.cleaned_data.get('project')
+        
         release.project = project
         release.author = request.user
         release.save()
@@ -2130,10 +2225,16 @@ def release_create(request, pk):
 
         messages.success(request, f'Release "{release.name}" created.')
         return redirect("tasks:release_detail", pk=release.pk)
+    
     return render(
         request,
         "tasks/release_form.html",
-        {"form": form, "project": project, "title": "Create Release", "root_categories": project.file_categories.filter(parent=None)},
+        {
+            "form": form,
+            "project": project,
+            "title": "Create Release",
+            "root_categories": project.file_categories.filter(parent=None) if project else []
+        },
     )
 
 
@@ -2491,6 +2592,11 @@ def inventory_list(request):
             | Q(brand__icontains=search_query)
             | Q(sku__icontains=search_query)
             | Q(serial_number__icontains=search_query)
+            | Q(category__name__icontains=search_query)
+            | Q(branch__icontains=search_query)
+            | Q(rack_number__icontains=search_query)
+            | Q(shelf_number__icontains=search_query)
+            | Q(description__icontains=search_query)
         )
 
     from django.core.paginator import Paginator
@@ -2517,7 +2623,11 @@ def inventory_list(request):
             )["total"]
             or 0
         )
-        product.current_quantity = stock_in - stock_out
+        from inventory.models import InventoryAdjustment
+        adjustments = InventoryAdjustment.objects.filter(product=product).aggregate(
+            total=Sum("quantity")
+        )["total"] or 0
+        product.current_quantity = (stock_in + adjustments) - stock_out
 
     return render(
         request,
@@ -2638,19 +2748,19 @@ def requirement_report(request, pk):
         lines.append(f"---\n")
 
         lines.append(f"## Requirements Overview\n")
-        lines.append(f"| Requirement ID | Requirement Name | Description |")
-        lines.append(f"|---|---|---|")
+        lines.append(f"| Project Name | Requirement ID | Requirement Name | Description |")
+        lines.append(f"|---|---|---|---|")
         for req in requirements:
             req_id = req.req_id or str(req.pk)
             name = req.name.replace("|", "\\|")
             desc = (req.description or "N/A").replace("|", "\\|").replace("\n", " ")
-            lines.append(f"| {req_id} | {name} | {desc} |")
+            lines.append(f"| {project.name} | {req_id} | {name} | {desc} |")
         lines.append(f"")
         lines.append(f"---\n")
 
         lines.append(f"## Requirements with Linked Tasks\n")
-        lines.append(f"| Requirement ID | Requirement Name | Description | Linked Task ID | Linked Task Name | Linked Task Description |")
-        lines.append(f"|---|---|---|---|---|---|")
+        lines.append(f"| Project Name | Requirement ID | Requirement Name | Description | Linked Task ID | Linked Task Name | Linked Task Description |")
+        lines.append(f"|---|---|---|---|---|---|---|")
         for req in requirements:
             req_id = req.req_id or str(req.pk)
             req_name = req.name.replace("|", "\\|")
@@ -2661,9 +2771,9 @@ def requirement_report(request, pk):
                     task_id = task.task_id or str(task.pk)
                     task_name = task.title.replace("|", "\\|")
                     task_desc = (task.description or "N/A").replace("|", "\\|").replace("\n", " ")
-                    lines.append(f"| {req_id} | {req_name} | {req_desc} | {task_id} | {task_name} | {task_desc} |")
+                    lines.append(f"| {project.name} | {req_id} | {req_name} | {req_desc} | {task_id} | {task_name} | {task_desc} |")
             else:
-                lines.append(f"| {req_id} | {req_name} | {req_desc} | N/A | N/A | N/A |")
+                lines.append(f"| {project.name} | {req_id} | {req_name} | {req_desc} | N/A | N/A | N/A |")
 
         md_content = "\n".join(lines)
         response = __import__("django.http", fromlist=["HttpResponse"]).HttpResponse(
@@ -2739,8 +2849,8 @@ def requirement_report(request, pk):
     # ── Section B: Requirements Overview ────────────────────────────────────
     add_heading("Requirements Overview", level=1)
 
-    req_cols = ["Requirement ID", "Requirement Name", "Description"]
-    req_table = doc.add_table(rows=1 + requirements.count(), cols=3)
+    req_cols = ["Project Name", "Requirement ID", "Requirement Name", "Description"]
+    req_table = doc.add_table(rows=1 + requirements.count(), cols=4)
     req_table.style = "Table Grid"
 
     # Header row
@@ -2763,9 +2873,10 @@ def requirement_report(request, pk):
 
     for i, req in enumerate(requirements):
         row = req_table.rows[i + 1].cells
-        row[0].paragraphs[0].add_run(req.req_id or str(req.pk)).font.size = Pt(9)
-        row[1].paragraphs[0].add_run(req.name).font.size = Pt(9)
-        row[2].paragraphs[0].add_run(req.description or "N/A").font.size = Pt(9)
+        row[0].paragraphs[0].add_run(project.name).font.size = Pt(9)
+        row[1].paragraphs[0].add_run(req.req_id or str(req.pk)).font.size = Pt(9)
+        row[2].paragraphs[0].add_run(req.name).font.size = Pt(9)
+        row[3].paragraphs[0].add_run(req.description or "N/A").font.size = Pt(9)
         # Zebra striping
         if i % 2 == 1:
             from docx.oxml import OxmlElement
@@ -2784,7 +2895,7 @@ def requirement_report(request, pk):
     add_heading("Requirements with Linked Tasks", level=1)
 
     linked_cols = [
-        "Requirement ID", "Requirement Name", "Description",
+        "Project Name", "Requirement ID", "Requirement Name", "Description",
         "Linked Task ID", "Linked Task Name", "Linked Task Description",
     ]
 
@@ -2794,7 +2905,7 @@ def requirement_report(request, pk):
         linked_tasks = req.tasks.all()
         total_rows += max(linked_tasks.count(), 1)
 
-    linked_table = doc.add_table(rows=total_rows, cols=6)
+    linked_table = doc.add_table(rows=total_rows, cols=7)
     linked_table.style = "Table Grid"
 
     # Header
@@ -2825,7 +2936,7 @@ def requirement_report(request, pk):
             for task in linked_tasks:
                 row_cells = linked_table.rows[row_idx].cells
                 data = [
-                    req_id_str, req.name, req.description or "N/A",
+                    project.name, req_id_str, req.name, req.description or "N/A",
                     task.task_id or str(task.pk), task.title, task.description or "N/A",
                 ]
                 for j, val in enumerate(data):
@@ -2844,12 +2955,12 @@ def requirement_report(request, pk):
                 row_idx += 1
         else:
             row_cells = linked_table.rows[row_idx].cells
-            data = [req_id_str, req.name, req.description or "N/A", "N/A", "N/A", "N/A"]
+            data = [project.name, req_id_str, req.name, req.description or "N/A", "N/A", "N/A", "N/A"]
             for j, val in enumerate(data):
                 p = row_cells[j].paragraphs[0]
                 r = p.add_run(val)
                 r.font.size = Pt(8)
-                if j >= 3:
+                if j >= 4:
                     r.font.color.rgb = RGBColor(0x9C, 0xA3, 0xAF)
                 if fill != "FFFFFF":
                     from docx.oxml import OxmlElement
@@ -2936,19 +3047,19 @@ def task_report(request, pk):
         lines.append(f"---\n")
 
         lines.append(f"## Task Details Table\n")
-        lines.append(f"| Task ID | Task Name | Description |")
-        lines.append(f"|---|---|---|")
+        lines.append(f"| Project Name | Task ID | Task Name | Description |")
+        lines.append(f"|---|---|---|---|")
         for task in tasks:
             task_id = task.task_id or str(task.pk)
             title = task.title.replace("|", "\\|")
             desc = (task.description or "N/A").replace("|", "\\|").replace("\n", " ")
-            lines.append(f"| {task_id} | {title} | {desc} |")
+            lines.append(f"| {project.name} | {task_id} | {title} | {desc} |")
         lines.append(f"")
         lines.append(f"---\n")
 
         lines.append(f"## Task-Requirement Mapping Table\n")
-        lines.append(f"| Task ID | Task Name | Task Description | Linked Requirement ID | Linked Requirement Name | Linked Requirement Description |")
-        lines.append(f"|---|---|---|---|---|---|")
+        lines.append(f"| Project Name | Task ID | Task Name | Task Description | Linked Requirement ID | Linked Requirement Name | Linked Requirement Description |")
+        lines.append(f"|---|---|---|---|---|---|---|")
         for task in tasks:
             task_id = task.task_id or str(task.pk)
             task_name = task.title.replace("|", "\\|")
@@ -2959,9 +3070,9 @@ def task_report(request, pk):
                 req_id = req.req_id or str(req.pk)
                 req_name = req.name.replace("|", "\\|")
                 req_desc = (req.description or "N/A").replace("|", "\\|").replace("\n", " ")
-                lines.append(f"| {task_id} | {task_name} | {task_desc} | {req_id} | {req_name} | {req_desc} |")
+                lines.append(f"| {project.name} | {task_id} | {task_name} | {task_desc} | {req_id} | {req_name} | {req_desc} |")
             else:
-                lines.append(f"| {task_id} | {task_name} | {task_desc} | N/A | N/A | N/A |")
+                lines.append(f"| {project.name} | {task_id} | {task_name} | {task_desc} | N/A | N/A | N/A |")
 
         md_content = "\n".join(lines)
         response = __import__("django.http", fromlist=["HttpResponse"]).HttpResponse(
@@ -3034,8 +3145,8 @@ def task_report(request, pk):
 
     # Section 2: Task Details Table
     add_heading("Task Details Table", level=1)
-    task_cols = ["Task ID", "Task Name", "Description"]
-    task_table = doc.add_table(rows=1 + tasks.count(), cols=3)
+    task_cols = ["Project Name", "Task ID", "Task Name", "Description"]
+    task_table = doc.add_table(rows=1 + tasks.count(), cols=4)
     task_table.style = "Table Grid"
 
     # Header
@@ -3057,9 +3168,10 @@ def task_report(request, pk):
 
     for i, task in enumerate(tasks):
         row = task_table.rows[i + 1].cells
-        row[0].paragraphs[0].add_run(task.task_id or str(task.pk)).font.size = Pt(9)
-        row[1].paragraphs[0].add_run(task.title).font.size = Pt(9)
-        row[2].paragraphs[0].add_run(task.description or "N/A").font.size = Pt(9)
+        row[0].paragraphs[0].add_run(project.name).font.size = Pt(9)
+        row[1].paragraphs[0].add_run(task.task_id or str(task.pk)).font.size = Pt(9)
+        row[2].paragraphs[0].add_run(task.title).font.size = Pt(9)
+        row[3].paragraphs[0].add_run(task.description or "N/A").font.size = Pt(9)
         if i % 2 == 1:
             from docx.oxml import OxmlElement
             for cell in row:
@@ -3075,9 +3187,9 @@ def task_report(request, pk):
 
     # Section 3: Task-Requirement Mapping Table
     add_heading("Task-Requirement Mapping Table", level=1)
-    mapping_cols = ["Task ID", "Task Name", "Task Description", "Req ID", "Req Name", "Req Description"]
+    mapping_cols = ["Project Name", "Task ID", "Task Name", "Task Description", "Req ID", "Req Name", "Req Description"]
     
-    mapping_table = doc.add_table(rows=1 + tasks.count(), cols=6)
+    mapping_table = doc.add_table(rows=1 + tasks.count(), cols=7)
     mapping_table.style = "Table Grid"
 
     # Header
@@ -3098,24 +3210,24 @@ def task_report(request, pk):
         tcPr.append(shd)
 
     for i, task in enumerate(tasks):
-        task_id_str = task.task_id or str(task.pk)
+        task_id_str = f"{project.name} - {task.task_id or str(task.pk)}"
         req = task.requirement
         fill = "EFF6FF" if i % 2 == 1 else "FFFFFF"
 
         row_cells = mapping_table.rows[i + 1].cells
         if req:
             data = [
-                task_id_str, task.title, task.description or "N/A",
-                req.req_id or str(req.pk), req.name, req.description or "N/A"
+                project.name, task_id_str, task.title, task.description or "N/A",
+                f"{project.name} - {req.req_id or str(req.pk)}", req.name, req.description or "N/A"
             ]
         else:
-            data = [task_id_str, task.title, task.description or "N/A", "N/A", "N/A", "N/A"]
+            data = [project.name, task_id_str, task.title, task.description or "N/A", "N/A", "N/A", "N/A"]
 
         for j, val in enumerate(data):
             p = row_cells[j].paragraphs[0]
             r = p.add_run(val)
             r.font.size = Pt(8)
-            if not req and j >= 3:
+            if not req and j >= 4:
                 r.font.color.rgb = RGBColor(0x9C, 0xA3, 0xAF)
             
             if fill != "FFFFFF":

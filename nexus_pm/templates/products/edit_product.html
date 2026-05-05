@@ -55,6 +55,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="mb-4">
+                    <label for="branch" class="form-label">Branch</label>
+                    <select class="form-select" id="branch" name="branch" required>
+                        <option value="koramangala" {% if product.branch == 'koramangala' %}selected{% endif %}>IIA, Koramangala</option>
+                        <option value="hosakote" {% if product.branch == 'hosakote' %}selected{% endif %}>IIA, Hosakote (CREST)</option>
+                        <option value="hanle" {% if product.branch == 'hanle' %}selected{% endif %}>IIA, Hanle (IAO)</option>
+                        <option value="kavalur" {% if product.branch == 'kavalur' %}selected{% endif %}>IIA, Kavalur (VBO)</option>
+                        <option value="kodaikanal" {% if product.branch == 'kodaikanal' %}selected{% endif %}>IIA, Kodaikanal (KSO)</option>
+                        <option value="gauribidanur" {% if product.branch == 'gauribidanur' %}selected{% endif %}>IIA, Gauribidanur</option>
+                    </select>
+                </div>
                 <div class="mb-3">
                     <label for="rack_number" class="form-label">Rack Number</label>
                     <input type="text" class="form-control" id="rack_number" name="rack_number" value="{{ product.rack_number }}">

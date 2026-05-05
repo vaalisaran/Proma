@@ -43,6 +43,7 @@ def download_excel_template(request):
         "Serial Number",
         "Price",
         "Description",
+        "Branch",
         "Datasheet Filename",
         "Rack Number",
         "Shelf Number",
@@ -66,6 +67,7 @@ def download_excel_template(request):
         "SN123456",
         "99.99",
         "Sample product description",
+        "IIA, Koramangala",
         "widget2000.pdf",
         "A1",
         "B2",
@@ -129,6 +131,7 @@ class ProductCreateView(View):
         price = request.POST.get("price")
         rack_number = request.POST.get("rack_number")
         shelf_number = request.POST.get("shelf_number")
+        branch = request.POST.get("branch")
         image = request.FILES.get("image")
         datasheet = request.FILES.get("datasheet")
 
@@ -142,6 +145,7 @@ class ProductCreateView(View):
             sku=sku,
             serial_number=serial_number,
             price=price if price else 0.0,
+            branch=branch,
             rack_number=rack_number,
             shelf_number=shelf_number,
             image=image,
@@ -242,6 +246,15 @@ class ProductCreateView(View):
                             datasheet_file = ContentFile(
                                 zip_files[datasheet_name], name=datasheet_name
                             )
+                    
+                    branch = "koramangala"
+                    if "Branch" in df.columns and not pd.isna(row["Branch"]):
+                        branch_display = str(row["Branch"]).strip()
+                        # Map display name to key
+                        for k, v in Product.BRANCH_CHOICES:
+                            if branch_display.lower() == v.lower() or branch_display.lower() == k.lower():
+                                branch = k
+                                break
 
                     # Create product
                     product = Product.objects.create(
@@ -260,6 +273,7 @@ class ProductCreateView(View):
                         and not pd.isna(row.get("Serial Number"))
                         else "",
                         price=price,
+                        branch=branch,
                         rack_number=str(row.get("Rack Number", "")).strip()
                         if "Rack Number" in df.columns
                         and not pd.isna(row.get("Rack Number"))
@@ -441,7 +455,13 @@ class ProductListPageView(View):
                 )["total"]
                 or 0
             )
-            product.current_quantity = stock_in - stock_out
+            adjustments = (
+                InventoryAdjustment.objects.filter(product=product).aggregate(
+                    total=Sum("quantity")
+                )["total"]
+                or 0
+            )
+            product.current_quantity = (stock_in + adjustments) - stock_out
 
         return render(
             request,
@@ -507,16 +527,17 @@ class ProductDetailView(View):
         # Shrinkage Rate: total negative adjustments / (stock in + positive adjustments)
         positive_adj = (
             InventoryAdjustment.objects.filter(
-                product=product, adjustment_type="increase"
+                product=product, quantity__gt=0
             ).aggregate(total=Sum("quantity"))["total"]
             or 0
         )
         negative_adj = (
             InventoryAdjustment.objects.filter(
-                product=product, adjustment_type="decrease"
+                product=product, quantity__lt=0
             ).aggregate(total=Sum("quantity"))["total"]
             or 0
         )
+        negative_adj = abs(negative_adj)
         shrinkage_base = stock_in + positive_adj
         shrinkage_rate = (
             round((negative_adj / shrinkage_base) * 100, 2) if shrinkage_base else 0
@@ -682,6 +703,7 @@ class ProductEditView(View):
         product.sku = request.POST.get("sku")
         product.serial_number = request.POST.get("serial_number")
         product.price = request.POST.get("price")
+        product.branch = request.POST.get("branch")
         product.rack_number = request.POST.get("rack_number")
         product.shelf_number = request.POST.get("shelf_number")
         if request.FILES.get("image"):

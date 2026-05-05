@@ -94,10 +94,19 @@
                             <input type="file" class="form-control" id="image" name="image" accept="image/*">
                         </div>
                         
-                        <div class="mb-4">
-                            <label for="datasheet" class="form-label">Datasheet (PDF, Excel, Word)</label>
-                            <input type="file" class="form-control" id="datasheet" name="datasheet" accept=".pdf,.xls,.xlsx,.doc,.docx,.csv">
                             <small class="form-text text-muted">Optional. Upload a product datasheet (PDF, Excel, or Word document).</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="branch" class="form-label">Branch</label>
+                            <select class="form-select" id="branch" name="branch" required>
+                                <option value="koramangala">IIA, Koramangala</option>
+                                <option value="hosakote">IIA, Hosakote (CREST)</option>
+                                <option value="hanle">IIA, Hanle (IAO)</option>
+                                <option value="kavalur">IIA, Kavalur (VBO)</option>
+                                <option value="kodaikanal">IIA, Kodaikanal (KSO)</option>
+                                <option value="gauribidanur">IIA, Gauribidanur</option>
+                            </select>
                         </div>
                         
                         <div class="mb-3">
@@ -202,8 +211,13 @@
                                     <tr>
                                         <td><strong>Description</strong></td>
                                         <td><span class="badge bg-secondary">No</span></td>
-                                        <td>Product description</td>
                                         <td>Latest iPhone model</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Branch</strong></td>
+                                        <td><span class="badge bg-secondary">No</span></td>
+                                        <td>IIA Branch name (must be one of the specified branches)</td>
+                                        <td>IIA, Koramangala</td>
                                     </tr>
                                     <tr>
                                         <td><strong>Rack Number</strong></td>

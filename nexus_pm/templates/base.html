@@ -16,21 +16,46 @@
 
         <div class="sidebar-nav">
             {% if user.is_admin %}
-            <div class="nav-section-label">Admin Workspace</div>
-            <a href="{% url 'tasks:project_list' %}"
-                class="nav-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-folder-open"></i><span>Projects</span>
-            </a>
+            <a href="{% url 'tasks:project_list' %}" class="nav-section-label" style="text-decoration:none; display:block;">Admin Workspace</a>
+            <div class="project-tree">
+                {% for p in sidebar_projects %}
+                <div class="tree-item">
+                    <div class="tree-header" id="tree-header-{{ p.id }}" onclick="toggleProjectTree('{{ p.id }}')">
+                        <i class="fas fa-chevron-right toggle-icon"></i>
+                        <i class="fas fa-folder folder-icon"></i>
+                        <span>{{ p.name }}</span>
+                    </div>
+                    <div class="tree-content" id="tree-content-{{ p.id }}">
+                        <a href="{% url 'tasks:project_detail' p.id %}" class="tree-sub-item {% if request.resolver_match.url_name == 'project_detail' and request.resolver_match.kwargs.pk|slugify == p.id|slugify %}active{% endif %}">
+                            <i class="fas fa-info-circle"></i> Overview
+                        </a>
+                        <a href="{% url 'tasks:task_list' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-tasks"></i> Tasks
+                        </a>
+                        <a href="{% url 'tasks:kb_overview' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-sticky-note"></i> Notes
+                        </a>
+                        <a href="{% url 'tasks:inventory_list' %}" class="tree-sub-item">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                        <a href="{% url 'tasks:bug_list' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-bug"></i> Bug Reports
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
             <a href="{% url 'tasks:global_release_list' %}"
                 class="nav-item {% if 'release' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-rocket"></i><span>Releases</span>
             </a>
             <a href="{% url 'tasks:bug_list' %}"
-                class="nav-item {% if 'bug' in request.resolver_match.url_name %}active{% endif %}">
+                class="nav-item {% if request.resolver_match.url_name == 'bug_list' and not request.GET.project %}active{% endif %}">
                 <i class="fas fa-bug"></i><span>Bug Reports</span>
             </a>
             <a href="{% url 'tasks:kb_overview' %}"
-                class="nav-item {% if 'kb' in request.resolver_match.url_name %}active{% endif %}">
+                class="nav-item {% if request.resolver_match.url_name == 'kb_overview' and not request.GET.project %}active{% endif %}">
                 <i class="fas fa-sticky-note"></i><span>Notes</span>
             </a>
             <a href="{% url 'tasks:notifications' %}"
@@ -58,17 +83,42 @@
                 <i class="fas fa-chart-bar"></i><span>Reports</span>
             </a>
 
-            <div class="nav-section-label">Planning</div>
-            <a href="{% url 'tasks:project_list' %}"
-                class="nav-item {% if 'project' in request.resolver_match.url_name %}active{% endif %}">
-                <i class="fas fa-folder-open"></i><span>Projects</span>
-            </a>
+            <a href="{% url 'tasks:project_list' %}" class="nav-section-label" style="text-decoration:none; display:block;">Projects</a>
+            <div class="project-tree">
+                {% for p in sidebar_projects %}
+                <div class="tree-item">
+                    <div class="tree-header" id="tree-header-{{ p.id }}" onclick="toggleProjectTree('{{ p.id }}')">
+                        <i class="fas fa-chevron-right toggle-icon"></i>
+                        <i class="fas fa-folder folder-icon"></i>
+                        <span>{{ p.name }}</span>
+                    </div>
+                    <div class="tree-content" id="tree-content-{{ p.id }}">
+                        <a href="{% url 'tasks:project_detail' p.id %}" class="tree-sub-item {% if request.resolver_match.url_name == 'project_detail' and request.resolver_match.kwargs.pk|slugify == p.id|slugify %}active{% endif %}">
+                            <i class="fas fa-info-circle"></i> Overview
+                        </a>
+                        <a href="{% url 'tasks:task_list' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-tasks"></i> Tasks
+                        </a>
+                        <a href="{% url 'tasks:kb_overview' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-sticky-note"></i> Notes
+                        </a>
+                        <a href="{% url 'tasks:inventory_list' %}" class="tree-sub-item">
+                            <i class="fas fa-boxes"></i> Inventory
+                        </a>
+                        <a href="{% url 'tasks:bug_list' %}?project={{ p.id }}" class="tree-sub-item">
+                            <i class="fas fa-bug"></i> Bug Reports
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
             <a href="{% url 'tasks:global_release_list' %}"
                 class="nav-item {% if 'release' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-rocket"></i><span>Releases</span>
             </a>
             <a href="{% url 'tasks:task_list' %}"
-                class="nav-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">
+                class="nav-item {% if request.resolver_match.url_name == 'task_list' and not request.GET.project and not request.GET.mine %}active{% endif %}">
                 <i class="fas fa-check-square"></i><span>All Tasks</span>
             </a>
             <a href="{% url 'tasks:task_list' %}?mine=1"
@@ -76,7 +126,7 @@
                 <i class="fas fa-user-check"></i><span>My Tasks</span>
             </a>
             <a href="{% url 'tasks:kb_overview' %}"
-                class="nav-item {% if 'kb' in request.resolver_match.url_name %}active{% endif %}">
+                class="nav-item {% if request.resolver_match.url_name == 'kb_overview' and not request.GET.project %}active{% endif %}">
                 <i class="fas fa-sticky-note"></i><span>Notes</span>
             </a>
             <a href="{% url 'tasks:calendar' %}"

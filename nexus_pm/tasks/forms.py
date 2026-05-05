@@ -8,8 +8,11 @@ from .models import BugReport, CalendarEvent, Comment, KnowledgeBaseNote, Projec
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ["name", "description", "start_date", "managers", "members"]
+        fields = ["project_id", "name", "description", "image", "background_color", "button_color", "start_date", "managers", "members"]
         widgets = {
+            "project_id": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Project ID (Auto-generated if empty)"}
+            ),
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Project name"}
             ),
@@ -23,6 +26,8 @@ class ProjectForm(forms.ModelForm):
             "start_date": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
+            "background_color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
+            "button_color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
             "managers": forms.SelectMultiple(attrs={"class": "form-control"}),
             "members": forms.CheckboxSelectMultiple(),
         }
@@ -38,6 +43,7 @@ class ProjectForm(forms.ModelForm):
         )
         self.fields["managers"].required = False
         self.fields["members"].required = False
+        self.fields["project_id"].required = False
 
         if user and user.is_admin:
             for field in ["start_date", "members"]:
@@ -49,6 +55,7 @@ class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = [
+            "task_id",
             "title",
             "description",
             "project",
@@ -58,10 +65,14 @@ class TaskForm(forms.ModelForm):
             "status",
             "priority",
             "assignees",
+            "deadline",
             "parent_task",
             "tags",
         ]
         widgets = {
+            "task_id": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Task ID (Auto-generated if empty)"}
+            ),
             "title": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "What needs to be done?"}
             ),
@@ -85,6 +96,7 @@ class TaskForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "form-control"}),
             "priority": forms.Select(attrs={"class": "form-control"}),
             "assignees": forms.SelectMultiple(attrs={"class": "form-control"}),
+            "deadline": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "parent_task": forms.Select(attrs={"class": "form-control"}),
             "tags": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "tag1, tag2, tag3"}
@@ -141,6 +153,7 @@ class TaskForm(forms.ModelForm):
         self.fields["module"].empty_label = "— No module selected —"
         self.fields["requirement"].empty_label = "— No requirement (Optional) —"
         self.fields["requirement"].required = False
+        self.fields["task_id"].required = False
 
 
 
@@ -322,6 +335,8 @@ class CalendarEventForm(forms.ModelForm):
             "start_datetime",
             "end_datetime",
             "attendees",
+            "meeting_link",
+            "meeting_password",
             "color",
         ]
         widgets = {
@@ -337,6 +352,8 @@ class CalendarEventForm(forms.ModelForm):
                 attrs={"class": "form-control", "type": "datetime-local"}
             ),
             "attendees": forms.CheckboxSelectMultiple(),
+            "meeting_link": forms.URLInput(attrs={"class": "form-control", "placeholder": "Meeting URL (optional)"}),
+            "meeting_password": forms.TextInput(attrs={"class": "form-control", "placeholder": "Meeting Password (optional)"}),
             "color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
         }
 
@@ -423,10 +440,25 @@ class ReleaseForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, project=None, **kwargs):
+    def __init__(self, *args, project=None, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        from django.db.models import Q
         from files.models import ProjectFile
 
+        if not project and user:
+            if user.is_admin:
+                self.fields["project"] = forms.ModelChoiceField(
+                    queryset=Project.objects.all(),
+                    widget=forms.Select(attrs={"class": "form-control"}),
+                    required=True,
+                )
+            else:
+                self.fields["project"] = forms.ModelChoiceField(
+                    queryset=Project.objects.filter(managers=user),
+                    widget=forms.Select(attrs={"class": "form-control"}),
+                    required=True,
+                )
+        
         if project:
             self.fields["selected_files"] = forms.ModelMultipleChoiceField(
                 queryset=ProjectFile.objects.filter(project=project).order_by('category__name', 'original_name'),
@@ -436,6 +468,13 @@ class ReleaseForm(forms.ModelForm):
             )
             if self.instance and self.instance.pk:
                 self.fields["selected_files"].initial = self.instance.direct_files.all()
+        else:
+            self.fields["selected_files"] = forms.ModelMultipleChoiceField(
+                queryset=ProjectFile.objects.none(),
+                widget=forms.CheckboxSelectMultiple,
+                required=False,
+                label="Select Project Files to Include in Release",
+            )
 
 
 class ModuleForumPostForm(forms.ModelForm):
@@ -461,8 +500,11 @@ class RequirementForm(forms.ModelForm):
         from .models import Requirement
 
         model = Requirement
-        fields = ["name", "description"]
+        fields = ["req_id", "name", "description"]
         widgets = {
+            "req_id": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Requirement ID (Auto-generated if empty)"}
+            ),
             "name": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Requirement name"}
             ),
@@ -474,3 +516,7 @@ class RequirementForm(forms.ModelForm):
                 }
             ),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["req_id"].required = False

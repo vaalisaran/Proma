@@ -39,7 +39,13 @@
 {% if projects %}
 <div class="grid-3">
     {% for project in projects %}
-    <div class="card" style="transition:var(--transition);cursor:pointer" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
+    <div class="card" style="transition:var(--transition);cursor:pointer;padding:0;overflow:hidden" onmouseover="this.style.borderColor='var(--border-light)'" onmouseout="this.style.borderColor='var(--border)'">
+        {% if project.image %}
+        <div style="width:100%;height:140px;overflow:hidden;border-bottom:1px solid var(--border)">
+            <img src="{{ project.image.url }}" alt="{{ project.name }}" style="width:100%;height:100%;object-fit:cover">
+        </div>
+        {% endif %}
+        <div style="padding:20px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
             <span class="badge {% if project.module == 'electronics' %}badge-blue{% elif project.module == 'software' %}badge-green{% elif project.module == 'mechanical' %}badge-yellow{% elif project.module == 'optics' %}badge-cyan{% else %}badge-purple{% endif %}">
                 <i class="fas {% if project.module == 'electronics' %}fa-microchip{% elif project.module == 'software' %}fa-code{% elif project.module == 'mechanical' %}fa-cog{% elif project.module == 'optics' %}fa-eye{% else %}fa-chart-line{% endif %}"></i>
@@ -112,6 +118,7 @@
             {% endif %}
             
             {% endif %}
+        </div>
         </div>
     </div>
     {% endfor %}
