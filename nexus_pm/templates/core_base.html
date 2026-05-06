@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="{% if user.is_authenticated and user.theme_preference %}{{ user.theme_preference }}{% else %}light{% endif %}">
+<html lang="en"
+    data-theme="{% if user.is_authenticated and user.theme_preference %}{{ user.theme_preference }}{% else %}light{% endif %}">
 
 <head>
     <meta charset="UTF-8">
@@ -97,31 +98,31 @@
 
         /* ── DARK THEME ── */
         [data-theme="dark"] {
-            --bg-primary:     #0f1117;
-            --bg-secondary:   #161b27;
-            --bg-card:        #1e2535;
-            --bg-card-hover:  #242d40;
-            --bg-sidebar:     #161b27;
-            --border:         #2a3347;
-            --border-light:   #3a4a66;
-            --text-primary:   #f0f4ff;
+            --bg-primary: #0f1117;
+            --bg-secondary: #161b27;
+            --bg-card: #1e2535;
+            --bg-card-hover: #242d40;
+            --bg-sidebar: #161b27;
+            --border: #2a3347;
+            --border-light: #3a4a66;
+            --text-primary: #f0f4ff;
             --text-secondary: #c2cee8;
-            --text-muted:     #6b7fa3;
-            --shadow:         0 4px 20px rgba(0,0,0,0.4);
+            --text-muted: #6b7fa3;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
         }
 
         /* ── LIGHT THEME (explicit) ── */
         [data-theme="light"] {
-            --bg-primary:    #f4f6f8;
-            --bg-secondary:  #ffffff;
-            --bg-card:       #ffffff;
+            --bg-primary: #f4f6f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
             --bg-card-hover: #f9fafb;
-            --bg-sidebar:    #ffffff;
-            --border:        #e2e8f0;
-            --border-light:  #cbd5e1;
-            --text-primary:  #0f172a;
-            --text-secondary:#334155;
-            --text-muted:    #64748b;
+            --bg-sidebar: #ffffff;
+            --border: #e2e8f0;
+            --border-light: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
         }
 
         * {
@@ -162,7 +163,7 @@
         }
 
         .sidebar-logo {
-            padding: 24px 20px 20px;
+            padding: 11px;
             border-bottom: 1px solid var(--border);
         }
 
@@ -454,8 +455,11 @@
         }
 
         .page-body {
-            padding: 16px;
+            padding: 24px;
             flex: 1;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
         /* ── BUTTONS ── */
@@ -837,20 +841,20 @@
         /* ── GRIDS ── */
         .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 24px;
         }
 
         .grid-3 {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
         }
 
         .grid-4 {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         /* ── SEARCH/FILTER BAR ── */
@@ -948,7 +952,8 @@
             font-size: 12px;
             font-weight: 600;
             line-height: 1;
-            border-radius: 50px; /* Capsule shape */
+            border-radius: 50px;
+            /* Capsule shape */
             width: fit-content;
             margin: 0 auto;
         }
@@ -1224,20 +1229,29 @@
             <div class="topbar-title">{% block page_title %}{% endblock %}</div>
             <div class="topbar-actions" style="display:flex;align-items:center;gap:12px;">
                 {% if user.is_authenticated %}
-                <form action="{% url 'tasks:global_search' %}" method="get" style="display:flex; align-items:center; position:relative; margin-right:10px;">
-                    <i class="fas fa-search" style="position:absolute; left:12px; color:var(--text-muted); font-size:13px;"></i>
-                    <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q }}" style="background:var(--bg-primary); border:1px solid var(--border); border-radius:20px; padding:6px 12px 6px 32px; font-size:13px; outline:none; width:220px; color:var(--text-primary); transition:var(--transition);" onfocus="this.style.borderColor='var(--accent)';" onblur="this.style.borderColor='var(--border)';">
+                <form action="{% url 'tasks:global_search' %}" method="get"
+                    style="display:flex; align-items:center; position:relative; margin-right:10px;">
+                    <i class="fas fa-search"
+                        style="position:absolute; left:12px; color:var(--text-muted); font-size:13px;"></i>
+                    <input type="text" name="q" placeholder="Search..." value="{{ request.GET.q }}"
+                        style="background:var(--bg-primary); border:1px solid var(--border); border-radius:20px; padding:6px 12px 6px 32px; font-size:13px; outline:none; width:220px; color:var(--text-primary); transition:var(--transition);"
+                        onfocus="this.style.borderColor='var(--accent)';"
+                        onblur="this.style.borderColor='var(--border)';">
                 </form>
                 {% endif %}
                 {% block topbar_actions %}{% endblock %}
                 {% if user.is_authenticated %}
-                <a href="javascript:location.reload()" class="btn btn-secondary btn-icon" title="Refresh Page" style="margin-right:4px;">
+                <a href="javascript:location.reload()" class="btn btn-secondary btn-icon" title="Refresh Page"
+                    style="margin-right:4px;">
                     <i class="fas fa-sync-alt"></i>
                 </a>
-                <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-icon" title="Notifications" style="position:relative;">
+                <a href="{% url 'tasks:notifications' %}" class="btn btn-secondary btn-icon" title="Notifications"
+                    style="position:relative;">
                     <i class="fas fa-bell"></i>
                     {% if unread_count %}
-                    <span class="nav-badge" style="position:absolute;top:-5px;right:-5px;padding:2px 5px;min-width:16px;height:16px;line-height:12px;display:flex;align-items:center;justify-content:center;">{{ unread_count }}</span>
+                    <span class="nav-badge"
+                        style="position:absolute;top:-5px;right:-5px;padding:2px 5px;min-width:16px;height:16px;line-height:12px;display:flex;align-items:center;justify-content:center;">{{
+                        unread_count }}</span>
                     {% endif %}
                 </a>
                 {% endif %}
@@ -1317,7 +1331,7 @@
             if (header && content) {
                 header.classList.toggle('open');
                 content.classList.toggle('open');
-                
+
                 // Store state in localStorage
                 const isOpen = content.classList.contains('open');
                 localStorage.setItem(`project-tree-${projectId}`, isOpen);
@@ -1325,7 +1339,7 @@
         }
 
         // Initialize tree states from localStorage
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.tree-content').forEach(content => {
                 const projectId = content.id.replace('tree-content-', '');
                 const isOpen = localStorage.getItem(`project-tree-${projectId}`) === 'true';

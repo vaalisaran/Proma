@@ -125,6 +125,11 @@
         <div class="settings-nav-item" onclick="switchTab('notifications')">
             <i class="fas fa-bell"></i> Notifications
         </div>
+        {% if user.is_admin %}
+        <div class="settings-nav-item" onclick="switchTab('calendar')">
+            <i class="fas fa-calendar-alt"></i> Calendar Sync
+        </div>
+        {% endif %}
         <div class="settings-nav-item" onclick="switchTab('issues')">
             <i class="fas fa-bug"></i> Help & Feedback
         </div>
@@ -330,7 +335,84 @@
             </form>
         </div>
 
-        <!-- ISSUES PANEL -->
+        <div id="panel-calendar" class="settings-panel">
+            <h2 class="settings-section-title">Calendar Sync</h2>
+            <p class="settings-section-desc">Sync your meetings and deadlines with external calendars.</p>
+            
+            {% if user.is_admin %}
+            <!-- Google Calendar -->
+            <div class="form-card" style="background:var(--bg-secondary); padding:24px; border-radius:16px; margin-bottom:24px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <i class="fab fa-google" style="font-size:24px; color:#4285F4;"></i>
+                        <h3 style="font-size:16px; font-weight:700; margin:0;">Google Calendar</h3>
+                    </div>
+                    {% if user.calendar_settings.is_google_synced %}
+                        <span class="badge-system" style="background:var(--green)15; color:var(--green);">CONNECTED</span>
+                    {% else %}
+                        <span class="badge-system">NOT CONNECTED</span>
+                    {% endif %}
+                </div>
+                <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">
+                    Synchronize your IIAP PM events with your Google Calendar. This will allow you to see your deadlines and meetings on your phone and other devices.
+                </p>
+                {% if user.calendar_settings.is_google_synced %}
+                    <div style="background:var(--bg-card); padding:12px; border-radius:8px; border:1px solid var(--border); margin-bottom:16px; font-size:12px;">
+                        <i class="fas fa-check-circle" style="color:var(--green); margin-right:8px;"></i> Connected as <strong>{{ user.email }}</strong>
+                    </div>
+                    <a href="{% url 'tasks:google_calendar_init' %}" class="btn btn-secondary btn-sm">Reconnect Account</a>
+                {% else %}
+                    <a href="{% url 'tasks:google_calendar_init' %}" class="btn btn-primary btn-sm">
+                        <i class="fab fa-google" style="margin-right:8px;"></i> Connect Google Calendar
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- CalDAV / Radicale -->
+            <div class="form-card" style="background:var(--bg-secondary); padding:24px; border-radius:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <i class="fas fa-server" style="font-size:24px; color:var(--accent);"></i>
+                        <h3 style="font-size:16px; font-weight:700; margin:0;">CalDAV (Radicale)</h3>
+                    </div>
+                    {% if user.calendar_settings.is_caldav_synced %}
+                        <span class="badge-system" style="background:var(--green)15; color:var(--green);">ACTIVE</span>
+                    {% else %}
+                        <span class="badge-system">INACTIVE</span>
+                    {% endif %}
+                </div>
+                <form method="POST" action="{% url 'tasks:toggle_caldav_sync' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Radicale Server URL</label>
+                        <input type="url" name="caldav_url" class="form-control" value="{{ user.calendar_settings.caldav_url|default:'https://ssaran.pythonanywhere.com/' }}" placeholder="https://ssaran.pythonanywhere.com/">
+                    </div>
+                    <div class="settings-form-row">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="caldav_user" class="form-control" value="{{ user.calendar_settings.caldav_user|default:'' }}">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="caldav_password" class="form-control" value="{{ user.calendar_settings.caldav_password|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:12px; margin-top:16px;">
+                        <input type="checkbox" name="is_caldav_synced" id="id_is_caldav_synced" {% if user.calendar_settings.is_caldav_synced %}checked{% endif %}>
+                        <label for="id_is_caldav_synced" style="margin:0; cursor:pointer;">Enable CalDAV Synchronization</label>
+                    </div>
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+                        <button type="submit" class="btn btn-secondary btn-sm">Update CalDAV Settings</button>
+                    </div>
+                </form>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-lock"></i>
+                <p>Only administrators can manage calendar synchronization.</p>
+            </div>
+            {% endif %}
+        </div>
         <div id="panel-issues" class="settings-panel">
             <h2 class="settings-section-title">Help & Feedback</h2>
             <p class="settings-section-desc">Report a platform bug or request a new feature.</p>

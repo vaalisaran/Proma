@@ -461,6 +461,8 @@ class CalendarEvent(models.Model):
     meeting_link = models.URLField(max_length=500, blank=True, null=True)
     meeting_password = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=7, default="#6366f1")
+    google_event_id = models.CharField(max_length=255, blank=True, null=True)
+    caldav_event_path = models.CharField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -468,6 +470,26 @@ class CalendarEvent(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class UserCalendarSettings(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="calendar_settings"
+    )
+    # CalDAV (Radicale) Settings
+    caldav_url = models.URLField(max_length=500, default="https://ssaran.pythonanywhere.com/")
+    caldav_user = models.CharField(max_length=100, default="your_username", blank=True, null=True)
+    caldav_password = models.CharField(max_length=100, blank=True, null=True)
+    caldav_calendar_name = models.CharField(max_length=100, default="IIAP PM")
+
+    # Google Calendar Settings
+    google_calendar_id = models.CharField(max_length=255, default="primary")
+    google_oauth_token = models.JSONField(blank=True, null=True)
+    is_google_synced = models.BooleanField(default=False)
+    is_caldav_synced = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Calendar Settings for {self.user.username}"
 
 
 class KnowledgeBaseNote(models.Model):

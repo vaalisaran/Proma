@@ -47,10 +47,12 @@ def sidebar_projects(request):
     from .models import Project
     if request.user.is_authenticated:
         if request.user.is_admin:
-            projects = Project.objects.all().only('id', 'name', 'project_id')
+            projects = Project.objects.all()
         else:
             projects = Project.objects.filter(
                 Q(managers=request.user) | Q(members=request.user)
-            ).distinct().only('id', 'name', 'project_id')
+            ).distinct()
+        
+        projects = projects.prefetch_related('kb_notes', 'bug_reports', 'files', 'files__category')
         return {"sidebar_projects": projects}
     return {}

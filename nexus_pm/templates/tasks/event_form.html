@@ -1,27 +1,412 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}{{ title }} — IIAP PM{% endblock %}
-{% block page_title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .event-form-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 30px;
+    }
+
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(var(--accent-rgb), 0.02);
+    }
+
+    .card-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .card-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: var(--accent);
+        background: var(--bg-card);
+        box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.1);
+        outline: none;
+    }
+
+    .datetime-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    /* Attendees Selection */
+    .attendees-list {
+        max-height: 300px;
+        overflow-y: auto;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px;
+    }
+
+    .attendee-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .attendee-item:hover {
+        background: rgba(var(--accent-rgb), 0.05);
+    }
+
+    .attendee-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 2px solid var(--border);
+        cursor: pointer;
+    }
+
+    .attendee-info {
+        flex: 1;
+    }
+
+    .attendee-name {
+        font-size: 13px;
+        font-weight: 600;
+        display: block;
+    }
+
+    .attendee-role {
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    /* Preview Card */
+    .preview-card {
+        position: sticky;
+        top: 100px;
+    }
+
+    .event-preview {
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+        margin-bottom: 20px;
+    }
+
+    .preview-title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .preview-meta {
+        font-size: 13px;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+
+    /* Badge system */
+    .badge-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-container {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .preview-card {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="max-width:600px">
-    <div class="page-header">
-        <div class="page-header-left"><h1>{{ title }}</h1></div>
-        <a href="{% url 'tasks:calendar' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+<div class="event-form-container">
+    <div style="margin-bottom: 30px;">
+        <h1 class="page-title" style="margin-bottom: 8px;">{{ title }}</h1>
+        <p style="color: var(--text-muted); font-size: 14px;">Schedule meetings, deadlines, or milestones for your projects.</p>
     </div>
-    <div class="card">
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group">
-                <label class="form-label">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}<div class="form-error">{{ field.errors.0 }}</div>{% endif %}
+
+    <form method="POST" id="eventForm">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+        <div class="card mb-4" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+            <div class="card-body py-3">
+                {% for error in form.non_field_errors %}
+                <p class="text-danger small mb-0"><i class="fas fa-exclamation-circle"></i> {{ error }}</p>
+                {% endfor %}
             </div>
-            {% endfor %}
-            <div style="display:flex;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ action }}</button>
-                <a href="{% url 'tasks:calendar' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+        <div class="grid-2" style="gap: 30px; align-items: start;">
+            
+            <!-- LEFT COLUMN: EVENT DETAILS -->
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                
+                <!-- Section 1: Core Information -->
+                <div class="card">
+                    <div class="form-section-title">
+                        <i class="fas fa-info-circle"></i> 1. Event Information
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Event Title <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Event Type</label>
+                            {{ form.event_type }}
+                            {% if form.event_type.errors %}<div class="text-danger small mt-1">{{ form.event_type.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Label Color</label>
+                            {{ form.color }}
+                            {% if form.color.errors %}<div class="text-danger small mt-1">{{ form.color.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Timing -->
+                <div class="card">
+                    <div class="form-section-title">
+                        <i class="fas fa-clock"></i> 2. Date & Time
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Start Date & Time</label>
+                            {{ form.start_datetime }}
+                            {% if form.start_datetime.errors %}<div class="text-danger small mt-1">{{ form.start_datetime.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date & Time</label>
+                            {{ form.end_datetime }}
+                            {% if form.end_datetime.errors %}<div class="text-danger small mt-1">{{ form.end_datetime.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+                        <i class="fas fa-globe"></i> Times are handled in your local timezone.
+                    </p>
+                </div>
+
+                <!-- Section 3: Connectivity -->
+                <div class="card">
+                    <div class="form-section-title">
+                        <i class="fas fa-video"></i> 3. Meeting Details (Optional)
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Meeting Link</label>
+                        {{ form.meeting_link }}
+                        {% if form.meeting_link.errors %}<div class="text-danger small mt-1">{{ form.meeting_link.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Access Password</label>
+                        {{ form.meeting_password }}
+                        {% if form.meeting_password.errors %}<div class="text-danger small mt-1">{{ form.meeting_password.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
             </div>
-        </form>
-    </div>
+
+            <!-- RIGHT COLUMN: RELATIONS & ATTENDEES -->
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                
+                <!-- Section 4: Project Context -->
+                <div class="card">
+                    <div class="form-section-title">
+                        <i class="fas fa-link"></i> 4. Project Link
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Related Project</label>
+                        {{ form.project }}
+                        {% if form.project.errors %}<div class="text-danger small mt-1">{{ form.project.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Related Task</label>
+                        {{ form.task }}
+                        {% if form.task.errors %}<div class="text-danger small mt-1">{{ form.task.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Section 5: Attendees -->
+                <div class="card">
+                    <div class="form-section-title">
+                        <i class="fas fa-users"></i> 5. Invite Attendees
+                    </div>
+                    <div class="attendee-list">
+                        {% for value, text in form.attendees.field.choices %}
+                        <label class="attendee-item {% if value|stringformat:'s' in form.attendees.value|stringformat:'s' %}checked{% endif %}">
+                            <input type="checkbox" name="attendees" value="{{ value }}" 
+                                {% if value|stringformat:'s' in form.attendees.value|stringformat:'s' %}checked{% endif %}
+                                style="margin-right: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">{{ text }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- STICKY ACTIONS -->
+        <div class="sticky-actions">
+            <button type="submit" class="btn btn-primary btn-lg" style="padding: 12px 32px;">
+                <i class="fas fa-save"></i> {{ action|default:"Save Event" }}
+            </button>
+            
+            {% if event %}
+                {% if event.created_by == request.user or request.user.is_admin %}
+                <a href="{% url 'tasks:event_delete' event.id %}" class="btn btn-outline-danger btn-lg" style="padding: 12px 24px;">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </a>
+                {% endif %}
+            {% endif %}
+            
+            <a href="{% url 'tasks:calendar' %}" class="btn btn-secondary btn-lg" style="padding: 12px 32px;">
+                Cancel
+            </a>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    const previewTitle = document.getElementById('previewTitle');
+    const previewType = document.getElementById('previewType');
+    const previewCard = document.getElementById('previewCard');
+    const previewTime = document.getElementById('previewTime');
+    const previewProjectRow = document.getElementById('previewProjectRow');
+    const previewProjectName = document.getElementById('previewProjectName');
+
+    function updatePreview() {
+        // Title
+        previewTitle.textContent = titleInput.value || 'Untitled Event';
+        
+        // Type
+        const typeText = typeInput.options[typeInput.selectedIndex].text;
+        previewType.innerHTML = `<i class="fas fa-calendar"></i> ${typeText}`;
+        
+        // Color
+        previewCard.style.background = colorInput.value;
+        
+        // Time
+        if (startInput.value) {
+            const date = new Date(startInput.value);
+            previewTime.textContent = date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } else {
+            previewTime.textContent = 'Time not set';
+        }
+
+        // Project
+        if (projectInput.value && projectInput.selectedIndex > 0) {
+            previewProjectRow.style.display = 'flex';
+            previewProjectName.textContent = projectInput.options[projectInput.selectedIndex].text;
+        } else {
+            previewProjectRow.style.display = 'none';
+        }
+    }
+
+    [titleInput, typeInput, colorInput, startInput, projectInput].forEach(el => {
+        el.addEventListener('input', updatePreview);
+    });
+
+    // Time logic: Ensure end time is at least 1 hour after start time by default
+    startInput.addEventListener('change', () => {
+        if (startInput.value && !endInput.value) {
+            const startDate = new Date(startInput.value);
+            const endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
+            
+            // Format for datetime-local input
+            const year = endDate.getFullYear();
+            const month = String(endDate.getMonth() + 1).padStart(2, '0');
+            const day = String(endDate.getDate()).padStart(2, '0');
+            const hours = String(endDate.getHours()).padStart(2, '0');
+            const minutes = String(endDate.getMinutes()).padStart(2, '0');
+            
+            endInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+    });
+
+    // Run once on load
+    updatePreview();
+</script>
 {% endblock %}

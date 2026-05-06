@@ -344,7 +344,10 @@ def change_password(request):
 
 @login_required
 def settings_view(request):
-    from tasks.models import SystemIssue, SystemSettings
+    from tasks.models import SystemIssue, SystemSettings, UserCalendarSettings
+    
+    # Ensure calendar settings exist for the user
+    UserCalendarSettings.objects.get_or_create(user=request.user)
 
     # Load settings
     sys_settings = SystemSettings.get_settings()
@@ -413,10 +416,18 @@ def settings_view(request):
     if request.user.is_project_manager:
         reported_issues = SystemIssue.objects.all()
 
+    # For Calendar Sync Settings
+    from tasks.models import UserCalendarSettings
+    calendar_settings, _ = UserCalendarSettings.objects.get_or_create(user=request.user)
+
     return render(
         request,
         "accounts/settings.html",
-        {"sys_settings": sys_settings, "reported_issues": reported_issues},
+        {
+            "sys_settings": sys_settings, 
+            "reported_issues": reported_issues,
+            "calendar_settings": calendar_settings
+        },
     )
 
 

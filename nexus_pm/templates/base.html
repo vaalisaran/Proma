@@ -32,15 +32,66 @@
                         <a href="{% url 'tasks:task_list' %}?project={{ p.id }}" class="tree-sub-item">
                             <i class="fas fa-tasks"></i> Tasks
                         </a>
-                        <a href="{% url 'tasks:kb_overview' %}?project={{ p.id }}" class="tree-sub-item">
-                            <i class="fas fa-sticky-note"></i> Notes
-                        </a>
+                        
+                        <!-- Nested Notes -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-notes-{{ p.id }}" onclick="toggleProjectTree('notes-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-sticky-note folder-icon" style="color: var(--yellow);"></i>
+                                <span>Notes</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-notes-{{ p.id }}">
+                                {% for note in p.kb_notes.all %}
+                                <a href="{% url 'tasks:kb_detail' note.id %}" class="tree-sub-item">
+                                    <i class="fas fa-file-alt"></i> {{ note.title }}
+                                </a>
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No notes</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
                         <a href="{% url 'tasks:inventory_list' %}" class="tree-sub-item">
                             <i class="fas fa-boxes"></i> Inventory
                         </a>
-                        <a href="{% url 'tasks:bug_list' %}?project={{ p.id }}" class="tree-sub-item">
-                            <i class="fas fa-bug"></i> Bug Reports
-                        </a>
+
+                        <!-- Nested Bug Reports -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-bugs-{{ p.id }}" onclick="toggleProjectTree('bugs-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-bug folder-icon" style="color: var(--red);"></i>
+                                <span>Bug Reports</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-bugs-{{ p.id }}">
+                                {% for bug in p.bug_reports.all %}
+                                <a href="{% url 'tasks:bug_detail' bug.id %}" class="tree-sub-item">
+                                    <i class="fas fa-bug"></i> {{ bug.title }}
+                                </a>
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No reports</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Nested Resources (Files) -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-res-{{ p.id }}" onclick="toggleProjectTree('res-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-file-archive folder-icon" style="color: var(--purple);"></i>
+                                <span>Resources</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-res-{{ p.id }}">
+                                {% for file in p.files.all %}
+                                    {% if file.category.name != "Notes" %}
+                                    <a href="{% url 'files:file_detail' file.id %}" class="tree-sub-item">
+                                        <i class="fas {{ file.icon_class }}"></i> {{ file.display_name }}
+                                    </a>
+                                    {% endif %}
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No resources</div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -99,15 +150,66 @@
                         <a href="{% url 'tasks:task_list' %}?project={{ p.id }}" class="tree-sub-item">
                             <i class="fas fa-tasks"></i> Tasks
                         </a>
-                        <a href="{% url 'tasks:kb_overview' %}?project={{ p.id }}" class="tree-sub-item">
-                            <i class="fas fa-sticky-note"></i> Notes
-                        </a>
+                        
+                        <!-- Nested Notes -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-notes-{{ p.id }}" onclick="toggleProjectTree('notes-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-sticky-note folder-icon" style="color: var(--yellow);"></i>
+                                <span>Notes</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-notes-{{ p.id }}">
+                                {% for note in p.kb_notes.all %}
+                                <a href="{% url 'tasks:kb_detail' note.id %}" class="tree-sub-item">
+                                    <i class="fas fa-file-alt"></i> {{ note.title }}
+                                </a>
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No notes</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
                         <a href="{% url 'tasks:inventory_list' %}" class="tree-sub-item">
                             <i class="fas fa-boxes"></i> Inventory
                         </a>
-                        <a href="{% url 'tasks:bug_list' %}?project={{ p.id }}" class="tree-sub-item">
-                            <i class="fas fa-bug"></i> Bug Reports
-                        </a>
+
+                        <!-- Nested Bug Reports -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-bugs-{{ p.id }}" onclick="toggleProjectTree('bugs-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-bug folder-icon" style="color: var(--red);"></i>
+                                <span>Bug Reports</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-bugs-{{ p.id }}">
+                                {% for bug in p.bug_reports.all %}
+                                <a href="{% url 'tasks:bug_detail' bug.id %}" class="tree-sub-item">
+                                    <i class="fas fa-bug"></i> {{ bug.title }}
+                                </a>
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No reports</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Nested Resources (Files) -->
+                        <div class="tree-item" style="margin-left: 10px;">
+                            <div class="tree-header" id="tree-header-res-{{ p.id }}" onclick="toggleProjectTree('res-{{ p.id }}')">
+                                <i class="fas fa-chevron-right toggle-icon"></i>
+                                <i class="fas fa-file-archive folder-icon" style="color: var(--purple);"></i>
+                                <span>Resources</span>
+                            </div>
+                            <div class="tree-content" id="tree-content-res-{{ p.id }}">
+                                {% for file in p.files.all %}
+                                    {% if file.category.name != "Notes" %}
+                                    <a href="{% url 'files:file_detail' file.id %}" class="tree-sub-item">
+                                        <i class="fas {{ file.icon_class }}"></i> {{ file.display_name }}
+                                    </a>
+                                    {% endif %}
+                                {% empty %}
+                                <div class="tree-sub-item" style="opacity: 0.5; cursor: default;">No resources</div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -159,7 +261,7 @@
 
         <div class="sidebar-user">
             <div class="user-card" onclick="toggleUserMenu()">
-                <div class="user-avatar" style="background: {{ user.avatar_color }}">{{ user.initials }}</div>
+                <div class="user-avatar" style="background: {{ user.avatar_color }};">{{ user.initials }}</div>
                 <div class="user-info">
                     <div class="user-name">{{ user.display_name }}</div>
                     <div class="user-role">{{ user.get_role_display }}</div>

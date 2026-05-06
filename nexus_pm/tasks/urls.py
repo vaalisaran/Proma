@@ -77,6 +77,8 @@ urlpatterns = [
     path("bugs/<int:pk>/edit/", views.bug_edit, name="bug_edit"),
     path("calendar/", views.calendar_view, name="calendar"),
     path("calendar/event/new/", views.event_create, name="event_create"),
+    path("calendar/event/<int:pk>/edit/", views.event_edit, name="event_edit"),
+    path("calendar/event/<int:pk>/delete/", views.event_delete, name="event_delete"),
     path("reports/", views.reports, name="reports"),
     path("releases/", views.global_release_list, name="global_release_list"),
     path("api/tasks-for-project/", views.tasks_for_project, name="tasks_for_project"),
@@ -98,4 +100,7 @@ urlpatterns = [
         views.task_report,
         name="task_report",
     ),
+    path("calendar/google/init/", views.google_calendar_init, name="google_calendar_init"),
+    path("calendar/google/callback/", views.google_calendar_callback, name="google_calendar_callback"),
+    path("calendar/caldav/sync/", views.toggle_caldav_sync, name="toggle_caldav_sync"),
 ]

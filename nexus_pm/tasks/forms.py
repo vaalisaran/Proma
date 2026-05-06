@@ -8,7 +8,7 @@ from .models import BugReport, CalendarEvent, Comment, KnowledgeBaseNote, Projec
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ["project_id", "name", "description", "image", "background_color", "button_color", "start_date", "managers", "members"]
+        fields = ["project_id", "name", "description", "module", "status", "priority", "image", "background_color", "button_color", "start_date", "end_date", "managers", "members"]
         widgets = {
             "project_id": forms.TextInput(
                 attrs={"class": "form-control", "placeholder": "Project ID (Auto-generated if empty)"}
@@ -23,7 +23,13 @@ class ProjectForm(forms.ModelForm):
                     "placeholder": "Describe the project...",
                 }
             ),
+            "module": forms.Select(attrs={"class": "form-control"}),
+            "status": forms.Select(attrs={"class": "form-control"}),
+            "priority": forms.Select(attrs={"class": "form-control"}),
             "start_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "end_date": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}
             ),
             "background_color": forms.TextInput(attrs={"class": "form-control", "type": "color"}),
@@ -367,6 +373,22 @@ class CalendarEventForm(forms.ModelForm):
             is_active=True
         ).order_by("first_name")
         self.fields["attendees"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start = cleaned_data.get("start_datetime")
+        end = cleaned_data.get("end_datetime")
+
+        if start and end:
+            if start >= end:
+                raise forms.ValidationError("End time must be after start time.")
+            
+            from django.utils import timezone
+            # For new events, check if start time is in the past (with a 5-min buffer for delay)
+            if not self.instance.pk and start < (timezone.now() - timezone.timedelta(minutes=5)):
+                raise forms.ValidationError("Event cannot start in the past.")
+
+        return cleaned_data
 
 
 class KnowledgeBaseNoteForm(forms.ModelForm):

@@ -12,7 +12,7 @@ from django.utils import timezone
 from accounts.models import User
 from products.models import Product
 
-from .decorators import manager_or_admin_required
+from .decorators import admin_required, manager_or_admin_required
 from .forms import (
     BugReportForm,
     CalendarEventForm,
@@ -32,6 +32,7 @@ from .models import (
     ProjectModule,
     Release,
     Task,
+    UserCalendarSettings,
 )
 
 
@@ -1373,8 +1374,64 @@ def event_create(request):
     return render(
         request,
         "tasks/event_form.html",
-        {"form": form, "title": "New Event", "action": "Create Event"},
+        {"form": form, "title": "Create New Event", "action": "Create Event"},
     )
+
+
+@login_required
+def event_edit(request, pk):
+    event = get_object_or_404(CalendarEvent, pk=pk)
+    
+    # Permission check: Only creator or admin can edit
+    if event.created_by != request.user and not request.user.is_admin:
+        messages.error(request, "You do not have permission to edit this event.")
+        return redirect("tasks:calendar")
+        
+    form = CalendarEventForm(request.POST or None, instance=event)
+    if request.method == "POST" and form.is_valid():
+        event = form.save()
+        
+        # Notify attendees about update
+        for attendee in event.attendees.all():
+            if attendee != request.user:
+                Notification.objects.create(
+                    recipient=attendee,
+                    sender=request.user,
+                    notification_type="project_update",
+                    title=f"Event Updated: {event.title}",
+                    message=f"The event '{event.title}' has been updated. Please check the calendar for details.",
+                    project=event.project
+                )
+                
+        messages.success(request, f'Event "{event.title}" updated.')
+        return redirect("tasks:calendar")
+        
+    return render(
+        request,
+        "tasks/event_form.html",
+        {"form": form, "title": f"Edit Event: {event.title}", "action": "Save Changes", "event": event},
+    )
+
+@login_required
+def event_delete(request, pk):
+    event = get_object_or_404(CalendarEvent, pk=pk)
+    
+    # Permission check: Only creator or admin can delete
+    if event.created_by != request.user and not request.user.is_admin:
+        messages.error(request, "You do not have permission to delete this event.")
+        return redirect("tasks:calendar")
+        
+    if request.method == "POST":
+        title = event.title
+        # Delete from external calendars first
+        from .calendar_sync import delete_from_external_calendars
+        delete_from_external_calendars(event)
+        
+        event.delete()
+        messages.success(request, f'Event "{title}" has been deleted.')
+        return redirect("tasks:calendar")
+        
+    return render(request, "tasks/event_confirm_delete.html", {"event": event})
 
 
 # ─── REPORTS ──────────────────────────────────────────────────────────────────
@@ -3258,3 +3315,76 @@ def task_report(request, pk):
     )
     response["Content-Disposition"] = f'attachment; filename="task_report_{safe_name}.docx"'
     return response
+
+
+# ─── GOOGLE CALENDAR OAUTH ───────────────────────────────────────────────────
+
+import os
+
+from google_auth_oauthlib.flow import Flow
+from django.conf import settings
+
+# This should be your client_secret.json path
+CLIENT_SECRETS_FILE = os.path.join(settings.BASE_DIR, "client_secret.json")
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+
+@login_required
+@admin_required
+def google_calendar_init(request):
+    """Start Google OAuth flow."""
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        redirect_uri=request.build_absolute_uri(reverse('tasks:google_calendar_callback'))
+    )
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    request.session['google_oauth_state'] = state
+    return redirect(authorization_url)
+
+@login_required
+@admin_required
+def google_calendar_callback(request):
+    """Handle Google OAuth callback."""
+    state = request.session.get('google_oauth_state')
+    flow = Flow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE,
+        scopes=SCOPES,
+        state=state,
+        redirect_uri=request.build_absolute_uri(reverse('tasks:google_calendar_callback'))
+    )
+    
+    flow.fetch_token(authorization_response=request.build_absolute_uri(request.get_full_path()))
+    credentials = flow.credentials
+    
+    # Save credentials to UserCalendarSettings
+    user_settings, _ = UserCalendarSettings.objects.get_or_create(user=request.user)
+    user_settings.google_oauth_token = {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+    user_settings.is_google_synced = True
+    user_settings.save()
+    
+    messages.success(request, "Google Calendar connected successfully!")
+    return redirect('accounts:settings')
+
+@login_required
+@admin_required
+def toggle_caldav_sync(request):
+    """Toggle Radicale sync."""
+    user_settings, _ = UserCalendarSettings.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        user_settings.caldav_url = request.POST.get('caldav_url', user_settings.caldav_url)
+        user_settings.caldav_user = request.POST.get('caldav_user', user_settings.caldav_user)
+        user_settings.caldav_password = request.POST.get('caldav_password', user_settings.caldav_password)
+        user_settings.is_caldav_synced = request.POST.get('is_caldav_synced') == 'on'
+        user_settings.save()
+        messages.success(request, "CalDAV settings updated.")
+    return redirect('accounts:settings')
